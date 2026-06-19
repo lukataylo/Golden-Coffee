@@ -18,8 +18,9 @@ import httpx
 
 from shared.schemas import CleaningZone, Funnel, Role, SceneEvent, Table, Track, Zone
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
-TICK_S = float(os.environ.get("MOCK_TICK_S", "1.0"))
+BACKEND_URL    = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+TICK_S         = float(os.environ.get("MOCK_TICK_S", "1.0"))
+AVG_TICKET_GBP = float(os.environ.get("AVG_TICKET_GBP", "4.80"))
 
 ZONES = [Zone.QUEUE, Zone.COUNTER, Zone.SEATING, Zone.SEATING, Zone.ENTRY]
 
@@ -84,6 +85,8 @@ def _synthetic_scene(t: int) -> SceneEvent:
         since_clean_s=float((t * 30) % 4000), status=clean_status,
     )]
 
+    walkaway_gbp = round(funnel.abandoned * AVG_TICKET_GBP, 2)
+
     return SceneEvent(
         ts=time.time(),
         tracks=tracks,
@@ -95,6 +98,7 @@ def _synthetic_scene(t: int) -> SceneEvent:
         staff_productivity=productivity,
         tables=tables,
         cleaning=cleaning,
+        walkaway_gbp=walkaway_gbp,
         source="mock",
     )
 

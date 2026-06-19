@@ -85,6 +85,8 @@ class SceneEvent(BaseModel):
     staff_productivity: float = 0.0  # 0..1 aggregate, anonymized
     tables: list[Table] = Field(default_factory=list)       # per-table wait + cleaning
     cleaning: list[CleaningZone] = Field(default_factory=list)  # cleaning cadence by zone
+    walkaway_gbp: Optional[float] = None   # cumulative revenue lost to queue walk-offs today
+    forecast_next_hour: Optional[int] = None  # predicted occupancy for the next clock hour
     source: Literal["mock", "perception"] = "mock"
 
 

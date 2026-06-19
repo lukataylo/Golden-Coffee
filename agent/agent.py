@@ -33,6 +33,7 @@ except ImportError:
     pass
 
 from agent import policy
+from agent.forecast import FootfallForecast
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 BACKEND_WS  = os.environ.get("BACKEND_WS",  "ws://127.0.0.1:8000/ws")
@@ -171,8 +172,9 @@ class Agent:
     """
 
     def __init__(self, use_claude: bool = USE_CLAUDE) -> None:
-        # Policy owns its own debounce state across the whole run.
         self.state: dict = {}
+        self.forecast = FootfallForecast()
+        self._forecast_debounce: float = 0.0
         self.use_claude = use_claude
         self.client = None
         if self.use_claude:
@@ -186,15 +188,43 @@ class Agent:
         if not self.use_claude:
             print("[agent] rule-based policy (no API key) — deterministic decisions")
 
+    # --- footfall forecast -------------------------------------------------
+    def _forecast_actions(self, scene: dict, now: float) -> list[dict]:
+        """Update the forecast model and emit a staffing note if the next hour
+        looks significantly busier. Debounced to once per 10 minutes."""
+        hour = time.localtime(now).tm_hour
+        self.forecast.update(hour, float(scene.get("occupancy", 0)))
+        if now - self._forecast_debounce < 600:
+            return []
+        note = self.forecast.staffing_note(
+            current_occ=int(scene.get("occupancy", 0)),
+            current_hour=hour,
+        )
+        if not note:
+            return []
+        self._forecast_debounce = now
+        return [{
+            "type": "action", "ts": now,
+            "action": "notify_staff",
+            "params": {"text": note, "priority": "low"},
+            "rationale": f"Footfall forecast: next hour predicted busier — early heads-up.",
+            "reversible": True, "auto": True,
+        }]
+
     # --- decision making ---------------------------------------------------
     def decide_actions(self, scene: dict) -> list[dict]:
         """Return a list of AgentAction dicts for this scene."""
+        now = float(scene.get("ts") or time.time())
         if self.use_claude and self.client is not None:
             try:
-                return self._decide_claude(scene)
+                actions = self._decide_claude(scene)
             except Exception as exc:
                 print(f"[agent] Claude decide failed ({exc}); falling back to rules")
-        return [a.model_dump() for a in policy.decide(scene, self.state)]
+                actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+        else:
+            actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+        actions += self._forecast_actions(scene, now)
+        return actions
 
     def _decide_claude(self, scene: dict) -> list[dict]:
         msg = self.client.messages.create(

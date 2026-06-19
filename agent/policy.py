@@ -41,6 +41,7 @@ LOW_ACTIVITY = 0.2          # track activity below this counts as "settled/seate
 MANY_LONG_DWELLERS = 2      # >= this many settled guests in a full room
 HIGH_QUEUE = 3              # queue at/over this => service is slipping
 ABANDON_DELTA = 1           # walk-offs rising by >= this since last scene => act
+AVG_TICKET_GBP = 4.80       # average spend per customer (for walkaway £ metric)
 
 # music — ambient autopilot tunes energy both ways
 MUSIC_LULL_VOLUME = 60      # lift the vibe in a flat room
@@ -48,12 +49,33 @@ MUSIC_LOW_ENERGY_VOLUME = 52  # gentler bump when the room just feels low-energy
 MUSIC_BUSY_VOLUME = 38      # soften music when it's busy so it stays pleasant
 # temperature — COMFORT, never eviction
 COMFORT_COOL_DELTA_C = -1.5  # a full room warms up; cool slightly for comfort
-# lighting (brightness 0-100, warmth) — bright+neutral when busy, dim+warm when cozy
+# lighting (brightness 0-100, warmth) — busy stays bright+neutral; quiet is time-aware
 LIGHT_BUSY = (90, "neutral")
-LIGHT_COZY = (35, "warm")
-# scent (intensity 0-100, scent) — freshen a crowded room, warm scent for a cozy lull
+# scent — busy room: fresh citrus to keep the air pleasant; quiet is time-aware
 SCENT_BUSY = (60, "fresh citrus")
-SCENT_COZY = (40, "warm vanilla")
+
+
+def _ambient_lighting(hour: int) -> tuple[int, str]:
+    """Time-aware ambient lighting for a quiet room.
+    Morning: bright + neutral (wake-up energy).
+    Afternoon: warm-neutral (relaxed productivity).
+    Evening: dim + warm (cosy wind-down).
+    """
+    if 6 <= hour < 11:
+        return (80, "neutral")
+    if 17 <= hour:
+        return (30, "warm")
+    return (55, "warm")
+
+
+def _ambient_scent(hour: int) -> tuple[int, str]:
+    """Time-aware scent for a quiet room.
+    Morning: fresh citrus (energising).
+    Afternoon/evening: warm vanilla (cosy and welcoming).
+    """
+    if 6 <= hour < 11:
+        return (50, "fresh citrus")
+    return (40, "warm vanilla")
 
 # debounce windows, seconds — keyed per *rule* so distinct alerts don't mask
 # each other (e.g. a queue alert won't suppress an unattended-guest nudge).
@@ -124,11 +146,13 @@ def _unattended_guests(scene: dict) -> list[dict]:
 def decide(scene: dict, state: dict) -> list[AgentAction]:
     """Inspect a scene and return the actions to take right now (possibly none)."""
     now = float(scene.get("ts") or time.time())
+    hour = time.localtime(now).tm_hour
     occupancy = int(scene.get("occupancy", 0))
     queue_len = int(scene.get("queue_len", 0))
     energy = float(scene.get("staff_productivity", 0.0))  # aggregate room movement/energy
     funnel = scene.get("funnel", {}) or {}
     abandoned = int(funnel.get("abandoned", 0))
+    walkaway_gbp = float(scene.get("walkaway_gbp") or abandoned * AVG_TICKET_GBP)
 
     long_dwellers = _long_dwellers(scene)
     unattended = _unattended_guests(scene)
@@ -146,11 +170,13 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
         elif queue_len >= HIGH_QUEUE:
             why = f"Queue length {queue_len} is over threshold {HIGH_QUEUE}"
         else:
-            why = f"Walk-offs rising ({prev_abandoned}->{abandoned}) — customers leaving the line"
+            why = f"Walk-offs rising ({prev_abandoned}→{abandoned}) — customers leaving the line"
+        gbp_note = f" (~£{walkaway_gbp:.0f} lost today to walk-offs)" if walkaway_gbp > 0 else ""
         _mark(state, "notify_queue", now)
         actions.append(_action(
             now, "notify_staff",
-            {"text": "Queue building — can someone open a second till?", "priority": "high"},
+            {"text": f"Queue building{gbp_note} — can someone open a second till?",
+             "priority": "high"},
             f"{why}; open another till so we don't lose the sale.",
         ))
 
@@ -212,22 +238,23 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             now, "set_music_volume", {"volume": vol}, why,
         ))
 
-    # --- 4. lull -> cozy comfort (warm dim light + warm scent) ---------------
+    # --- 4. lull -> time-aware comfort (lighting + scent vary by time of day) --
     if is_lull and not busy:
         if _due(state, "lighting", now):
-            bri, warmth = LIGHT_COZY
+            bri, warmth = _ambient_lighting(hour)
             _mark(state, "lighting", now)
+            tod = "morning" if hour < 11 else "evening" if hour >= 17 else "afternoon"
             actions.append(_action(
                 now, "set_lighting", {"brightness": bri, "warmth": warmth},
-                f"Quiet room ({occupancy} in) — dim, warm lighting makes it feel "
-                f"cosy and inviting.",
+                f"Quiet {tod} ({occupancy} in) — {warmth}, {bri}% lighting sets "
+                f"the right mood for this time of day.",
             ))
         if _due(state, "scent", now):
-            inten, sc = SCENT_COZY
+            inten, sc = _ambient_scent(hour)
             _mark(state, "scent", now)
             actions.append(_action(
                 now, "set_scent", {"intensity": inten, "scent": sc},
-                f"A gentle {sc} scent adds to the cosy atmosphere during the lull.",
+                f"A {sc} scent complements the {('morning energy' if hour < 11 else 'cosy atmosphere')}.",
             ))
 
     # --- 5. fill-the-trough off-peak discount (never surge) ------------------
