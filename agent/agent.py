@@ -40,17 +40,19 @@ USE_CLAUDE = bool(os.environ.get("ANTHROPIC_API_KEY"))
 DEBOUNCE_S = float(os.environ.get("AGENT_DEBOUNCE_S", "15"))
 
 SYSTEM = (
-    "You are the operations copilot for a coffee shop. You receive anonymized scene "
-    "metrics (occupancy, queue length, dwell times, staff activity, conversion funnel). "
-    "Act ONLY when it clearly helps service, turnover, or conversion. Prefer the gentlest "
-    "effective action. Never identify individuals. Always give a one-sentence rationale. "
+    "You are the ambient + service copilot for a coffee shop. You receive anonymized "
+    "scene metrics (occupancy, queue length, dwell times, room energy, conversion funnel). "
+    "Every action must help the CUSTOMER or the STAFF — tune the atmosphere (music, "
+    "comfort) and protect speed-of-service. Never punish customers or staff: no surge "
+    "pricing, no using discomfort to move people along, no individual tracking. Prefer the "
+    "gentlest effective action and always give a one-sentence, customer-friendly rationale. "
     "If nothing needs doing, call no tool."
 )
 
 TOOLS = [
     {
         "name": "set_music_volume",
-        "description": "Set Spotify volume 0-100. Raise to lift energy during lulls.",
+        "description": "Set Spotify volume 0-100. Raise to lift the vibe in a lull; lower to keep a busy room pleasant.",
         "input_schema": {
             "type": "object",
             "properties": {"volume": {"type": "integer"}, "rationale": {"type": "string"}},
@@ -59,7 +61,7 @@ TOOLS = [
     },
     {
         "name": "set_temperature",
-        "description": "Nudge ambient temperature via the AC/heater (IR blaster). delta_c negative = cooler (encourages turnover).",
+        "description": "Adjust the AC/heater (IR blaster) for guest COMFORT. delta_c negative = cooler (e.g. a full, warming room).",
         "input_schema": {
             "type": "object",
             "properties": {"delta_c": {"type": "number"}, "rationale": {"type": "string"}},
@@ -68,7 +70,7 @@ TOOLS = [
     },
     {
         "name": "push_discount",
-        "description": "Fire a time/occupancy-based promo to the in-store board to smooth demand.",
+        "description": "Fire an off-peak/fill-the-trough promo to the in-store board to smooth demand. Never a surge/peak surcharge.",
         "input_schema": {
             "type": "object",
             "properties": {"text": {"type": "string"}, "rationale": {"type": "string"}},
@@ -77,7 +79,7 @@ TOOLS = [
     },
     {
         "name": "notify_staff",
-        "description": "Send a Telegram alert to staff (queue build-up, free-ride, idle flag).",
+        "description": "Send a Telegram alert to staff (queue building, or a seated guest who could use a check-in).",
         "input_schema": {
             "type": "object",
             "properties": {"text": {"type": "string"}, "rationale": {"type": "string"}},

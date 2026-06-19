@@ -1,9 +1,15 @@
-# ☕ Golden Coffee — Hospitality Ops Copilot
+# ☕ Golden Coffee — your café, but it runs itself
 
-Turns a coffee shop's existing CCTV/webcam into a live ops copilot: it reads the room
-(occupancy, dwell, conversion funnel, staff activity, flow heatmap) and **acts** —
-nudging music volume, temperature, discounts, and staff alerts — **without storing a
-single face**. Built for the Encode Vibe Coding Hackathon.
+An **ambient autopilot + rush copilot** for cafés. Using the camera you already own, it
+reads the room (occupancy, queue, dwell, conversion, flow) and **acts to help customers
+and staff** — tuning the atmosphere (music, comfort) and protecting speed-of-service:
+soften the music when it's busy, lift the vibe in a lull, cool a full room for comfort,
+fire an off-peak offer to fill dead time, and alert staff to open a second till before a
+queue costs you the sale. **Privacy-first: no faces stored, anonymous tracking only.**
+Built for the Encode Vibe Coding Hackathon.
+
+Not a surveillance tool: no employee scoring, no demographics, no surge pricing, no using
+discomfort to move people along. Every action helps the customer or the staff.
 
 Full plan & team split: `~/.claude/plans/help-plan-a-hackathon-crystalline-papert.md`.
 
