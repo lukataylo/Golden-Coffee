@@ -67,8 +67,10 @@ class SceneEvent(BaseModel):
 # Agent output: actions the system takes on the real world.
 # ---------------------------------------------------------------------------
 ActionName = Literal[
-    "set_music_volume",
-    "set_temperature",
+    "set_music_volume",   # Spotify volume 0-100
+    "set_temperature",    # AC/heater via IR: {delta_c}
+    "set_lighting",       # smart lights: {brightness 0-100, warmth: warm|neutral|cool}
+    "set_scent",          # scent diffuser: {intensity 0-100, scent}
     "push_discount",
     "notify_staff",
     "suggest_layout",

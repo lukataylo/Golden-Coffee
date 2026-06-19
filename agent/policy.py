@@ -48,6 +48,12 @@ MUSIC_LOW_ENERGY_VOLUME = 52  # gentler bump when the room just feels low-energy
 MUSIC_BUSY_VOLUME = 38      # soften music when it's busy so it stays pleasant
 # temperature — COMFORT, never eviction
 COMFORT_COOL_DELTA_C = -1.5  # a full room warms up; cool slightly for comfort
+# lighting (brightness 0-100, warmth) — bright+neutral when busy, dim+warm when cozy
+LIGHT_BUSY = (90, "neutral")
+LIGHT_COZY = (35, "warm")
+# scent (intensity 0-100, scent) — freshen a crowded room, warm scent for a cozy lull
+SCENT_BUSY = (60, "fresh citrus")
+SCENT_COZY = (40, "warm vanilla")
 
 # debounce windows, seconds — keyed per *rule* so distinct alerts don't mask
 # each other (e.g. a queue alert won't suppress an unattended-guest nudge).
@@ -56,6 +62,8 @@ DEBOUNCE_S = {
     "discount_quiet": 600,
     "discount_togo": 600,
     "temperature": 300,
+    "lighting": 300,
+    "scent": 600,
     "notify_queue": 120,
     "notify_unattended": 600,
 }
@@ -161,6 +169,22 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
                 f"Busy and buzzy ({occupancy} in); soften the music so the room "
                 f"stays pleasant to talk in.",
             ))
+        if _due(state, "lighting", now):
+            bri, warmth = LIGHT_BUSY
+            _mark(state, "lighting", now)
+            actions.append(_action(
+                now, "set_lighting", {"brightness": bri, "warmth": warmth},
+                f"Busy room — brighten the lights to a clean, neutral level so it "
+                f"feels alert and easy to move around.",
+            ))
+        if _due(state, "scent", now):
+            inten, sc = SCENT_BUSY
+            _mark(state, "scent", now)
+            actions.append(_action(
+                now, "set_scent", {"intensity": inten, "scent": sc},
+                f"A full room gets stuffy; freshen the air with a light {sc} scent "
+                f"to keep it pleasant.",
+            ))
         # A gentle grab-and-go offer for guests in a hurry during the rush
         # (convenience, not eviction).
         if _due(state, "discount_togo", now):
@@ -186,7 +210,25 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             now, "set_music_volume", {"volume": vol}, why,
         ))
 
-    # --- 4. fill-the-trough off-peak discount (never surge) ------------------
+    # --- 4. lull -> cozy comfort (warm dim light + warm scent) ---------------
+    if is_lull and not busy:
+        if _due(state, "lighting", now):
+            bri, warmth = LIGHT_COZY
+            _mark(state, "lighting", now)
+            actions.append(_action(
+                now, "set_lighting", {"brightness": bri, "warmth": warmth},
+                f"Quiet room ({occupancy} in) — dim, warm lighting makes it feel "
+                f"cosy and inviting.",
+            ))
+        if _due(state, "scent", now):
+            inten, sc = SCENT_COZY
+            _mark(state, "scent", now)
+            actions.append(_action(
+                now, "set_scent", {"intensity": inten, "scent": sc},
+                f"A gentle {sc} scent adds to the cosy atmosphere during the lull.",
+            ))
+
+    # --- 5. fill-the-trough off-peak discount (never surge) ------------------
     if is_lull and _due(state, "discount_quiet", now):
         promo = quiet_hour_discount(now)
         _mark(state, "discount_quiet", now)
@@ -197,7 +239,7 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             f"and pulls walk-ins in.",
         ))
 
-    # --- 5. HOSPITALITY: seated guest unattended a while -> offer service -----
+    # --- 6. HOSPITALITY: seated guest unattended a while -> offer service -----
     # Skip if the room is empty (a lone guest relaxing in a quiet café is fine).
     if unattended and not is_lull and _due(state, "notify_unattended", now):
         worst = max(unattended, key=lambda t: t.get("dwell_s", 0.0))

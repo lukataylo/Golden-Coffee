@@ -24,7 +24,7 @@ try:
 except ImportError:
     pass
 
-from actuators import discount, infrared, notify, spotify
+from actuators import discount, infrared, lights, notify, scent, spotify
 
 BACKEND_WS = os.environ.get("BACKEND_WS", "ws://127.0.0.1:8000/ws")
 
@@ -40,6 +40,10 @@ def dispatch(action: dict) -> None:
             spotify.set_volume(int(p.get("volume", 50)))
         elif name == "set_temperature":
             infrared.set_temperature(float(p.get("delta_c", 0)))
+        elif name == "set_lighting":
+            lights.set_lighting(int(p.get("brightness", 70)), str(p.get("warmth", "neutral")))
+        elif name == "set_scent":
+            scent.set_scent(int(p.get("intensity", 50)), str(p.get("scent", "fresh")))
         elif name == "push_discount":
             discount.push_discount(p.get("text", ""))
         elif name == "notify_staff":

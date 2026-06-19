@@ -69,6 +69,32 @@ TOOLS = [
         },
     },
     {
+        "name": "set_lighting",
+        "description": "Set smart-light brightness (0-100) and warmth for comfort/ambiance. Warm+dim = cozy lull/evening; brighter+neutral = busy/daytime.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "brightness": {"type": "integer"},
+                "warmth": {"type": "string", "enum": ["warm", "neutral", "cool"]},
+                "rationale": {"type": "string"},
+            },
+            "required": ["brightness", "warmth", "rationale"],
+        },
+    },
+    {
+        "name": "set_scent",
+        "description": "Set the scent diffuser intensity (0-100) and scent for comfort. Freshen the air when busy/stuffy; a warm scent for a cozy lull.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "intensity": {"type": "integer"},
+                "scent": {"type": "string"},
+                "rationale": {"type": "string"},
+            },
+            "required": ["intensity", "scent", "rationale"],
+        },
+    },
+    {
         "name": "push_discount",
         "description": "Fire an off-peak/fill-the-trough promo to the in-store board to smooth demand. Never a surge/peak surcharge.",
         "input_schema": {
