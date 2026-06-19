@@ -19,11 +19,13 @@ scoring, no surge pricing, no using discomfort to move people along.
 Owns what the camera understands. Current state: YOLO11 + supervision (ByteTrack,
 zones, dwell, funnel, heatmap), table wait-times + cleaning monitor, MJPEG stream.
 
-- [ ] **Real zone geometry**: replace the placeholder vertical-band zones + table /
-      cleaning polygons with geometry drawn over the actual demo camera framing
-      (a quick click-to-draw tool or hand-tuned coords). *Biggest accuracy win.*
-- [ ] **Small/dense detection**: add a `--model` flag (yolo11m/x) and optional SAHI
-      tiled inference — the eval shows yolo11n under-detects distant/overlapping people.
+- [x] **Real zone geometry tool** shipped: `python -m perception.draw_zones --source <cam>`
+      (click polygons → `zones.json`) loaded by `perception.run --zones zones.json`.
+      → **Do this for the demo camera** (placeholder bands are the biggest accuracy gap).
+- [x] **Model flag** shipped: `--model yolo11m/x`. Still TODO: optional SAHI tiled
+      inference for distant/overlapping people (eval shows yolo11n under-detects dense scenes).
+- [ ] **Licensing**: Ultralytics YOLO is **AGPL-3.0** — fine for the hackathon, but for a
+      real product switch to RF-DETR / a permissive detector (see RESEARCH.md).
 - [ ] **Staff vs customer**: a real classifier (apron/uniform colour or station
       heuristic) so "served" and "bussed" events fire reliably (today it's a crude proxy).
 - [ ] **Calibrate thresholds** on real footage: counter-dwell→ordered, table wait
