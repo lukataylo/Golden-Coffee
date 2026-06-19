@@ -1,0 +1,20 @@
+# Golden Coffee — Python dependencies
+# Perception
+ultralytics>=8.3.0          # YOLO11
+supervision>=0.25.0         # ByteTrack, zones, dwell timers, heatmaps (MIT)
+opencv-python>=4.10.0
+
+# Backend / realtime
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+websockets>=13.0
+httpx>=0.27.0               # producers POST events to the backend
+pydantic>=2.9.0
+
+# Agent
+anthropic>=0.40.0           # Claude tool-use loop
+
+# Actuators
+spotipy>=2.24.0             # Spotify volume (needs Premium + active device)
+python-kasa>=0.7.0          # TP-Link Kasa smart plug (fan/heater)
+requests>=2.32.0            # Slack / Telegram webhooks

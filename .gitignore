@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets / caches
+.env
+.spotipy-cache
+*.cache
+
+# Models / media (keep the repo light)
+*.pt
+clips/*.mp4
+clips/*.mov
+
+# Node / Next.js (if dashboard is upgraded)
+node_modules/
+.next/
+.vercel/
+
+# OS
+.DS_Store
