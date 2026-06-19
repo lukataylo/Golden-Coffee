@@ -20,6 +20,7 @@ import os
 import time
 from collections import deque
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,7 +41,7 @@ INGEST_TOKEN = os.environ.get("INGEST_TOKEN", "")
 METRICS_PATH = REPO_ROOT / "data" / "metrics.jsonl"
 
 
-def _require_token(x_token: str | None) -> None:
+def _require_token(x_token: Optional[str]) -> None:
     if INGEST_TOKEN and x_token != INGEST_TOKEN:
         raise HTTPException(status_code=401, detail="bad or missing X-Token")
 
@@ -85,13 +86,13 @@ class Hub:
 
     def __init__(self) -> None:
         self.clients: set[WebSocket] = set()
-        self.last_scene: dict | None = None
+        self.last_scene: Optional[dict] = None
         self.action_log: deque[dict] = deque(maxlen=50)
         self._lock = asyncio.Lock()
         # Latest annotated JPEG frame (boxes + zones already drawn by perception)
         # plus a monotonically increasing version so MJPEG subscribers can detect
         # new frames without an explicit event/condition.
-        self.last_frame: bytes | None = None
+        self.last_frame: Optional[bytes] = None
         self.frame_version: int = 0
 
     def set_frame(self, data: bytes) -> None:
@@ -136,7 +137,7 @@ async def health() -> dict:
 
 
 @app.post("/frame")
-async def frame(request: Request, x_token: str | None = Header(None)) -> dict:
+async def frame(request: Request, x_token: Optional[str] = Header(None)) -> dict:
     """Perception POSTs the latest annotated JPEG (raw image/jpeg body) here."""
     _require_token(x_token)
     data = await request.body()
@@ -193,7 +194,7 @@ async def stream() -> StreamingResponse:
 
 
 @app.post("/ingest")
-async def ingest(event: SceneEvent, x_token: str | None = Header(None)) -> dict:
+async def ingest(event: SceneEvent, x_token: Optional[str] = Header(None)) -> dict:
     """Producers (mock_events or perception) push scenes here."""
     _require_token(x_token)
     payload = event.model_dump()
