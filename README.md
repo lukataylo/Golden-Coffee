@@ -43,20 +43,21 @@ You should see occupancy/funnel/heatmap tiles updating live. That's the skeleton
 each of the four tracks now builds independently:
 
 ```bash
-python -m perception.run --source 0          # P1: real YOLO11+supervision events (replaces mock)
-python -m agent.agent                         # P2: Claude tool-use loop -> /action
-python -m actuators.spotify 40                # P3: prove one real device live
+cp .env.example .env                          # then fill in keys (all optional; blanks degrade gracefully)
+python -m perception.run --source 0          # P1: real YOLO11+supervision events (+ MJPEG /stream)
+python -m agent.agent                         # P2: rule-based (or Claude) policy -> /action
+python -m actuators.run                       # P3: subscribe to /ws and drive real devices
 ```
 
 ## Workstreams (4 people)
-- **P1 Perception** — `perception/`, `clips/`. YOLO11 + supervision (ByteTrack, zones, dwell, heatmap, funnel). Emit real `SceneEvent`s.
-- **P2 Agent** — `agent/`, `federated/`. Claude tool-use policy + discount engine + FLock.
-- **P3 Backend/Actuators** — `backend/`, `actuators/`. WS hub + Spotify/Kasa/Slack live.
-- **P4 Frontend/Pitch** — `dashboard/`. Upgrade `index.html` → Next.js/v0 on Vercel; demo deck.
+- **P1 Perception** — `perception/`, `clips/`. YOLO11 + supervision (ByteTrack, zones, dwell, heatmap, funnel). Emit real `SceneEvent`s + annotated `/stream`.
+- **P2 Agent** — `agent/`, `federated/`. Rule-based / Claude tool-use policy + discount engine + FLock.
+- **P3 Backend/Actuators** — `backend/`, `actuators/`. WS hub + actuator executor: Spotify volume, **IR AC/heater** (Broadlink), **Telegram** alerts, discount board.
+- **P4 Frontend/Pitch** — `dashboard/`. Feed-dominant dashboard (live feed + stats + floorplan); demo deck.
 
 ## Pre-hackathon prep
 - Spotify **Premium** + app credentials + run the OAuth consent once (`python -m actuators.spotify 40`).
-- TP-Link **Kasa** plug + fan/lamp; discover its IP (`kasa discover`).
-- Slack Incoming Webhook URL (or Telegram bot).
+- **Broadlink RM4** IR blaster pointed at the AC/heater; discover + learn codes (`python -m actuators.infrared --discover`, then `--learn cool|warm`).
+- **Telegram** bot via @BotFather; capture the chat id (`python -m actuators.notify --chat-id`).
 - `ANTHROPIC_API_KEY`; pre-download `yolo11n.pt`; test FPS on the demo laptop.
 - 2–3 staged café clips in `clips/` as the live-demo fallback.

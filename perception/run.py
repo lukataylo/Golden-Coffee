@@ -25,6 +25,13 @@ import argparse
 import os
 import time
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 from shared.schemas import Funnel, Role, SceneEvent, Track, Zone
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")

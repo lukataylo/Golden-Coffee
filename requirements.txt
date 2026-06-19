@@ -16,8 +16,9 @@ anthropic>=0.40.0           # Claude tool-use loop
 
 # Actuators
 spotipy>=2.24.0             # Spotify volume (needs Premium + active device)
-python-kasa>=0.7.0          # TP-Link Kasa smart plug (fan/heater)
-requests>=2.32.0            # Slack / Telegram webhooks
+broadlink>=0.18.3          # Infrared blaster (RM4) to control the AC/heater via IR
+requests>=2.32.0            # Telegram bot notifications
+python-dotenv>=1.0.0        # load API keys from .env
 
 # Live feed ingestion (YouTube/HLS -> OpenCV)
 yt-dlp>=2024.0.0

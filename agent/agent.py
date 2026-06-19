@@ -24,6 +24,13 @@ import time
 import httpx
 import websockets
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 from agent import policy
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
@@ -52,7 +59,7 @@ TOOLS = [
     },
     {
         "name": "set_temperature",
-        "description": "Nudge ambient temperature via smart-plug fan/heater. delta_c negative = cooler (encourages turnover).",
+        "description": "Nudge ambient temperature via the AC/heater (IR blaster). delta_c negative = cooler (encourages turnover).",
         "input_schema": {
             "type": "object",
             "properties": {"delta_c": {"type": "number"}, "rationale": {"type": "string"}},
@@ -70,7 +77,7 @@ TOOLS = [
     },
     {
         "name": "notify_staff",
-        "description": "Send a Slack/Telegram alert to staff (queue build-up, free-ride, idle flag).",
+        "description": "Send a Telegram alert to staff (queue build-up, free-ride, idle flag).",
         "input_schema": {
             "type": "object",
             "properties": {"text": {"type": "string"}, "rationale": {"type": "string"}},

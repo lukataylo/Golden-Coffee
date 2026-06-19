@@ -48,8 +48,9 @@ in the URL.
 
 ## Environment variables
 
-The hub itself needs no secrets. Producers/agent/actuators that run elsewhere
-use keys (`ANTHROPIC_API_KEY`, Spotify, Kasa, Slack — see `.env.example`).
+The hub itself needs no secrets. Producers/agent/actuators run on the demo laptop
+(`actuators/run.py` drives the devices, not Railway) and read keys from `.env`
+(`ANTHROPIC_API_KEY`, Spotify, Broadlink IR, Telegram — see `.env.example`).
 If you ever need to set one on the Railway service:
 
 ```bash

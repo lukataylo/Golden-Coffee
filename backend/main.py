@@ -163,8 +163,8 @@ async def ingest(event: SceneEvent) -> dict:
 
 @app.post("/action")
 async def action(act: AgentAction) -> dict:
-    """The agent pushes decisions here. Actuator wiring (Spotify/plug/Slack)
-    can subscribe over /ws or be called inline here later."""
+    """The agent pushes decisions here. The actuator executor (actuators/run.py)
+    subscribes over /ws and drives the real devices (Spotify / IR / Telegram)."""
     payload = act.model_dump()
     hub.action_log.append(payload)
     await hub.broadcast(payload)

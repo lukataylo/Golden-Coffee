@@ -16,6 +16,13 @@ from __future__ import annotations
 import os
 import sys
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 REDIRECT = os.environ.get("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
 SCOPE = "user-modify-playback-state user-read-playback-state"
 
@@ -33,6 +40,10 @@ def set_volume(percent: int) -> bool:
     """Set the active device volume (0-100). Returns False on any failure so the
     demo degrades gracefully instead of crashing."""
     percent = max(0, min(100, int(percent)))
+    if not os.environ.get("SPOTIPY_CLIENT_ID"):
+        # No creds: don't construct SpotifyOAuth (it would try interactive auth).
+        print(f"[spotify] (not configured) would set volume -> {percent}")
+        return False
     try:
         sp = _client()
         devices = sp.devices().get("devices", [])
