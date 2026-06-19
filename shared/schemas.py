@@ -8,7 +8,7 @@ changing it means coordinating across all four people.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -113,4 +113,4 @@ class AgentAction(BaseModel):
 
 
 # Convenience union for anything broadcast over the websocket.
-Message = SceneEvent | AgentAction
+Message = Union[SceneEvent, AgentAction]
