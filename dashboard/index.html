@@ -194,6 +194,43 @@
     .action .why { color:var(--muted2); font-size:12px; margin-top:4px; }
     .empty { color:var(--muted); font-size:12px; padding:18px; text-align:center; }
 
+    /* ---------- comfort control surface ---------- */
+    .comfort-card { border-color: rgba(217,164,65,.35);
+                    box-shadow: var(--shadow), inset 0 0 0 1px rgba(217,164,65,.06); }
+    .comfort-card h2 .tag { color: var(--gold-soft); }
+    .comfort { display:flex; flex-direction:column; gap:12px; }
+    .cdev { background:var(--bg3); border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .cdev .crow { display:flex; align-items:center; gap:10px; }
+    .cdev .cic { font-size:18px; width:32px; height:32px; flex:none; display:flex; align-items:center; justify-content:center;
+                 border-radius:9px; background:#201a13; border:1px solid var(--line); }
+    .cdev .cmeta { min-width:0; flex:1; }
+    .cdev .cname { font-weight:650; font-size:13px; color:var(--ink); }
+    .cdev .cval { font-size:11px; color:var(--muted2); font-variant-numeric:tabular-nums; margin-top:1px; }
+    .cdev .cval b { color:var(--gold-soft); font-weight:650; }
+    /* level meter (lighting / scent / music) */
+    .ctrack { height:8px; border-radius:999px; background:#1a150f; overflow:hidden; margin:11px 0 12px;
+              position:relative; border:1px solid var(--line2); }
+    .ctrack .cfill { position:absolute; inset:0 auto 0 0; width:0; border-radius:999px;
+                     background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+                     transition: width .5s ease, background .3s ease; }
+    /* cool <-> warm thermostat track with marker */
+    .ctemp { height:8px; border-radius:999px; margin:11px 0 12px; position:relative;
+             background:linear-gradient(90deg,#6fb6e0,#8c7d68 50%,#e85c46); }
+    .ctemp .cmark { position:absolute; top:50%; left:50%; width:14px; height:14px; margin:-7px 0 0 -7px;
+                    border-radius:50%; background:var(--ink); border:2px solid #1a140c;
+                    box-shadow:0 1px 4px rgba(0,0,0,.5); transition:left .5s ease; }
+    .cbtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .cbtn { display:flex; align-items:center; justify-content:center; gap:7px; padding:9px 10px; border-radius:9px;
+            border:1px solid var(--line); background:#201a13; color:var(--ink); cursor:pointer;
+            font:inherit; font-size:12px; font-weight:600;
+            transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+    .cbtn:hover { border-color:var(--gold); background:#2a2114; transform:translateY(-1px); }
+    .cbtn:active { transform:translateY(0); }
+    .cbtn:focus-visible { outline:2px solid var(--gold-soft); outline-offset:2px; }
+    .cbtn .bic { font-size:13px; flex:none; }
+    .cbtn.flash { border-color:var(--green); background:#16301c; }
+    .cbtn:disabled { opacity:.5; cursor:default; }
+
     /* ---------- bottom strip ---------- */
     .bottom { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:14px; }
     .funnel { display:flex; flex-direction:column; gap:7px; }
@@ -224,6 +261,55 @@
     .switch input:focus-visible + .slider { outline:2px solid var(--gold-soft); outline-offset:2px; }
     .consent-state { font-size:11px; color:var(--muted2); }
 
+    /* ---------- tables view ---------- */
+    #view-tables { overflow-y:auto; padding:14px; background:#0b0907; }
+    #view-tables::-webkit-scrollbar { width:8px; }
+    #view-tables::-webkit-scrollbar-thumb { background:#3a3026; border-radius:8px; }
+    .tv-title { font-size:11px; text-transform:uppercase; letter-spacing:.1em;
+                color:var(--muted); margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+    .tv-title .tag { color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+    .tbl-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(132px,1fr)); gap:10px; }
+    .ttile { position:relative; border:1px solid var(--line); border-left:3px solid var(--muted);
+             border-radius:12px; padding:11px 12px; background:var(--bg3);
+             display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .ttile .trow { display:flex; align-items:center; gap:6px; }
+    .ttile .tid { font-weight:700; font-size:13px; color:var(--ink); }
+    .ttile .twait { font-size:26px; font-weight:680; line-height:1; font-variant-numeric:tabular-nums; color:var(--ink); }
+    .ttile .tmeta { font-size:11px; color:var(--muted2); text-transform:capitalize; }
+    .ttile .tbadge { font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px;
+                     background:#3a2f14; color:var(--gold-soft); margin-left:auto; white-space:nowrap; }
+    .ttile.st-empty   { border-left-color:var(--muted); opacity:.72; }
+    .ttile.st-empty   .twait { color:var(--muted); }
+    .ttile.st-seated  { border-left-color:var(--green); }
+    .ttile.st-seated  .twait { color:var(--green); }
+    .ttile.st-waiting { border-left-color:var(--gold-soft); }
+    .ttile.st-waiting .twait { color:var(--gold-soft); }
+    .ttile.st-overdue { border-left-color:var(--red-hot); animation: tpulse 1.6s ease-in-out infinite; }
+    .ttile.st-overdue .twait { color:var(--red-hot); }
+    @keyframes tpulse { 0%,100%{ box-shadow:0 0 0 0 rgba(232,92,70,0);} 50%{ box-shadow:0 0 0 3px rgba(232,92,70,.28);} }
+
+    .clean-card { margin-top:14px; }
+    .clean-list { display:flex; flex-direction:column; gap:8px; }
+    .clean-row { display:flex; align-items:center; gap:10px; padding:9px 11px;
+                 border:1px solid var(--line); border-radius:10px; background:var(--bg3); }
+    .clean-row .cz { font-weight:650; font-size:13px; color:var(--ink); text-transform:capitalize; flex:1; min-width:0; }
+    .clean-row .cu { font-size:11px; color:var(--muted2); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .chip { font-size:10px; font-weight:700; padding:2px 9px; border-radius:999px;
+            letter-spacing:.04em; text-transform:uppercase; }
+    .chip.ok      { background:#143014; color:var(--green); }
+    .chip.due     { background:#3a2f14; color:var(--gold-soft); }
+    .chip.overdue { background:#3a1f1f; color:var(--red); }
+
+    /* tables summary line (visible from any view) */
+    .tsum { display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center; margin-top:10px;
+            padding:9px 14px; border:1px solid var(--line); border-radius:10px;
+            background:linear-gradient(180deg,var(--bg2),#1a150f); }
+    .tsum .seg2 { display:flex; align-items:baseline; gap:8px; }
+    .tsum .lab { color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-size:10px; }
+    .tsum b { color:var(--ink); font-variant-numeric:tabular-nums; font-size:18px; font-weight:680; }
+    .tsum .seg2.alert b { color:var(--red); }
+    .tsum .ic { font-size:13px; }
+
     /* ---------- responsive ---------- */
     @media (max-width: 1040px) {
       .stage { grid-template-columns: 1fr; }
@@ -243,6 +329,7 @@
     @media (prefers-reduced-motion: reduce) {
       .pill .dot.pulse, .live-badge .dot { animation:none; }
       .action { animation:none; }
+      .ttile.st-overdue { animation:none; box-shadow:0 0 0 2px rgba(232,92,70,.3); }
       .floor-alert::before { animation:none; opacity:.5; }
       * { transition-duration:.001ms !important; }
     }
@@ -258,6 +345,7 @@
     <div class="seg" role="tablist" aria-label="View mode">
       <button id="tab-live" role="tab" aria-selected="true" aria-controls="view-live">Live</button>
       <button id="tab-floor" role="tab" aria-selected="false" aria-controls="view-floor">Floorplan</button>
+      <button id="tab-tables" role="tab" aria-selected="false" aria-controls="view-tables">Tables</button>
     </div>
 
     <div class="head-right">
@@ -315,6 +403,15 @@
             <div class="ov tr"><span class="src-badge">FLOORPLAN · dwell heatmap</span></div>
             <div class="stage-msg" id="floor-msg">Waiting for data…</div>
           </div>
+          <!-- TABLES view -->
+          <div class="view" id="view-tables" role="tabpanel" aria-label="Table wait times and cleaning" hidden>
+            <h2 class="tv-title">🍽 Tables <span class="tag">wait times &amp; bussing</span></h2>
+            <div id="tbl-grid" class="tbl-grid" aria-live="polite"></div>
+            <div class="card clean-card" aria-label="Cleaning status">
+              <h2>🧹 Cleaning <span class="tag">restrooms &amp; zones</span></h2>
+              <div id="clean-list" class="clean-list" aria-live="polite"></div>
+            </div>
+          </div>
         </div>
         <div class="legend stage-foot">
           <span><i style="background:#6fb6e0"></i>Entry</span>
@@ -326,10 +423,118 @@
           <span><i class="round" style="background:#b58fe0"></i>Staff</span>
           <span style="margin-left:6px"><i style="background:linear-gradient(90deg,#6fb6e0,#d9a441,#e85c46)"></i>low → high occupancy</span>
         </div>
+        <div class="tsum" aria-label="Table service summary">
+          <div class="seg2" id="sum-waiting-seg"><span class="ic" aria-hidden="true">🍽</span>
+            <span class="lab">Tables waiting</span><b id="sum-waiting">0</b></div>
+          <div class="seg2"><span class="ic" aria-hidden="true">⏱</span>
+            <span class="lab">Longest wait</span><b id="sum-longest">0:00</b></div>
+        </div>
       </div>
 
       <!-- Right rail -->
       <aside class="rail">
+        <div class="card comfort-card" aria-label="Comfort control surface">
+          <h2>☕ Comfort autopilot <span class="tag">visitor comfort, first</span></h2>
+          <div class="comfort">
+            <!-- AC / temperature -->
+            <div class="cdev">
+              <div class="crow">
+                <span class="cic" aria-hidden="true">🌡</span>
+                <div class="cmeta">
+                  <div class="cname">Temperature</div>
+                  <div class="cval" id="cm-temp-val">setpoint —</div>
+                </div>
+              </div>
+              <div class="ctemp" role="img" aria-label="Temperature setpoint, cool to warm">
+                <span class="cmark" id="cm-temp-mark"></span>
+              </div>
+              <div class="cbtns">
+                <button class="cbtn" data-action="set_temperature" data-params='{"delta_c":-1.5}'
+                        data-rationale="Operator nudged the room cooler for comfort."
+                        aria-label="Nudge temperature cooler by 1.5 degrees">
+                  <span class="bic" aria-hidden="true">❄️</span>Cooler</button>
+                <button class="cbtn" data-action="set_temperature" data-params='{"delta_c":1.5}'
+                        data-rationale="Operator nudged the room warmer for comfort."
+                        aria-label="Nudge temperature warmer by 1.5 degrees">
+                  <span class="bic" aria-hidden="true">🔥</span>Warmer</button>
+              </div>
+            </div>
+
+            <!-- Lighting -->
+            <div class="cdev">
+              <div class="crow">
+                <span class="cic" aria-hidden="true">💡</span>
+                <div class="cmeta">
+                  <div class="cname">Lighting</div>
+                  <div class="cval" id="cm-light-val">brightness —</div>
+                </div>
+              </div>
+              <div class="ctrack" role="img" aria-label="Lighting brightness level">
+                <span class="cfill" id="cm-light-fill"></span>
+              </div>
+              <div class="cbtns">
+                <button class="cbtn" data-action="set_lighting" data-params='{"brightness":35,"warmth":"warm"}'
+                        data-rationale="Operator dimmed to a cozy warm glow."
+                        aria-label="Set lighting dim and cozy">
+                  <span class="bic" aria-hidden="true">🕯️</span>Dim &amp; cozy</button>
+                <button class="cbtn" data-action="set_lighting" data-params='{"brightness":90,"warmth":"neutral"}'
+                        data-rationale="Operator brightened the room."
+                        aria-label="Set lighting bright">
+                  <span class="bic" aria-hidden="true">☀️</span>Bright</button>
+              </div>
+            </div>
+
+            <!-- Scent diffuser -->
+            <div class="cdev">
+              <div class="crow">
+                <span class="cic" aria-hidden="true">🌸</span>
+                <div class="cmeta">
+                  <div class="cname">Scent diffuser</div>
+                  <div class="cval" id="cm-scent-val">intensity —</div>
+                </div>
+              </div>
+              <div class="ctrack" role="img" aria-label="Scent intensity level">
+                <span class="cfill" id="cm-scent-fill" style="background:linear-gradient(90deg,#b58fe0,#e7a8d4)"></span>
+              </div>
+              <div class="cbtns">
+                <button class="cbtn" data-action="set_scent" data-params='{"intensity":60,"scent":"fresh citrus"}'
+                        data-rationale="Operator freshened the air with citrus."
+                        aria-label="Set scent to fresh citrus">
+                  <span class="bic" aria-hidden="true">🍋</span>Freshen</button>
+                <button class="cbtn" data-action="set_scent" data-params='{"intensity":40,"scent":"warm vanilla"}'
+                        data-rationale="Operator set a cozy warm vanilla scent."
+                        aria-label="Set scent to warm vanilla">
+                  <span class="bic" aria-hidden="true">🍮</span>Cozy scent</button>
+              </div>
+            </div>
+
+            <!-- Music / ambiance -->
+            <div class="cdev">
+              <div class="crow">
+                <span class="cic" aria-hidden="true">🔊</span>
+                <div class="cmeta">
+                  <div class="cname">Music volume</div>
+                  <div class="cval" id="cm-music-val">volume —</div>
+                </div>
+              </div>
+              <div class="ctrack" role="img" aria-label="Music volume level">
+                <span class="cfill" id="cm-music-fill"></span>
+              </div>
+              <div class="cbtns">
+                <button class="cbtn" data-action="set_music_volume" data-params='{"volume":40}'
+                        data-rationale="Operator softened the music for a calmer room."
+                        aria-label="Lower music volume to 40">
+                  <span class="bic" aria-hidden="true">🔉</span>Soften</button>
+                <button class="cbtn" data-action="set_music_volume" data-params='{"volume":75}'
+                        data-rationale="Operator lifted the music to add energy."
+                        aria-label="Raise music volume to 75">
+                  <span class="bic" aria-hidden="true">🔊</span>Lift</button>
+              </div>
+            </div>
+          </div>
+          <div id="comfort-note" class="ovr-note">Live state follows the agent · nudges POST to <code id="comfort-url">—</code></div>
+        </div>
+
         <div class="card">
           <h2>Manual override <span class="tag">human-in-the-loop</span></h2>
           <div class="btns">
@@ -412,6 +617,7 @@
     }
     var EP = resolveEndpoints();
     $("ovr-url").textContent = EP.http + "/override";
+    $("comfort-url").textContent = EP.http + "/override";
 
     // ---------- clock ----------
     setInterval(function () { $("clock").textContent = new Date().toLocaleTimeString([], { hour12: false }); }, 1000);
@@ -425,16 +631,21 @@
     function setMode(m) {
       mode = m;
       var live = m === "live";
-      $("tab-live").setAttribute("aria-selected", live ? "true" : "false");
-      $("tab-floor").setAttribute("aria-selected", live ? "false" : "true");
-      $("view-live").hidden = !live;
-      $("view-floor").hidden = live;
-      if (live) startVideo(); else { stopVideoTimers(); requestAnimationFrame(redrawFloor); }
+      $("tab-live").setAttribute("aria-selected", m === "live" ? "true" : "false");
+      $("tab-floor").setAttribute("aria-selected", m === "floor" ? "true" : "false");
+      $("tab-tables").setAttribute("aria-selected", m === "tables" ? "true" : "false");
+      $("view-live").hidden = m !== "live";
+      $("view-floor").hidden = m !== "floor";
+      $("view-tables").hidden = m !== "tables";
+      if (live) startVideo(); else stopVideoTimers();
+      if (m === "floor") requestAnimationFrame(redrawFloor);
+      else if (m === "tables") renderTables(lastScene);
     }
     $("tab-live").addEventListener("click", function () { setMode("live"); });
     $("tab-floor").addEventListener("click", function () { setMode("floor"); });
+    $("tab-tables").addEventListener("click", function () { setMode("tables"); });
     // arrow-key navigation within the tablist
-    [$("tab-live"), $("tab-floor")].forEach(function (b, i, arr) {
+    [$("tab-live"), $("tab-floor"), $("tab-tables")].forEach(function (b, i, arr) {
       b.addEventListener("keydown", function (e) {
         if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
           e.preventDefault();
@@ -689,6 +900,78 @@
       return conv;
     }
 
+    // ---------- tables + cleaning ----------
+    function fmtClock(sec) {
+      sec = Math.max(0, Math.round(Number(sec) || 0));
+      var m = Math.floor(sec / 60), s = sec % 60;
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+    function fmtDur(sec) {
+      sec = Math.max(0, Math.round(Number(sec) || 0));
+      var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+      if (h > 0) return h + "h " + m + "m";
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+    var TABLE_STATES = { empty:1, seated:1, waiting:1, overdue:1 };
+    function renderTables(s) {
+      s = s || {};
+      var tables = s.tables || [];
+      var grid = $("tbl-grid");
+      if (!tables.length) {
+        grid.innerHTML = '<div class="empty">No tables configured</div>';
+      } else {
+        var html = "";
+        for (var i = 0; i < tables.length; i++) {
+          var t = tables[i] || {};
+          var st = TABLE_STATES[t.status] ? t.status : (t.occupied ? "seated" : "empty");
+          var meta = t.occupied
+            ? ("party " + (t.party_size || 0) + " · " + st)
+            : st;
+          html +=
+            '<div class="ttile st-' + st + '">' +
+              '<div class="trow"><span class="tid">' + escapeHtml(t.id || "—") + '</span>' +
+                (t.needs_cleaning ? '<span class="tbadge">needs bussing 🧹</span>' : '') +
+              '</div>' +
+              '<div class="twait" title="waiting to be served">' + fmtClock(t.wait_s) + '</div>' +
+              '<div class="tmeta">' + escapeHtml(meta) + '</div>' +
+            '</div>';
+        }
+        grid.innerHTML = html;
+      }
+      renderCleaning(s.cleaning);
+      updateTableSummary(tables);
+    }
+    function renderCleaning(zones) {
+      zones = zones || [];
+      var el = $("clean-list");
+      if (!zones.length) { el.innerHTML = '<div class="empty">No cleaning zones reported</div>'; return; }
+      var html = "";
+      for (var i = 0; i < zones.length; i++) {
+        var z = zones[i] || {};
+        var st = (z.status === "due" || z.status === "overdue") ? z.status : "ok";
+        html +=
+          '<div class="clean-row">' +
+            '<span class="cz">' + escapeHtml(z.id || "—") + '</span>' +
+            '<span class="cu">' + (z.uses_since_clean || 0) + ' uses · ' + fmtDur(z.since_clean_s) + '</span>' +
+            '<span class="chip ' + st + '">' + st + '</span>' +
+          '</div>';
+      }
+      el.innerHTML = html;
+    }
+    function updateTableSummary(tables) {
+      tables = tables || [];
+      var waiting = 0, longest = 0;
+      for (var i = 0; i < tables.length; i++) {
+        var t = tables[i] || {};
+        if (t.status === "waiting" || t.status === "overdue") waiting++;
+        var w = Number(t.wait_s) || 0;
+        if (w > longest) longest = w;
+      }
+      $("sum-waiting").textContent = waiting;
+      $("sum-longest").textContent = fmtClock(longest);
+      $("sum-waiting-seg").classList.toggle("alert", waiting > 0);
+    }
+
     // ---------- scene render ----------
     var prev = {};
     function renderScene(s) {
@@ -717,11 +1000,13 @@
       if (mode === "floor") drawFloor($("floor-canvas"), s);
       else if (vState === "synthetic") drawSynth();
 
+      renderTables(s); // updates Tables view + the always-visible summary
+
       prev = { occ:occ, queue:q, conv:conv, prod:prod };
     }
 
     // ---------- action render ----------
-    var ACTION_ICON = { set_music_volume:"🔊", set_temperature:"🌡", push_discount:"💸", notify_staff:"🔔", suggest_layout:"🧭" };
+    var ACTION_ICON = { set_music_volume:"🔊", set_temperature:"🌡", set_lighting:"💡", set_scent:"🌸", push_discount:"💸", notify_staff:"🔔", suggest_layout:"🧭" };
     function inferZone(text) {
       var t = (text || "").toLowerCase();
       if (/seat|table|dining/.test(t)) return "seating";
@@ -759,29 +1044,96 @@
       });
     }
 
-    // ---------- overrides ----------
-    document.querySelectorAll(".ovr").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var payload = {
-          type:"action", ts: Date.now()/1000,
-          action: btn.getAttribute("data-action"),
-          params: JSON.parse(btn.getAttribute("data-params")),
-          rationale: btn.getAttribute("data-rationale") || "",
-          reversible: true, auto: false
-        };
-        btn.disabled = true;
-        fetch(EP.http + "/override", {
-          method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload)
-        }).then(function (r) {
-          btn.classList.add("flash");
-          setTimeout(function () { btn.classList.remove("flash"); btn.disabled = false; }, 700);
-          if (!r.ok) $("ovr-note").textContent = "⚠ override returned " + r.status;
-        }).catch(function (err) {
-          btn.disabled = false;
-          $("ovr-note").textContent = "⚠ could not reach " + EP.http + "/override (" + (err.message || err) + ")";
-        });
+    // ---------- overrides (shared by override panel + comfort surface) ----------
+    function noteFor(btn) {
+      var card = btn.closest ? btn.closest(".card") : null;
+      var n = card ? card.querySelector(".ovr-note") : null;
+      return n || $("ovr-note");
+    }
+    function sendOverride(btn) {
+      var params; try { params = JSON.parse(btn.getAttribute("data-params")); } catch (e) { params = {}; }
+      var payload = {
+        type:"action", ts: Date.now()/1000,
+        action: btn.getAttribute("data-action"),
+        params: params,
+        rationale: btn.getAttribute("data-rationale") || "",
+        reversible: true, auto: false
+      };
+      var note = noteFor(btn);
+      btn.disabled = true;
+      fetch(EP.http + "/override", {
+        method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload)
+      }).then(function (r) {
+        btn.classList.add("flash");
+        setTimeout(function () { btn.classList.remove("flash"); btn.disabled = false; }, 700);
+        if (!r.ok) note.textContent = "⚠ override returned " + r.status;
+      }).catch(function (err) {
+        btn.disabled = false;
+        note.textContent = "⚠ could not reach " + EP.http + "/override (" + (err.message || err) + ")";
       });
+    }
+    document.querySelectorAll(".ovr, .cbtn").forEach(function (btn) {
+      btn.addEventListener("click", function () { sendOverride(btn); });
     });
+
+    // ---------- comfort surface live state ----------
+    var comfort = { tempNudge:null, tempAbs:null, brightness:null, warmth:null, intensity:null, scent:null, volume:null };
+    var WARMTH_FILL = {
+      warm:    "linear-gradient(90deg,#b9842f,#e7c074)",
+      neutral: "linear-gradient(90deg,#9a8e78,#f3ede3)",
+      cool:    "linear-gradient(90deg,#3f6f8f,#6fb6e0)"
+    };
+    function renderTemp() {
+      var mark = $("cm-temp-mark"), val = $("cm-temp-val");
+      if (comfort.tempNudge == null && comfort.tempAbs == null) { mark.style.left = "50%"; val.textContent = "setpoint —"; return; }
+      if (comfort.tempNudge == null && comfort.tempAbs != null) {
+        val.innerHTML = "setpoint <b>" + comfort.tempAbs + "°C</b>";
+        mark.style.left = Math.max(0, Math.min(100, ((comfort.tempAbs - 16) / 10) * 100)) + "%";
+        return;
+      }
+      var n = Math.round((comfort.tempNudge || 0) * 10) / 10;
+      val.innerHTML = "nudge <b>" + (n > 0 ? "+" : "") + n + "°C</b> " + (n < 0 ? "cooler" : n > 0 ? "warmer" : "neutral");
+      mark.style.left = Math.max(0, Math.min(100, ((n + 4) / 8) * 100)) + "%"; // -4..+4°C -> 0..100%
+    }
+    function renderLight() {
+      var fill = $("cm-light-fill"), val = $("cm-light-val");
+      if (comfort.brightness == null) { fill.style.width = "0"; val.textContent = "brightness —"; return; }
+      fill.style.width = comfort.brightness + "%";
+      fill.style.background = WARMTH_FILL[comfort.warmth] || WARMTH_FILL.neutral;
+      val.innerHTML = "brightness <b>" + comfort.brightness + "%</b>" + (comfort.warmth ? " · " + escapeHtml(comfort.warmth) : "");
+    }
+    function renderScent() {
+      var fill = $("cm-scent-fill"), val = $("cm-scent-val");
+      if (comfort.intensity == null) { fill.style.width = "0"; val.textContent = "intensity —"; return; }
+      fill.style.width = comfort.intensity + "%";
+      val.innerHTML = "intensity <b>" + comfort.intensity + "%</b>" + (comfort.scent ? " · " + escapeHtml(comfort.scent) : "");
+    }
+    function renderMusic() {
+      var fill = $("cm-music-fill"), val = $("cm-music-val");
+      if (comfort.volume == null) { fill.style.width = "0"; val.textContent = "volume —"; return; }
+      fill.style.width = comfort.volume + "%";
+      val.innerHTML = "volume <b>" + comfort.volume + "%</b>";
+    }
+    function applyComfortAction(a) {
+      var p = a.params || {};
+      switch (a.action) {
+        case "set_temperature":
+          if (typeof p.delta_c === "number") comfort.tempNudge = (comfort.tempNudge || 0) + p.delta_c;
+          else if (typeof p.celsius === "number") comfort.tempAbs = p.celsius;
+          renderTemp(); break;
+        case "set_lighting":
+          if (typeof p.brightness === "number") comfort.brightness = Math.max(0, Math.min(100, p.brightness));
+          if (p.warmth) comfort.warmth = p.warmth;
+          renderLight(); break;
+        case "set_scent":
+          if (typeof p.intensity === "number") comfort.intensity = Math.max(0, Math.min(100, p.intensity));
+          if (p.scent) comfort.scent = p.scent;
+          renderScent(); break;
+        case "set_music_volume":
+          if (typeof p.volume === "number") comfort.volume = Math.max(0, Math.min(100, p.volume));
+          renderMusic(); break;
+      }
+    }
 
     // ---------- consent toggle (visual only) ----------
     $("consent").addEventListener("change", function () {
@@ -806,7 +1158,7 @@
       sock.onmessage = function (e) {
         var m; try { m = JSON.parse(e.data); } catch (err) { return; }
         if (m.type === "scene") renderScene(m);
-        else if (m.type === "action") renderAction(m);
+        else if (m.type === "action") { renderAction(m); applyComfortAction(m); }
       };
       sock.onclose = function () { setConn("down"); scheduleReconnect(); };
       sock.onerror = function () { try { sock.close(); } catch (e) {} };
@@ -827,6 +1179,7 @@
     });
 
     // ---------- init ----------
+    renderTemp(); renderLight(); renderScent(); renderMusic(); // comfort defaults ("—")
     setMode("live");
     drawFloor($("floor-canvas"), lastScene);
     console.log("[Golden Coffee] ws=" + EP.ws + " http=" + EP.http);
