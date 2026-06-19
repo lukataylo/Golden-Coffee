@@ -20,6 +20,7 @@ import json
 import os
 import sys
 import time
+from typing import Optional
 
 import httpx
 import websockets
@@ -34,20 +35,31 @@ except ImportError:
 from agent import policy
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
-BACKEND_WS = os.environ.get("BACKEND_WS", "ws://127.0.0.1:8000/ws")
-MODEL = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
-USE_CLAUDE = bool(os.environ.get("ANTHROPIC_API_KEY"))
-DEBOUNCE_S = float(os.environ.get("AGENT_DEBOUNCE_S", "15"))
+BACKEND_WS  = os.environ.get("BACKEND_WS",  "ws://127.0.0.1:8000/ws")
+MODEL       = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
+USE_CLAUDE  = bool(os.environ.get("ANTHROPIC_API_KEY"))
 
 SYSTEM = (
     "You are the ambient + service copilot for a coffee shop. You receive anonymized "
-    "scene metrics (occupancy, queue length, dwell times, room energy, conversion funnel). "
+    "scene metrics (occupancy, queue, dwell times, room energy, funnel, tables, cleaning). "
     "Every action must help the CUSTOMER or the STAFF — tune the atmosphere (music, "
-    "comfort) and protect speed-of-service. Never punish customers or staff: no surge "
-    "pricing, no using discomfort to move people along, no individual tracking. Prefer the "
-    "gentlest effective action and always give a one-sentence, customer-friendly rationale. "
-    "If nothing needs doing, call no tool."
+    "lighting, scent, comfort) and protect speed-of-service. "
+    "Rules: no surge pricing, no discomfort to move people along, no individual tracking. "
+    "Prefer the gentlest effective action. Always give a one-sentence customer-friendly "
+    "rationale. If nothing needs doing, call no tool."
 )
+
+# Maps Claude tool names → policy debounce key so the same windows apply
+# whether the rule engine or Claude fires an action.
+_CLAUDE_DEBOUNCE: dict[str, str] = {
+    "set_music_volume": "music",
+    "set_temperature":  "temperature",
+    "set_lighting":     "lighting",
+    "set_scent":        "scent",
+    "push_discount":    "discount_quiet",
+    "notify_staff":     "notify_queue",
+    "suggest_layout":   "suggest_layout",
+}
 
 TOOLS = [
     {
@@ -115,15 +127,41 @@ TOOLS = [
 ]
 
 
-def _summarize(scene: dict) -> str:
-    f = scene.get("funnel", {})
-    long_dwellers = [t for t in scene.get("tracks", []) if t.get("zone") == "seating" and t.get("dwell_s", 0) > 600]
-    return (
-        f"occupancy={scene.get('occupancy')} queue_len={scene.get('queue_len')} "
-        f"staff_productivity={scene.get('staff_productivity')} cups_made={scene.get('cups_made')} "
-        f"funnel(entered={f.get('entered')},ordered={f.get('ordered')},abandoned={f.get('abandoned')}) "
-        f"long_dwellers={len(long_dwellers)}"
-    )
+def _scene_summary(scene: dict) -> str:
+    """Build a compact, complete scene description for Claude's context window."""
+    f        = scene.get("funnel",   {}) or {}
+    tables   = scene.get("tables",   []) or []
+    cleaning = scene.get("cleaning", []) or []
+
+    long_dwellers   = [t for t in scene.get("tracks", [])
+                       if t.get("zone") == "seating" and t.get("dwell_s", 0) > 600]
+    overdue_tables  = [t for t in tables if t.get("status") == "overdue"]
+    dirty_tables    = [t for t in tables if t.get("needs_cleaning")]
+    overdue_zones   = [c for c in cleaning if c.get("status") == "overdue"]
+
+    hour = time.localtime(scene.get("ts") or time.time()).tm_hour
+
+    parts = [
+        f"time={hour:02d}:xx",
+        f"occupancy={scene.get('occupancy')}  queue={scene.get('queue_len')}",
+        f"room_energy={scene.get('staff_productivity', 0):.2f}",
+        f"cups_made={scene.get('cups_made', 0)}",
+        (f"funnel(entered={f.get('entered',0)} ordered={f.get('ordered',0)} "
+         f"abandoned={f.get('abandoned',0)})"),
+        f"long_dwellers={len(long_dwellers)}",
+    ]
+    if overdue_tables:
+        worst = max(overdue_tables, key=lambda t: t.get("wait_s", 0))
+        parts.append(
+            f"overdue_tables={len(overdue_tables)} "
+            f"worst={worst['id']}@{int(worst.get('wait_s',0)//60)}min"
+        )
+    if dirty_tables:
+        parts.append(f"tables_need_bussing={len(dirty_tables)}")
+    if overdue_zones:
+        parts.append(f"cleaning_overdue=[{','.join(c['id'] for c in overdue_zones)}]")
+
+    return "  ".join(parts)
 
 
 class Agent:
@@ -161,20 +199,26 @@ class Agent:
     def _decide_claude(self, scene: dict) -> list[dict]:
         msg = self.client.messages.create(
             model=MODEL,
-            max_tokens=400,
+            max_tokens=512,
             system=SYSTEM,
             tools=TOOLS,
-            messages=[{"role": "user", "content": f"Current scene: {_summarize(scene)}. Act if warranted."}],
+            messages=[{
+                "role": "user",
+                "content": f"Current scene: {_scene_summary(scene)}\nAct if warranted.",
+            }],
         )
         now = time.time()
         out: list[dict] = []
         for block in msg.content:
             if getattr(block, "type", None) != "tool_use":
                 continue
-            # Reuse the policy's debounce bookkeeping so Claude can't thrash devices.
-            if not policy._due(self.state, block.name, now):
+            # Map tool name → policy debounce key so Claude respects the same
+            # cooldown windows as the rule engine and can't thrash devices.
+            debounce_key = _CLAUDE_DEBOUNCE.get(block.name, block.name)
+            if not policy._due(self.state, debounce_key, now):
+                print(f"[agent] Claude: {block.name} debounced ({debounce_key})")
                 continue
-            policy._mark(self.state, block.name, now)
+            policy._mark(self.state, debounce_key, now)
             params = dict(block.input)
             rationale = params.pop("rationale", "")
             out.append({
@@ -185,7 +229,7 @@ class Agent:
         return out
 
     # --- output ------------------------------------------------------------
-    async def act_on(self, scene: dict, http: httpx.AsyncClient | None) -> list[dict]:
+    async def act_on(self, scene: dict, http: Optional[httpx.AsyncClient]) -> list[dict]:
         actions = self.decide_actions(scene)
         for action in actions:
             print(f"[agent] {action['action']} {action['params']} — {action['rationale']}")
@@ -199,18 +243,27 @@ class Agent:
 
 async def run_live() -> None:
     agent = Agent()
-    print(f"[agent] connecting to {BACKEND_WS}")
-    async with websockets.connect(BACKEND_WS) as sock, httpx.AsyncClient(timeout=3.0) as http:
-        async for raw in sock:
+    print(f"[agent] connecting to {BACKEND_WS}  (model={'Claude:'+MODEL if agent.use_claude else 'rule-based'})")
+    async with httpx.AsyncClient(timeout=3.0) as http:
+        while True:
             try:
-                data = json.loads(raw)
-            except Exception:
-                continue
-            if data.get("type") == "scene":
-                try:
-                    await agent.act_on(data, http)
-                except Exception as exc:
-                    print(f"[agent] decide failed: {exc}")
+                async with websockets.connect(BACKEND_WS) as sock:
+                    print("[agent] ws connected")
+                    async for raw in sock:
+                        try:
+                            data = json.loads(raw)
+                        except Exception:
+                            continue
+                        if data.get("type") == "scene":
+                            try:
+                                await agent.act_on(data, http)
+                            except Exception as exc:
+                                print(f"[agent] decide failed: {exc}")
+            except websockets.ConnectionClosed:
+                print("[agent] ws disconnected; reconnecting in 3s…")
+            except Exception as exc:
+                print(f"[agent] ws error ({exc}); reconnecting in 3s…")
+            await asyncio.sleep(3)
 
 
 def run_once(post: bool = False) -> None:
@@ -240,10 +293,51 @@ def run_once(post: bool = False) -> None:
     print(f"\n[agent] replay complete — {total} action(s) produced")
 
 
+def test_claude() -> None:
+    """Offline smoke-test for the Claude path — no WS or backend needed.
+
+    Feeds a handful of synthetic scenes through the Claude tool-use path and
+    prints the resulting actions + rationales so you can verify the model is
+    reasoning correctly before pointing it at a live stream.
+
+    Requires ANTHROPIC_API_KEY to be set.
+    """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print("[agent] set ANTHROPIC_API_KEY first")
+        return
+
+    from shared.mock_events import _synthetic_scene
+
+    agent = Agent(use_claude=True)
+    if not agent.use_claude:
+        print("[agent] Claude unavailable — check ANTHROPIC_API_KEY")
+        return
+
+    print(f"[agent] Claude smoke-test (model={MODEL})\n")
+    base = time.time()
+    # sample a lull (t=0), medium (t=18), busy peak (t=36)
+    for label, t in [("lull", 0), ("medium", 18), ("busy peak", 36)]:
+        scene = _synthetic_scene(t).model_dump()
+        scene["ts"] = base + t * 30
+        print(f"── {label}  occ={scene['occupancy']}  queue={scene['queue_len']} ──")
+        print(f"   summary: {_scene_summary(scene)}")
+        actions = agent._decide_claude(scene)
+        if actions:
+            for a in actions:
+                print(f"   → {a['action']} {a['params']}")
+                print(f"     {a['rationale']}")
+        else:
+            print("   → (no action)")
+        print()
+
+
 def main() -> None:
     args = sys.argv[1:]
     if "--once" in args:
         run_once(post="--post" in args)
+        return
+    if "--test-claude" in args:
+        test_claude()
         return
     asyncio.run(run_live())
 
