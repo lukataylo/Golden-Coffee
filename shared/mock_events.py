@@ -16,7 +16,7 @@ import time
 
 import httpx
 
-from shared.schemas import Funnel, Role, SceneEvent, Track, Zone
+from shared.schemas import CleaningZone, Funnel, Role, SceneEvent, Table, Track, Zone
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 TICK_S = float(os.environ.get("MOCK_TICK_S", "1.0"))
@@ -58,6 +58,32 @@ def _synthetic_scene(t: int) -> SceneEvent:
     # 8x8 coarse heatmap with a hot spot near the counter.
     grid = [[round(wave * math.exp(-((r - 2) ** 2 + (c - 5) ** 2) / 6), 3) for c in range(8)] for r in range(8)]
 
+    # Three tables cycling through seated/waiting/overdue + a cleaning flag.
+    tables = []
+    for k, tid in enumerate(["T1", "T2", "T3"]):
+        wait = max(0, ((t * 17 + k * 90) % 420) - 40)  # 0..380s, varies per table
+        occupied = wait > 0
+        status = (
+            "empty" if not occupied
+            else "overdue" if wait >= 300
+            else "waiting" if wait >= 120
+            else "seated"
+        )
+        tables.append(Table(
+            id=tid, occupied=occupied, party_size=(2 if occupied else 0),
+            occupied_s=float(wait), wait_s=float(wait), status=status,
+            needs_cleaning=(not occupied and (t + k) % 5 == 0),
+            since_clean_s=float((t * 11 + k * 50) % 2400), uses_since_clean=(t + k) % 12,
+        ))
+
+    # Restroom cleaning cadence ramps with usage.
+    uses = (t // 2) % 20
+    clean_status = "overdue" if uses >= 15 else "due" if uses >= 8 else "ok"
+    cleaning = [CleaningZone(
+        id="restroom", uses_since_clean=int(uses),
+        since_clean_s=float((t * 30) % 4000), status=clean_status,
+    )]
+
     return SceneEvent(
         ts=time.time(),
         tracks=tracks,
@@ -67,6 +93,8 @@ def _synthetic_scene(t: int) -> SceneEvent:
         cups_made=6 + t // 8,
         heatmap_grid=grid,
         staff_productivity=productivity,
+        tables=tables,
+        cleaning=cleaning,
         source="mock",
     )
 

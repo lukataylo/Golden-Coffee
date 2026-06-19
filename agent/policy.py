@@ -66,6 +66,8 @@ DEBOUNCE_S = {
     "scent": 600,
     "notify_queue": 120,
     "notify_unattended": 600,
+    "notify_table": 180,
+    "notify_clean": 600,
 }
 DEFAULT_DEBOUNCE_S = 120
 
@@ -252,6 +254,41 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             f"{len(unattended)} guest(s) seated a while; a friendly check-in is good "
             f"hospitality and often prompts another order.",
         ))
+
+    # --- 7. TABLE SERVICE: a table waiting too long -> alert staff -----------
+    tables = scene.get("tables", []) or []
+    overdue_tables = [t for t in tables if t.get("status") == "overdue"]
+    if overdue_tables and _due(state, "notify_table", now):
+        worst = max(overdue_tables, key=lambda t: t.get("wait_s", 0.0))
+        mins = int(worst.get("wait_s", 0) // 60)
+        _mark(state, "notify_table", now)
+        actions.append(_action(
+            now, "notify_staff",
+            {"text": f"Table {worst['id']} has been waiting ~{mins} min — please take their order.",
+             "priority": "high"},
+            f"Table {worst['id']} un-served for ~{mins} min; serve before they give up.",
+        ))
+
+    # --- 8. CLEANING: a zone overdue, or tables to buss -> alert staff -------
+    clean_overdue = [c for c in (scene.get("cleaning", []) or []) if c.get("status") == "overdue"]
+    dirty_tables = [t for t in tables if t.get("needs_cleaning")]
+    if (clean_overdue or dirty_tables) and _due(state, "notify_clean", now):
+        _mark(state, "notify_clean", now)
+        if clean_overdue:
+            z = clean_overdue[0]
+            actions.append(_action(
+                now, "notify_staff",
+                {"text": f"{z['id'].title()} is due a clean ({z['uses_since_clean']} uses since last).",
+                 "priority": "low"},
+                f"{z['id']} hit {z['uses_since_clean']} uses since the last clean — time for a check.",
+            ))
+        else:
+            ids = ", ".join(t["id"] for t in dirty_tables)
+            actions.append(_action(
+                now, "notify_staff",
+                {"text": f"Tables to buss: {ids}.", "priority": "low"},
+                f"{len(dirty_tables)} table(s) vacated and need bussing for the next guests.",
+            ))
 
     return actions
 

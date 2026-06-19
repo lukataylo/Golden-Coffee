@@ -50,6 +50,29 @@ class Funnel(BaseModel):
     abandoned: int = 0    # left the queue without ordering
 
 
+class Table(BaseModel):
+    """A named table region: live wait state + cleaning/bussing state."""
+    id: str                         # "T1"
+    occupied: bool = False
+    party_size: int = 0             # customers currently at the table
+    occupied_s: float = 0.0         # seconds the table has been occupied
+    wait_s: float = 0.0             # seconds waiting (since seated / last staff visit)
+    status: Literal["empty", "seated", "waiting", "overdue"] = "empty"
+    # cleaning / turnover
+    needs_cleaning: bool = False    # vacated and not yet bussed
+    since_clean_s: float = 0.0      # seconds since last cleaned/bussed
+    uses_since_clean: int = 0       # parties served since last clean
+
+
+class CleaningZone(BaseModel):
+    """A zone whose cleaning cadence is tracked by usage + elapsed time
+    (e.g. restroom, counter, high-traffic area)."""
+    id: str                         # "restroom"
+    uses_since_clean: int = 0       # entries since last clean
+    since_clean_s: float = 0.0      # seconds since last cleaned
+    status: Literal["ok", "due", "overdue"] = "ok"
+
+
 class SceneEvent(BaseModel):
     type: Literal["scene"] = "scene"
     ts: float                       # unix seconds (producer-stamped)
@@ -60,6 +83,8 @@ class SceneEvent(BaseModel):
     cups_made: int = 0              # cumulative drinks detected at counter
     heatmap_grid: Optional[list[list[float]]] = None  # coarse dwell-density grid for flow/layout
     staff_productivity: float = 0.0  # 0..1 aggregate, anonymized
+    tables: list[Table] = Field(default_factory=list)       # per-table wait + cleaning
+    cleaning: list[CleaningZone] = Field(default_factory=list)  # cleaning cadence by zone
     source: Literal["mock", "perception"] = "mock"
 
 

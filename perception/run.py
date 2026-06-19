@@ -113,6 +113,163 @@ def _annotate_frame(frame, det, w: int, h: int):
     return out
 
 
+# --- Tables & cleaning zones (placeholder geometry; tune to the real camera) ---
+# Named tables inside the seating area (x ~0.75..1.0).
+TABLE_POLYS_NORM = {
+    "T1": [(0.76, 0.18), (0.87, 0.18), (0.87, 0.50), (0.76, 0.50)],
+    "T2": [(0.88, 0.18), (0.99, 0.18), (0.99, 0.50), (0.88, 0.50)],
+    "T3": [(0.76, 0.55), (0.93, 0.55), (0.93, 0.93), (0.76, 0.93)],
+}
+# Zones whose cleaning cadence is tracked by usage + time (e.g. restroom).
+CLEAN_POLYS_NORM = {
+    "restroom": [(0.0, 0.55), (0.15, 0.55), (0.15, 1.0), (0.0, 1.0)],
+}
+WAIT_WARN_S = 120.0      # seated this long un-served => "waiting"
+WAIT_CRIT_S = 300.0      # => "overdue"
+CLEAN_DUE_USES = 8       # uses since last clean => "due"
+CLEAN_OVERDUE_USES = 15  # => "overdue"
+CLEAN_DUE_S = 1800.0     # 30 min since clean => "due"
+CLEAN_OVERDUE_S = 3600.0  # 60 min => "overdue"
+
+
+def _point_in_poly(pt, poly) -> bool:
+    """Ray-casting point-in-polygon on normalized (0..1) coords."""
+    x, y = pt
+    inside = False
+    n = len(poly)
+    j = n - 1
+    for i in range(n):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def _foot(track) -> tuple[float, float]:
+    """Bottom-center of a track's normalized bbox (the floor contact point)."""
+    b = track.bbox or [0, 0, 0, 0]
+    return ((b[0] + b[2]) / 2.0, b[3])
+
+
+class TableMonitor:
+    """Per-table wait + cleaning state, and per-zone cleaning cadence.
+
+    Wait: time a seated party has been un-served (since seated, or since a staff
+    member was last seen at the table). Cleaning: a table goes dirty when a party
+    leaves and is "bussed" when staff next visits; cleaning zones (restroom) track
+    uses-since-clean + time-since-clean, reset when staff is seen there.
+    """
+
+    def __init__(self) -> None:
+        self.t_state = {
+            tid: {"occ_since": None, "staff_t": None, "clean_t": 0.0,
+                  "uses": 0, "was_occ": False, "dirty": False}
+            for tid in TABLE_POLYS_NORM
+        }
+        self.c_state = {
+            cid: {"inside": set(), "uses": 0, "clean_t": 0.0}
+            for cid in CLEAN_POLYS_NORM
+        }
+
+    def update(self, tracks, t: float):
+        from shared.schemas import CleaningZone, Table
+
+        tables = []
+        for tid, poly in TABLE_POLYS_NORM.items():
+            s = self.t_state[tid]
+            party, staff_in = 0, False
+            for tr in tracks:
+                if tr.bbox and _point_in_poly(_foot(tr), poly):
+                    if tr.role == Role.STAFF:
+                        staff_in = True
+                    else:
+                        party += 1
+            occupied = party > 0
+            if occupied and not s["was_occ"]:        # new party seated
+                s["occ_since"] = t
+                s["uses"] += 1
+            if not occupied and s["was_occ"]:        # party left -> needs bussing
+                s["dirty"] = True
+            s["was_occ"] = occupied
+            if staff_in:                              # staff visit = served (+ bussed)
+                s["staff_t"] = t
+                if s["dirty"]:
+                    s["dirty"] = False
+                    s["clean_t"] = t
+                    s["uses"] = 0
+            if occupied and s["occ_since"] is not None:
+                base = max(x for x in (s["occ_since"], s["staff_t"]) if x is not None)
+                wait_s = t - base
+                occ_s = t - s["occ_since"]
+            else:
+                wait_s = occ_s = 0.0
+            status = (
+                "empty" if not occupied
+                else "overdue" if wait_s >= WAIT_CRIT_S
+                else "waiting" if wait_s >= WAIT_WARN_S
+                else "seated"
+            )
+            tables.append(Table(
+                id=tid, occupied=occupied, party_size=party,
+                occupied_s=round(occ_s, 1), wait_s=round(wait_s, 1), status=status,
+                needs_cleaning=s["dirty"], since_clean_s=round(t - s["clean_t"], 1),
+                uses_since_clean=s["uses"],
+            ))
+
+        cleaning = []
+        for cid, poly in CLEAN_POLYS_NORM.items():
+            s = self.c_state[cid]
+            now_inside, staff_in = set(), False
+            for tr in tracks:
+                if tr.bbox and _point_in_poly(_foot(tr), poly):
+                    now_inside.add(tr.id)
+                    if tr.role == Role.STAFF:
+                        staff_in = True
+            s["uses"] += len(now_inside - s["inside"])  # new entries since last frame
+            s["inside"] = now_inside
+            if staff_in:                                 # staff present = cleaned
+                s["uses"] = 0
+                s["clean_t"] = t
+            since = t - s["clean_t"]
+            status = (
+                "overdue" if (s["uses"] >= CLEAN_OVERDUE_USES or since >= CLEAN_OVERDUE_S)
+                else "due" if (s["uses"] >= CLEAN_DUE_USES or since >= CLEAN_DUE_S)
+                else "ok"
+            )
+            cleaning.append(CleaningZone(
+                id=cid, uses_since_clean=s["uses"], since_clean_s=round(since, 1), status=status,
+            ))
+        return tables, cleaning
+
+
+def _draw_tables(frame, tables, w: int, h: int):
+    """Overlay table boxes colored by status, with the wait clock + cleaning flag."""
+    import cv2
+    import numpy as np
+
+    color = {"empty": (120, 120, 120), "seated": (120, 200, 120),
+             "waiting": (80, 180, 235), "overdue": (70, 70, 230)}
+    by_id = {t.id: t for t in tables}
+    for tid, poly in TABLE_POLYS_NORM.items():
+        t = by_id.get(tid)
+        status = t.status if t else "empty"
+        col = color.get(status, (120, 120, 120))
+        pts = np.array([(int(x * w), int(y * h)) for x, y in poly], dtype=np.int32)
+        cv2.polylines(frame, [pts], True, col, 2)
+        x0 = int(min(p[0] for p in poly) * w) + 4
+        y0 = int(min(p[1] for p in poly) * h) + 18
+        if t and t.occupied:
+            label = f"{tid} {int(t.wait_s // 60)}:{int(t.wait_s % 60):02d}"
+            if t.needs_cleaning:
+                label += " !buss"
+        else:
+            label = f"{tid} empty"
+        cv2.putText(frame, label, (x0, y0), cv2.FONT_HERSHEY_SIMPLEX, 0.5, col, 2)
+    return frame
+
+
 class TrackState:
     """Per-tracker funnel/dwell/activity bookkeeping. tracker_id is ephemeral."""
 
@@ -157,6 +314,7 @@ class Pipeline:
         self.funnel = Funnel()
         # cumulative dwell-density heatmap (seconds spent per cell)
         self.heat = [[0.0] * HEATMAP_N for _ in range(HEATMAP_N)]
+        self.tablemon = TableMonitor()
 
     def _zone_of(self, single) -> Zone:
         for z, pz in self.zones.items():
@@ -271,7 +429,9 @@ class Pipeline:
         else:
             grid = [[0.0] * HEATMAP_N for _ in range(HEATMAP_N)]
 
-        return tracks, occupancy, productivity, grid
+        tables, cleaning = self.tablemon.update(tracks, t)
+
+        return tracks, occupancy, productivity, grid, tables, cleaning
 
 
 def _resolve_source(source: str):
@@ -390,11 +550,12 @@ def main() -> None:
 
         _blur_faces_inplace(frame, det, w, h)  # privacy: blur heads before bbox leaves
 
-        tracks, occupancy, productivity, grid = pipe.process(det, video_t, dt)
+        tracks, occupancy, productivity, grid, tables, cleaning = pipe.process(det, video_t, dt)
 
-        # Stream the annotated frame (zones + boxes baked in) to the backend.
+        # Stream the annotated frame (zones + boxes + tables baked in) to the backend.
         if stream_on and video_t - last_frame_t >= frame_interval:
             annotated = _annotate_frame(frame, det, w, h)
+            annotated = _draw_tables(annotated, tables, w, h)
             if stream_w != w:
                 annotated = cv2.resize(annotated, (stream_w, int(h * stream_w / w)))
             okj, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 65])
@@ -420,6 +581,8 @@ def main() -> None:
                 cups_made=pipe.funnel.ordered,  # ordered == drinks proxy at counter
                 heatmap_grid=grid,
                 staff_productivity=productivity,
+                tables=tables,
+                cleaning=cleaning,
                 source="perception",
             )
             if args.dry_run:
