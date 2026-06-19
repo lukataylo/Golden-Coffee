@@ -18,3 +18,6 @@ anthropic>=0.40.0           # Claude tool-use loop
 spotipy>=2.24.0             # Spotify volume (needs Premium + active device)
 python-kasa>=0.7.0          # TP-Link Kasa smart plug (fan/heater)
 requests>=2.32.0            # Slack / Telegram webhooks
+
+# Live feed ingestion (YouTube/HLS -> OpenCV)
+yt-dlp>=2024.0.0

@@ -229,9 +229,41 @@ class Pipeline:
         return tracks, occupancy, productivity, grid
 
 
+def _resolve_source(source: str):
+    """Turn --source into something cv2.VideoCapture can open.
+
+    - digit            -> webcam index (int)
+    - youtube/page URL -> direct stream URL via yt-dlp (live HLS or VOD)
+    - file path / direct media URL -> returned unchanged
+    """
+    if str(source).isdigit():
+        return int(source)
+    s = str(source)
+    is_url = s.startswith(("http://", "https://"))
+    is_direct = s.endswith((".m3u8", ".mp4", ".mov", ".mkv", ".webm"))
+    if is_url and not is_direct:
+        try:
+            import yt_dlp
+
+            opts = {"quiet": True, "skip_download": True, "format": "best[height<=720]/best"}
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(s, download=False)
+            stream = info.get("url")
+            if stream:
+                print(f"[perception] resolved stream via yt-dlp (live={info.get('is_live')})")
+                return stream
+        except Exception as exc:
+            print(f"[perception] yt-dlp resolve failed ({exc}); passing source as-is")
+    return s
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Golden Coffee perception pipeline")
-    parser.add_argument("--source", default="0", help="webcam index or video path")
+    parser.add_argument(
+        "--source",
+        default="0",
+        help="webcam index, video path, direct stream URL, or YouTube/livestream page URL",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -246,11 +278,16 @@ def main() -> None:
     import supervision as sv
     from ultralytics import YOLO
 
-    source = int(args.source) if str(args.source).isdigit() else args.source
+    source = _resolve_source(args.source)
     model = YOLO("yolo11n.pt")
     tracker = sv.ByteTrack()
 
-    cap = cv2.VideoCapture(source)
+    # Use the FFMPEG backend for network streams (HLS/RTSP); default otherwise.
+    cap = (
+        cv2.VideoCapture(source, cv2.CAP_FFMPEG)
+        if isinstance(source, str) and source.startswith("http")
+        else cv2.VideoCapture(source)
+    )
     if not cap.isOpened():
         raise SystemExit(f"[perception] could not open source: {source!r}")
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280
