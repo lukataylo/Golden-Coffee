@@ -5,91 +5,616 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Golden Coffee — Ops Copilot</title>
   <style>
-    :root { color-scheme: dark; }
+    :root {
+      color-scheme: dark;
+      --bg:        #14110e;
+      --bg2:       #1d1813;
+      --bg3:       #241d16;
+      --line:      #332a20;
+      --line2:     #2a2219;
+      --ink:       #f3ede3;
+      --muted:     #8c7d68;
+      --muted2:    #b6a88f;
+      --gold:      #d9a441;
+      --gold-soft: #e7c074;
+      --green:     #7ed87e;
+      --red:       #e0876f;
+      --blue:      #6fb6e0;
+      --violet:    #b58fe0;
+      --shadow:    0 10px 30px rgba(0,0,0,.35);
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; font: 14px/1.5 -apple-system, system-ui, sans-serif;
-           background: #14110e; color: #f3ede3; }
-    header { padding: 16px 24px; background: #1d1813; border-bottom: 1px solid #332a20;
-             display: flex; align-items: baseline; gap: 12px; }
-    h1 { font-size: 18px; margin: 0; color: #d9a441; }
-    .sub { color: #8c7d68; font-size: 12px; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 24px; }
-    .card { background: #1d1813; border: 1px solid #332a20; border-radius: 10px; padding: 14px; }
-    .card h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
-               color: #8c7d68; margin: 0 0 8px; }
-    .big { font-size: 32px; font-weight: 600; color: #f3ede3; }
-    .wide { grid-column: span 2; }
-    .full { grid-column: span 4; }
-    .feed { max-height: 260px; overflow:auto; display:flex; flex-direction:column; gap:6px; }
-    .action { border-left: 3px solid #d9a441; padding: 6px 10px; background:#241d16; border-radius:4px; }
-    .action .name { color:#d9a441; font-weight:600; }
-    .action .why { color:#b6a88f; }
-    .manual { background:#3a2a14; }
-    .funnel-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #2a2219; }
-    .heat { display:grid; grid-template-columns: repeat(8, 1fr); gap:2px; }
-    .heat div { aspect-ratio:1; border-radius:2px; background:#d9a441; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; }
-    .ok { background:#1f3a1f; color:#7ed87e; } .off { background:#3a1f1f; color:#d87e7e; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(217,164,65,.07), transparent 60%),
+        radial-gradient(900px 500px at -5% 110%, rgba(111,182,224,.05), transparent 55%),
+        var(--bg);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- header ---------- */
+    header {
+      position: sticky; top: 0; z-index: 20;
+      padding: 14px 24px;
+      background: linear-gradient(180deg, rgba(29,24,19,.96), rgba(29,24,19,.86));
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .brand { display:flex; align-items:baseline; gap:10px; }
+    h1 { font-size: 19px; margin: 0; color: var(--gold); letter-spacing:.2px; font-weight:650; }
+    .sub { color: var(--muted); font-size: 12px; }
+    .head-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+    .clock { color: var(--muted2); font-variant-numeric: tabular-nums; font-size:12px; }
+
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
+            font-size:11px; font-weight:600; letter-spacing:.03em; }
+    .pill .dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .pill .dot.pulse { animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.35; transform:scale(.8);} }
+    .ok    { background:#143014; color:var(--green); }
+    .off   { background:#3a1f1f; color:var(--red); }
+    .warn  { background:#3a2f14; color:var(--gold-soft); }
+    .badge { background:var(--bg3); color:var(--muted2); border:1px solid var(--line); }
+
+    /* ---------- layout ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      padding: 16px 24px 28px;
+      max-width: 1500px; margin: 0 auto;
+    }
+    .card {
+      background: linear-gradient(180deg, var(--bg2), #1a150f);
+      border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .card h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+               color: var(--muted); margin: 0 0 10px; display:flex; align-items:center; gap:8px; }
+    .card h2 .tag { color: var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+
+    .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; }
+    .col-5 { grid-column: span 5; } .col-6 { grid-column: span 6; }
+    .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; }
+    .col-12 { grid-column: span 12; }
+    @media (max-width: 1100px) {
+      .col-3,.col-4,.col-5 { grid-column: span 6; }
+      .col-6,.col-7,.col-8 { grid-column: span 12; }
+    }
+    @media (max-width: 680px) { .grid > * { grid-column: 1 / -1 !important; } }
+
+    /* ---------- KPI ---------- */
+    .kpi { position:relative; overflow:hidden; }
+    .kpi .big { font-size: 36px; font-weight: 680; color: var(--ink); line-height:1.05;
+                font-variant-numeric: tabular-nums; }
+    .kpi .unit { font-size:16px; color:var(--muted); font-weight:500; }
+    .kpi .delta { font-size:11px; margin-top:2px; color:var(--muted); }
+    .kpi .delta.up { color: var(--green); } .kpi .delta.down { color: var(--red); }
+    .spark { position:absolute; right:10px; bottom:10px; width:96px; height:34px; opacity:.9; }
+    .bar-track { height:6px; border-radius:999px; background:#2a2219; overflow:hidden; margin-top:10px; }
+    .bar-fill  { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+                 width:0; transition: width .5s ease; }
+
+    /* ---------- funnel ---------- */
+    .funnel { display:flex; flex-direction:column; gap:7px; }
+    .fn { display:grid; grid-template-columns: 96px 1fr 44px; align-items:center; gap:10px; }
+    .fn .lbl { font-size:12px; color:var(--muted2); text-transform:capitalize; }
+    .fn .meter { height:22px; background:#221b14; border-radius:6px; overflow:hidden; position:relative; }
+    .fn .meter > span { position:absolute; inset:0 auto 0 0; border-radius:6px;
+                        background:linear-gradient(90deg, #b9842f, var(--gold-soft));
+                        width:0; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .fn.abandon .meter > span { background:linear-gradient(90deg,#7a3a2a,var(--red)); }
+    .fn .val { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+    .fn .pct { font-size:10px; color:var(--muted); }
+    .conv-note { margin-top:10px; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; }
+
+    /* ---------- map ---------- */
+    .map-wrap { position:relative; }
+    #map { width:100%; display:block; border-radius:10px; background:#100d0a;
+           border:1px solid var(--line2); }
+    .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; font-size:11px; color:var(--muted2); }
+    .legend span { display:inline-flex; align-items:center; gap:6px; }
+    .legend i { width:10px; height:10px; border-radius:3px; display:inline-block; }
+    .legend i.round { border-radius:50%; }
+
+    /* ---------- heatmap ---------- */
+    .heat { display:grid; grid-template-columns: repeat(8, 1fr); gap:3px; }
+    .heat div { aspect-ratio:1; border-radius:3px; background:#1c1610; transition: background .4s ease; }
+    .heat-scale { display:flex; align-items:center; gap:8px; margin-top:10px; font-size:11px; color:var(--muted); }
+    .heat-scale .ramp { flex:1; height:8px; border-radius:999px;
+      background:linear-gradient(90deg,#1c1610,#5a3a16,#b9842f,#e7c074,#fff1cf); }
+
+    /* ---------- feed ---------- */
+    .feed { max-height: 420px; overflow:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px; }
+    .feed::-webkit-scrollbar { width:8px; } .feed::-webkit-scrollbar-thumb { background:#3a3026; border-radius:8px; }
+    .action { border-left:3px solid var(--gold); padding:8px 12px; background:var(--bg3);
+              border-radius:0 8px 8px 0; animation: slidein .35s ease; }
+    @keyframes slidein { from{ opacity:0; transform:translateX(-8px);} to{opacity:1; transform:none;} }
+    .action.manual { border-left-color: var(--blue); background:#16242e; }
+    .action .top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .action .name { color:var(--gold); font-weight:650; }
+    .action.manual .name { color:var(--blue); }
+    .action .src { font-size:10px; padding:1px 7px; border-radius:999px; font-weight:600; }
+    .action .src.auto { background:#2a2414; color:var(--gold-soft); }
+    .action .src.man  { background:#173040; color:var(--blue); }
+    .action .ts { margin-left:auto; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .action code { font-size:11px; color:var(--muted2); background:#100d0a; padding:1px 6px; border-radius:4px; }
+    .action .why { color:var(--muted2); font-size:12px; margin-top:4px; }
+    .empty { color:var(--muted); font-size:12px; padding:18px; text-align:center; }
+
+    /* ---------- override panel ---------- */
+    .btns { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
+    .ovr { display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px;
+           border:1px solid var(--line); background:#201a13; color:var(--ink);
+           cursor:pointer; font:inherit; text-align:left; transition: all .15s ease; }
+    .ovr:hover { border-color:var(--gold); background:#2a2114; transform:translateY(-1px); }
+    .ovr:active { transform:translateY(0); }
+    .ovr .ic { font-size:18px; width:26px; text-align:center; }
+    .ovr .t { font-weight:600; font-size:13px; } .ovr .d { font-size:11px; color:var(--muted); }
+    .ovr.flash { border-color:var(--green); background:#16301c; }
+    .ovr:disabled { opacity:.5; cursor:default; }
+    .ovr-note { margin-top:12px; font-size:11px; color:var(--muted); }
+
+    /* ---------- ethics ---------- */
+    .ethics .claim { display:flex; align-items:center; gap:10px; padding:8px 0;
+                     border-bottom:1px solid var(--line2); font-size:13px; }
+    .ethics .claim:last-of-type { border-bottom:none; }
+    .ethics .claim .ic { color:var(--green); font-weight:700; }
+    .switch-row { display:flex; align-items:center; justify-content:space-between; margin-top:12px;
+                  padding-top:12px; border-top:1px solid var(--line2); }
+    .switch { position:relative; width:46px; height:26px; flex:none; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; inset:0; background:#3a3026; border-radius:999px; transition:.2s; cursor:pointer; }
+    .slider:before { content:""; position:absolute; height:20px; width:20px; left:3px; top:3px;
+                     background:var(--ink); border-radius:50%; transition:.2s; }
+    .switch input:checked + .slider { background:var(--green); }
+    .switch input:checked + .slider:before { transform:translateX(20px); }
+    .consent-state { font-size:11px; color:var(--muted2); }
+
+    .src-foot { font-size:10px; color:var(--muted); margin-top:6px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>☕ Golden Coffee</h1>
-    <span class="sub">Hospitality Ops Copilot · privacy-by-design</span>
-    <span id="conn" class="pill off" style="margin-left:auto">connecting…</span>
+    <div class="brand">
+      <h1>☕ Golden Coffee</h1>
+      <span class="sub">Hospitality Ops Copilot · privacy-by-design</span>
+    </div>
+    <div class="head-right">
+      <span id="src" class="pill badge">source —</span>
+      <span class="clock" id="clock">--:--:--</span>
+      <span id="conn" class="pill off"><span class="dot"></span>connecting…</span>
+    </div>
   </header>
 
-  <div class="grid">
-    <div class="card"><h2>Occupancy</h2><div id="occ" class="big">–</div></div>
-    <div class="card"><h2>Queue</h2><div id="queue" class="big">–</div></div>
-    <div class="card"><h2>Staff productivity</h2><div id="prod" class="big">–</div></div>
-    <div class="card"><h2>Cups made</h2><div id="cups" class="big">–</div></div>
+  <main class="grid">
+    <!-- KPI row -->
+    <section class="card kpi col-3">
+      <h2>Occupancy</h2>
+      <div><span id="occ" class="big">–</span><span class="unit"> in</span></div>
+      <div id="occ-d" class="delta">&nbsp;</div>
+      <canvas class="spark" id="occ-spark" width="192" height="68"></canvas>
+    </section>
+    <section class="card kpi col-3">
+      <h2>Queue length</h2>
+      <div><span id="queue" class="big">–</span><span class="unit"> waiting</span></div>
+      <div id="queue-d" class="delta">&nbsp;</div>
+      <canvas class="spark" id="queue-spark" width="192" height="68"></canvas>
+    </section>
+    <section class="card kpi col-3">
+      <h2>Staff productivity</h2>
+      <div><span id="prod" class="big">–</span><span class="unit">%</span></div>
+      <div class="bar-track"><div id="prod-bar" class="bar-fill"></div></div>
+    </section>
+    <section class="card kpi col-3">
+      <h2>Cups made <span class="tag">cumulative</span></h2>
+      <div><span id="cups" class="big">–</span></div>
+      <div id="cups-d" class="delta">&nbsp;</div>
+      <canvas class="spark" id="cups-spark" width="192" height="68"></canvas>
+    </section>
 
-    <div class="card wide"><h2>Conversion funnel</h2><div id="funnel"></div></div>
-    <div class="card wide"><h2>Flow / dwell heatmap</h2><div id="heat" class="heat"></div></div>
+    <!-- Map -->
+    <section class="card col-7">
+      <h2>Live customer map <span class="tag">anonymous tracks · normalized bboxes</span></h2>
+      <div class="map-wrap"><canvas id="map" width="900" height="440"></canvas></div>
+      <div class="legend">
+        <span><i style="background:#6fb6e0"></i>Entry</span>
+        <span><i style="background:#e0876f"></i>Queue</span>
+        <span><i style="background:#d9a441"></i>Counter</span>
+        <span><i style="background:#7ed87e"></i>Seating</span>
+        <span style="margin-left:8px;border-left:1px solid var(--line);padding-left:12px">
+          <i class="round" style="background:#fff;border:2px solid #14110e"></i>Customer</span>
+        <span><i class="round" style="background:#b58fe0"></i>Staff</span>
+      </div>
+    </section>
 
-    <div class="card full"><h2>Agent actions <span class="sub">(perceive → reason → act)</span></h2>
-      <div id="feed" class="feed"></div></div>
-  </div>
+    <!-- Funnel -->
+    <section class="card col-5">
+      <h2>Conversion funnel</h2>
+      <div id="funnel" class="funnel"></div>
+      <div class="conv-note">
+        <span>Entry → Order conversion</span>
+        <span id="conv-rate" style="color:var(--gold-soft);font-weight:600">–</span>
+      </div>
+    </section>
+
+    <!-- Heatmap -->
+    <section class="card col-4">
+      <h2>Flow / dwell heatmap</h2>
+      <div id="heat" class="heat"></div>
+      <div class="heat-scale"><span>low</span><div class="ramp"></div><span>high dwell</span></div>
+    </section>
+
+    <!-- Override -->
+    <section class="card col-4">
+      <h2>Manual override <span class="tag">human-in-the-loop</span></h2>
+      <div class="btns">
+        <button class="ovr" data-action="set_music_volume" data-params='{"volume":70}'
+                data-rationale="Operator boosted music to lift energy.">
+          <span class="ic">🎵</span><span><span class="t">Boost music</span><br><span class="d">volume → 70</span></span></button>
+        <button class="ovr" data-action="set_temperature" data-params='{"celsius":20}'
+                data-rationale="Operator cooled the room for comfort.">
+          <span class="ic">❄️</span><span><span class="t">Cool room</span><br><span class="d">temp → 20°C</span></span></button>
+        <button class="ovr" data-action="push_discount" data-params='{"text":"20% off pastries"}'
+                data-rationale="Operator pushed a discount to drive conversion.">
+          <span class="ic">🏷️</span><span><span class="t">Push discount</span><br><span class="d">20% off pastries</span></span></button>
+        <button class="ovr" data-action="notify_staff" data-params='{"text":"Open a second till — queue building."}'
+                data-rationale="Operator alerted staff to the queue.">
+          <span class="ic">🔔</span><span><span class="t">Alert staff</span><br><span class="d">open second till</span></span></button>
+      </div>
+      <div id="ovr-note" class="ovr-note">Actions POST to <code id="ovr-url">—</code></div>
+    </section>
+
+    <!-- Ethics -->
+    <section class="card col-4 ethics">
+      <h2>Ethics &amp; privacy</h2>
+      <div class="claim"><span class="ic">✓</span> No faces stored — frames discarded after counting</div>
+      <div class="claim"><span class="ic">✓</span> Anonymous, ephemeral track IDs only</div>
+      <div class="claim"><span class="ic">✓</span> Aggregate metrics only — never individual identity</div>
+      <div class="switch-row">
+        <div>
+          <div style="font-weight:600;font-size:13px">Consent mode</div>
+          <div class="consent-state" id="consent-state">Enabled · visitors informed via signage</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="consent" checked><span class="slider"></span></label>
+      </div>
+    </section>
+
+    <!-- Feed -->
+    <section class="card col-12">
+      <h2>Agent action feed <span class="tag">perceive → reason → act</span></h2>
+      <div id="feed" class="feed"><div class="empty">Waiting for agent actions…</div></div>
+    </section>
+  </main>
 
   <script>
-    // Point this at your Render/Railway backend in production (wss://...).
-    const WS = (location.search.match(/ws=([^&]+)/)?.[1]) || "ws://127.0.0.1:8000/ws";
-    const $ = (id) => document.getElementById(id);
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
 
-    function renderScene(s) {
-      $("occ").textContent = s.occupancy;
-      $("queue").textContent = s.queue_len;
-      $("prod").textContent = Math.round((s.staff_productivity || 0) * 100) + "%";
-      $("cups").textContent = s.cups_made;
-      const f = s.funnel || {};
-      $("funnel").innerHTML = ["entered","approached","ordered","seated","abandoned"]
-        .map(k => `<div class="funnel-row"><span>${k}</span><b>${f[k] ?? 0}</b></div>`).join("");
-      if (s.heatmap_grid) {
-        $("heat").innerHTML = s.heatmap_grid.flat()
-          .map(v => `<div style="opacity:${Math.min(1, 0.08 + v)}"></div>`).join("");
+    // ---------- URL resolution (same-origin aware) ----------
+    function resolveEndpoints() {
+      var qs = (location.search.match(/[?&]ws=([^&]+)/) || [])[1];
+      var wsUrl, httpBase;
+      if (qs) {
+        wsUrl = decodeURIComponent(qs);
+        httpBase = wsUrl.replace(/^ws/, "http").replace(/\/ws\/?$/, "");
+      } else if (location.protocol === "http:" || location.protocol === "https:") {
+        var scheme = location.protocol === "https:" ? "wss" : "ws";
+        wsUrl = scheme + "://" + location.host + "/ws";
+        httpBase = location.protocol + "//" + location.host;
+      } else {
+        // file:// local dev fallback
+        wsUrl = "ws://127.0.0.1:8000/ws";
+        httpBase = "http://127.0.0.1:8000";
+      }
+      return { ws: wsUrl, http: httpBase };
+    }
+    var EP = resolveEndpoints();
+    $("ovr-url").textContent = EP.http + "/override";
+
+    // ---------- clock ----------
+    setInterval(function () {
+      $("clock").textContent = new Date().toLocaleTimeString();
+    }, 1000);
+
+    function fmtTs(ts) {
+      var d = ts ? new Date(ts * 1000) : new Date();
+      return d.toLocaleTimeString([], { hour12: false });
+    }
+
+    // ---------- sparklines ----------
+    var hist = { occ: [], queue: [], cups: [] };
+    function pushHist(key, v, cap) {
+      var a = hist[key]; a.push(v);
+      if (a.length > (cap || 40)) a.shift();
+    }
+    function drawSpark(canvasId, data, color) {
+      var c = $(canvasId); if (!c) return;
+      var ctx = c.getContext("2d"), w = c.width, h = c.height, pad = 4;
+      ctx.clearRect(0, 0, w, h);
+      if (data.length < 2) return;
+      var min = Math.min.apply(null, data), max = Math.max.apply(null, data);
+      var rng = (max - min) || 1;
+      var step = (w - pad * 2) / (data.length - 1);
+      ctx.beginPath();
+      for (var i = 0; i < data.length; i++) {
+        var x = pad + i * step;
+        var y = h - pad - ((data[i] - min) / rng) * (h - pad * 2);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.lineWidth = 2; ctx.strokeStyle = color;
+      ctx.lineJoin = "round"; ctx.stroke();
+      // fill
+      ctx.lineTo(pad + (data.length - 1) * step, h - pad);
+      ctx.lineTo(pad, h - pad); ctx.closePath();
+      var g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, color + "44"); g.addColorStop(1, color + "00");
+      ctx.fillStyle = g; ctx.fill();
+    }
+
+    function setDelta(id, cur, prev, suffix) {
+      var el = $(id); if (prev == null) { el.textContent = " "; return; }
+      var d = cur - prev;
+      el.className = "delta " + (d > 0 ? "up" : d < 0 ? "down" : "");
+      el.textContent = (d > 0 ? "▲ +" : d < 0 ? "▼ " : "● ") + d + (suffix || "") + " vs last";
+    }
+
+    // ---------- heatmap ----------
+    function heatColor(v) {
+      // v in 0..1 -> warm ramp
+      v = Math.max(0, Math.min(1, v));
+      var stops = [
+        [28, 22, 16], [90, 58, 22], [185, 132, 47], [231, 192, 116], [255, 241, 207]
+      ];
+      var seg = v * (stops.length - 1);
+      var i = Math.floor(seg), f = seg - i;
+      if (i >= stops.length - 1) return "rgb(" + stops[stops.length - 1].join(",") + ")";
+      var a = stops[i], b = stops[i + 1];
+      var r = Math.round(a[0] + (b[0] - a[0]) * f);
+      var g = Math.round(a[1] + (b[1] - a[1]) * f);
+      var bl = Math.round(a[2] + (b[2] - a[2]) * f);
+      return "rgb(" + r + "," + g + "," + bl + ")";
+    }
+    var heatCells = [];
+    function ensureHeat(n) {
+      var el = $("heat");
+      if (heatCells.length === n) return;
+      el.innerHTML = ""; heatCells = [];
+      for (var i = 0; i < n; i++) { var d = document.createElement("div"); el.appendChild(d); heatCells.push(d); }
+    }
+    function renderHeat(grid) {
+      var flat = grid.flat ? grid.flat() : [].concat.apply([], grid);
+      var max = Math.max.apply(null, flat) || 1;
+      ensureHeat(flat.length);
+      for (var i = 0; i < flat.length; i++) {
+        heatCells[i].style.background = heatColor(flat[i] / max);
       }
     }
-    function renderAction(a) {
-      const el = document.createElement("div");
-      el.className = "action" + (a.auto ? "" : " manual");
-      el.innerHTML = `<span class="name">${a.action}</span> `
-        + `<code>${JSON.stringify(a.params)}</code>`
-        + `<div class="why">${a.rationale || ""}${a.auto ? "" : " · manual override"}</div>`;
-      $("feed").prepend(el);
+
+    // ---------- funnel ----------
+    var FUNNEL_KEYS = ["entered", "approached", "ordered", "seated", "abandoned"];
+    function renderFunnel(f) {
+      f = f || {};
+      var entered = f.entered || 0;
+      var max = Math.max(entered, 1);
+      var html = "";
+      for (var i = 0; i < FUNNEL_KEYS.length; i++) {
+        var k = FUNNEL_KEYS[i], v = f[k] || 0;
+        var pct = Math.round((v / max) * 100);
+        var ofEntered = entered ? Math.round((v / entered) * 100) : 0;
+        html += '<div class="fn ' + (k === "abandoned" ? "abandon" : "") + '">' +
+                  '<span class="lbl">' + k + '</span>' +
+                  '<div class="meter"><span style="width:' + Math.max(2, pct) + '%"></span></div>' +
+                  '<div class="val">' + v + ' <span class="pct">' + ofEntered + '%</span></div>' +
+                '</div>';
+      }
+      $("funnel").innerHTML = html;
+      var conv = entered ? Math.round(((f.ordered || 0) / entered) * 100) : 0;
+      $("conv-rate").textContent = conv + "%";
     }
 
+    // ---------- floor map ----------
+    var ZONE_COLORS = {
+      entry:   "#6fb6e0", queue: "#e0876f", counter: "#d9a441",
+      seating: "#7ed87e", off:   "#7d7263"
+    };
+    // floor-plan regions (normalized x,y,w,h) for backdrop zones
+    var ZONE_RECTS = [
+      { z: "entry",   x: 0.00, y: 0.00, w: 0.22, h: 1.00, label: "Entry" },
+      { z: "queue",   x: 0.22, y: 0.00, w: 0.22, h: 1.00, label: "Queue" },
+      { z: "counter", x: 0.44, y: 0.00, w: 0.20, h: 1.00, label: "Counter" },
+      { z: "seating", x: 0.64, y: 0.00, w: 0.36, h: 1.00, label: "Seating" }
+    ];
+    function hexA(hex, a) {
+      var h = hex.replace("#", "");
+      var r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
+      return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+    }
+    function drawMap(tracks) {
+      var c = $("map"); if (!c) return;
+      var ctx = c.getContext("2d"), W = c.width, H = c.height;
+      ctx.clearRect(0, 0, W, H);
+      // zone backdrops
+      for (var i = 0; i < ZONE_RECTS.length; i++) {
+        var z = ZONE_RECTS[i], col = ZONE_COLORS[z.z];
+        ctx.fillStyle = hexA(col, 0.07);
+        ctx.fillRect(z.x * W, z.y * H, z.w * W, z.h * H);
+        ctx.strokeStyle = hexA(col, 0.25); ctx.lineWidth = 1;
+        ctx.strokeRect(z.x * W + 0.5, z.y * H + 0.5, z.w * W - 1, z.h * H - 1);
+        ctx.fillStyle = hexA(col, 0.55);
+        ctx.font = "600 11px system-ui";
+        ctx.fillText(z.label.toUpperCase(), z.x * W + 8, 18);
+      }
+      tracks = tracks || [];
+      for (var j = 0; j < tracks.length; j++) {
+        var t = tracks[j];
+        var bb = t.bbox;
+        var cx, cy, bw, bh;
+        if (bb && bb.length === 4) {
+          cx = ((bb[0] + bb[2]) / 2) * W; cy = ((bb[1] + bb[3]) / 2) * H;
+          bw = Math.abs(bb[2] - bb[0]) * W; bh = Math.abs(bb[3] - bb[1]) * H;
+        } else { continue; }
+        var zcol = ZONE_COLORS[t.zone] || ZONE_COLORS.off;
+        var isStaff = t.role === "staff";
+        // bbox
+        ctx.strokeStyle = hexA(zcol, 0.5); ctx.lineWidth = 1.5;
+        ctx.strokeRect(cx - bw / 2, cy - bh / 2, bw, bh);
+        ctx.fillStyle = hexA(zcol, 0.10);
+        ctx.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
+        // dot
+        ctx.beginPath();
+        ctx.arc(cx, cy, isStaff ? 8 : 6, 0, Math.PI * 2);
+        ctx.fillStyle = isStaff ? "#b58fe0" : "#fff7ec";
+        ctx.fill();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = zcol; ctx.stroke();
+        // id label
+        ctx.fillStyle = hexA("#f3ede3", 0.7); ctx.font = "10px system-ui";
+        ctx.fillText("#" + t.id, cx + 9, cy - 7);
+      }
+      if (!tracks.length) {
+        ctx.fillStyle = "#6b6253"; ctx.font = "13px system-ui";
+        ctx.fillText("No tracks in frame", W / 2 - 55, H / 2);
+      }
+    }
+
+    // ---------- scene render ----------
+    var prev = {};
+    function renderScene(s) {
+      var occ = s.occupancy || 0, q = s.queue_len || 0, cups = s.cups_made || 0;
+      var prod = Math.round((s.staff_productivity || 0) * 100);
+      $("occ").textContent = occ;
+      $("queue").textContent = q;
+      $("cups").textContent = cups;
+      $("prod").textContent = prod;
+      $("prod-bar").style.width = prod + "%";
+
+      setDelta("occ-d", occ, prev.occ);
+      setDelta("queue-d", q, prev.queue);
+      setDelta("cups-d", cups, prev.cups);
+
+      pushHist("occ", occ); pushHist("queue", q); pushHist("cups", cups);
+      drawSpark("occ-spark", hist.occ, "#d9a441");
+      drawSpark("queue-spark", hist.queue, "#e0876f");
+      drawSpark("cups-spark", hist.cups, "#7ed87e");
+
+      renderFunnel(s.funnel);
+      if (s.heatmap_grid) renderHeat(s.heatmap_grid);
+      drawMap(s.tracks);
+
+      var srcEl = $("src");
+      srcEl.textContent = "source · " + (s.source || "—");
+      srcEl.className = "pill " + (s.source === "perception" ? "ok" : "badge");
+
+      prev = { occ: occ, queue: q, cups: cups };
+    }
+
+    // ---------- action render ----------
+    var ACTION_ICON = {
+      set_music_volume: "🎵", set_temperature: "🌡️", push_discount: "🏷️",
+      notify_staff: "🔔", suggest_layout: "🪑"
+    };
+    var feedHasItems = false;
+    function renderAction(a) {
+      if (!feedHasItems) { $("feed").innerHTML = ""; feedHasItems = true; }
+      var el = document.createElement("div");
+      el.className = "action" + (a.auto === false ? " manual" : "");
+      var icon = ACTION_ICON[a.action] || "⚙️";
+      var srcCls = a.auto === false ? "man" : "auto";
+      var srcTxt = a.auto === false ? "MANUAL" : "AUTO";
+      var params = "";
+      try { params = JSON.stringify(a.params || {}); } catch (e) { params = "{}"; }
+      el.innerHTML =
+        '<div class="top">' +
+          '<span class="name">' + icon + " " + a.action + '</span>' +
+          '<span class="src ' + srcCls + '">' + srcTxt + '</span>' +
+          '<code>' + escapeHtml(params) + '</code>' +
+          '<span class="ts">' + fmtTs(a.ts) + '</span>' +
+        '</div>' +
+        (a.rationale ? '<div class="why">' + escapeHtml(a.rationale) + '</div>' : '');
+      $("feed").prepend(el);
+      while ($("feed").childElementCount > 60) $("feed").lastElementChild.remove();
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+
+    // ---------- overrides ----------
+    document.querySelectorAll(".ovr").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var payload = {
+          type: "action",
+          ts: Date.now() / 1000,
+          action: btn.getAttribute("data-action"),
+          params: JSON.parse(btn.getAttribute("data-params")),
+          rationale: btn.getAttribute("data-rationale") || "",
+          reversible: true,
+          auto: false
+        };
+        btn.disabled = true;
+        fetch(EP.http + "/override", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }).then(function (r) {
+          btn.classList.add("flash");
+          setTimeout(function () { btn.classList.remove("flash"); btn.disabled = false; }, 700);
+          if (!r.ok) $("ovr-note").innerHTML = "⚠ override returned " + r.status;
+        }).catch(function (err) {
+          btn.disabled = false;
+          $("ovr-note").innerHTML = "⚠ could not reach " + escapeHtml(EP.http) + "/override (" + escapeHtml(String(err.message || err)) + ")";
+        });
+      });
+    });
+
+    // ---------- consent toggle (visual only) ----------
+    $("consent").addEventListener("change", function () {
+      $("consent-state").textContent = this.checked
+        ? "Enabled · visitors informed via signage"
+        : "Disabled · analytics paused";
+    });
+
+    // ---------- websocket w/ auto-reconnect ----------
+    var sock, retry = 0;
+    function setConn(state) {
+      var el = $("conn");
+      if (state === "live") { el.className = "pill ok"; el.innerHTML = '<span class="dot pulse"></span>live'; }
+      else if (state === "connecting") { el.className = "pill warn"; el.innerHTML = '<span class="dot"></span>connecting…'; }
+      else { el.className = "pill off"; el.innerHTML = '<span class="dot"></span>reconnecting…'; }
+    }
     function connect() {
-      const sock = new WebSocket(WS);
-      sock.onopen = () => { $("conn").textContent = "live"; $("conn").className = "pill ok"; };
-      sock.onclose = () => { $("conn").textContent = "reconnecting…"; $("conn").className = "pill off"; setTimeout(connect, 1500); };
-      sock.onmessage = (e) => {
-        const m = JSON.parse(e.data);
+      setConn(retry === 0 ? "connecting" : "down");
+      try { sock = new WebSocket(EP.ws); }
+      catch (e) { scheduleReconnect(); return; }
+      sock.onopen = function () { retry = 0; setConn("live"); };
+      sock.onmessage = function (e) {
+        var m; try { m = JSON.parse(e.data); } catch (err) { return; }
         if (m.type === "scene") renderScene(m);
         else if (m.type === "action") renderAction(m);
       };
+      sock.onclose = function () { setConn("down"); scheduleReconnect(); };
+      sock.onerror = function () { try { sock.close(); } catch (e) {} };
     }
+    function scheduleReconnect() {
+      retry++;
+      var delay = Math.min(1000 * Math.pow(1.5, retry), 8000);
+      setTimeout(connect, delay);
+    }
+
+    // init blank canvases
+    drawMap([]);
+    console.log("[Golden Coffee] ws=" + EP.ws + " http=" + EP.http);
     connect();
+  })();
   </script>
 </body>
 </html>

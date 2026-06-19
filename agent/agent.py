@@ -1,14 +1,16 @@
-"""Golden Coffee agent — thin Claude tool-use loop over scene events.
+"""Golden Coffee agent — turns scene metrics into real-world actions.
 
-Subscribes to the backend websocket, maintains a short rolling state, and on each
-tick asks Claude (with tool definitions = our real-world actions) whether to act.
-Decisions are POSTed back to /action. Actions are debounced so the agent doesn't
+By default the agent runs a deterministic, rule-based policy (`agent.policy`):
+it needs no API key and no model, so the MVP works anywhere. If an
+ANTHROPIC_API_KEY is present, the (preserved) Claude tool-use path is layered on
+top to add judgement; either way the resulting `AgentAction`s are POSTed to
+`${BACKEND_URL}/action`. Actions are debounced inside the policy so we don't
 thrash devices.
 
-This is deliberately small and fully ours (vs. adopting a heavyweight framework).
-P2 extends the policy / discount engine here.
+Run:
+  python -m agent.agent            # live: subscribe to WS, act on each scene
+  python -m agent.agent --once     # offline: replay synthetic scenes, print actions
 
-Run:  python -m agent.agent
 Env:  BACKEND_URL, BACKEND_WS, ANTHROPIC_API_KEY, AGENT_MODEL
 """
 from __future__ import annotations
@@ -16,14 +18,18 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 import time
 
 import httpx
 import websockets
 
+from agent import policy
+
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 BACKEND_WS = os.environ.get("BACKEND_WS", "ws://127.0.0.1:8000/ws")
 MODEL = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
+USE_CLAUDE = bool(os.environ.get("ANTHROPIC_API_KEY"))
 DEBOUNCE_S = float(os.environ.get("AGENT_DEBOUNCE_S", "15"))
 
 SYSTEM = (
@@ -86,16 +92,38 @@ def _summarize(scene: dict) -> str:
 
 
 class Agent:
-    def __init__(self) -> None:
-        self.last_action_at: dict[str, float] = {}
-        from anthropic import Anthropic  # imported lazily so the module loads without a key
+    """Decides actions for a scene and posts them to the hub.
 
-        self.client = Anthropic()
+    Rule-based by default; Claude is opt-in via ANTHROPIC_API_KEY.
+    """
 
-    def _debounced(self, name: str) -> bool:
-        return (time.time() - self.last_action_at.get(name, 0)) < DEBOUNCE_S
+    def __init__(self, use_claude: bool = USE_CLAUDE) -> None:
+        # Policy owns its own debounce state across the whole run.
+        self.state: dict = {}
+        self.use_claude = use_claude
+        self.client = None
+        if self.use_claude:
+            try:
+                from anthropic import Anthropic  # lazy: module imports fine without a key
+                self.client = Anthropic()
+                print(f"[agent] Claude path enabled (model={MODEL})")
+            except Exception as exc:
+                print(f"[agent] Claude unavailable ({exc}); using rule-based policy only")
+                self.use_claude = False
+        if not self.use_claude:
+            print("[agent] rule-based policy (no API key) — deterministic decisions")
 
-    async def decide(self, scene: dict) -> None:
+    # --- decision making ---------------------------------------------------
+    def decide_actions(self, scene: dict) -> list[dict]:
+        """Return a list of AgentAction dicts for this scene."""
+        if self.use_claude and self.client is not None:
+            try:
+                return self._decide_claude(scene)
+            except Exception as exc:
+                print(f"[agent] Claude decide failed ({exc}); falling back to rules")
+        return [a.model_dump() for a in policy.decide(scene, self.state)]
+
+    def _decide_claude(self, scene: dict) -> list[dict]:
         msg = self.client.messages.create(
             model=MODEL,
             max_tokens=400,
@@ -103,38 +131,87 @@ class Agent:
             tools=TOOLS,
             messages=[{"role": "user", "content": f"Current scene: {_summarize(scene)}. Act if warranted."}],
         )
+        now = time.time()
+        out: list[dict] = []
         for block in msg.content:
-            if block.type != "tool_use" or self._debounced(block.name):
+            if getattr(block, "type", None) != "tool_use":
                 continue
-            self.last_action_at[block.name] = time.time()
+            # Reuse the policy's debounce bookkeeping so Claude can't thrash devices.
+            if not policy._due(self.state, block.name, now):
+                continue
+            policy._mark(self.state, block.name, now)
             params = dict(block.input)
             rationale = params.pop("rationale", "")
-            action = {
-                "type": "action",
-                "ts": time.time(),
-                "action": block.name,
-                "params": params,
-                "rationale": rationale,
-                "reversible": True,
-                "auto": True,
-            }
-            async with httpx.AsyncClient(timeout=3.0) as http:
-                await http.post(f"{BACKEND_URL}/action", json=action)
-            print(f"[agent] {block.name} {params} — {rationale}")
+            out.append({
+                "type": "action", "ts": now, "action": block.name,
+                "params": params, "rationale": rationale,
+                "reversible": True, "auto": True,
+            })
+        return out
+
+    # --- output ------------------------------------------------------------
+    async def act_on(self, scene: dict, http: httpx.AsyncClient | None) -> list[dict]:
+        actions = self.decide_actions(scene)
+        for action in actions:
+            print(f"[agent] {action['action']} {action['params']} — {action['rationale']}")
+            if http is not None:
+                try:
+                    await http.post(f"{BACKEND_URL}/action", json=action)
+                except Exception as exc:
+                    print(f"[agent] post failed: {exc}")
+        return actions
 
 
-async def main() -> None:
+async def run_live() -> None:
     agent = Agent()
-    print(f"[agent] connecting to {BACKEND_WS} (model={MODEL})")
-    async with websockets.connect(BACKEND_WS) as sock:
+    print(f"[agent] connecting to {BACKEND_WS}")
+    async with websockets.connect(BACKEND_WS) as sock, httpx.AsyncClient(timeout=3.0) as http:
         async for raw in sock:
-            data = json.loads(raw)
+            try:
+                data = json.loads(raw)
+            except Exception:
+                continue
             if data.get("type") == "scene":
                 try:
-                    await agent.decide(data)
+                    await agent.act_on(data, http)
                 except Exception as exc:
                     print(f"[agent] decide failed: {exc}")
 
 
+def run_once(post: bool = False) -> None:
+    """Offline replay: feed synthetic scenes to the policy and print actions.
+
+    No websocket and no API key required — proves the policy end to end.
+    """
+    from shared.mock_events import _synthetic_scene
+
+    agent = Agent(use_claude=False)
+    print("[agent] --once replay over synthetic scenes (offline)\n")
+    base = time.time()
+    total = 0
+    for t in range(0, 75, 3):
+        scene = _synthetic_scene(t).model_dump()
+        scene["ts"] = base + t * 20  # advancing clock so debouncing is realistic
+        actions = [a.model_dump() for a in policy.decide(scene, agent.state)]
+        for a in actions:
+            total += 1
+            print(f"t={t:>2} occ={scene['occupancy']:>2} q={scene['queue_len']} "
+                  f"-> {a['action']} {a['params']} | {a['rationale']}")
+            if post:
+                try:
+                    httpx.post(f"{BACKEND_URL}/action", json=a, timeout=2.0)
+                except Exception as exc:
+                    print(f"      (post failed: {exc})")
+    print(f"\n[agent] replay complete — {total} action(s) produced")
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if "--once" in args:
+        run_once(post="--post" in args)
+        return
+    asyncio.run(run_live())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

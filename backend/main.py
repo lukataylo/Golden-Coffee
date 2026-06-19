@@ -17,11 +17,18 @@ from __future__ import annotations
 import asyncio
 import time
 from collections import deque
+from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from shared.schemas import AgentAction, SceneEvent
+
+# Repo root is the parent of this file's directory (backend/). Resolve to an
+# absolute path so static serving works regardless of the container CWD.
+DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "dashboard"
 
 app = FastAPI(title="Golden Coffee Hub")
 
@@ -114,3 +121,19 @@ async def ws(websocket: WebSocket) -> None:
             await websocket.receive_text()
     except WebSocketDisconnect:
         hub.disconnect(websocket)
+
+
+# --- Static dashboard --------------------------------------------------------
+# Serve the dashboard UI at "/". The REST + WS endpoints above are registered
+# first, so they always win the route match; this catch-all mount is last.
+
+
+@app.get("/")
+async def index() -> FileResponse:
+    """Serve the dashboard's index.html at the site root."""
+    return FileResponse(DASHBOARD_DIR / "index.html")
+
+
+# Mount the whole dashboard/ dir for any other static assets (CSS/JS/images).
+# Must be the LAST route registered so it doesn't shadow the API endpoints.
+app.mount("/", StaticFiles(directory=DASHBOARD_DIR, html=True), name="dashboard")
