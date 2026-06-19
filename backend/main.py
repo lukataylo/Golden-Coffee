@@ -19,9 +19,9 @@ import time
 from collections import deque
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from shared.schemas import AgentAction, SceneEvent
@@ -49,6 +49,15 @@ class Hub:
         self.last_scene: dict | None = None
         self.action_log: deque[dict] = deque(maxlen=50)
         self._lock = asyncio.Lock()
+        # Latest annotated JPEG frame (boxes + zones already drawn by perception)
+        # plus a monotonically increasing version so MJPEG subscribers can detect
+        # new frames without an explicit event/condition.
+        self.last_frame: bytes | None = None
+        self.frame_version: int = 0
+
+    def set_frame(self, data: bytes) -> None:
+        self.last_frame = data
+        self.frame_version += 1
 
     async def connect(self, ws: WebSocket) -> None:
         await ws.accept()
@@ -79,7 +88,68 @@ hub = Hub()
 
 @app.get("/health")
 async def health() -> dict:
-    return {"ok": True, "clients": len(hub.clients), "has_scene": hub.last_scene is not None}
+    return {
+        "ok": True,
+        "clients": len(hub.clients),
+        "has_scene": hub.last_scene is not None,
+        "has_frame": hub.last_frame is not None,
+    }
+
+
+@app.post("/frame")
+async def frame(request: Request) -> dict:
+    """Perception POSTs the latest annotated JPEG (raw image/jpeg body) here."""
+    data = await request.body()
+    if data:
+        hub.set_frame(data)
+    return {"ok": True, "bytes": len(data)}
+
+
+@app.get("/frame.jpg")
+async def frame_jpg() -> Response:
+    """Latest single annotated frame (poster / polling fallback)."""
+    if hub.last_frame is None:
+        return Response(status_code=404)
+    return Response(
+        content=hub.last_frame,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/stream")
+async def stream() -> StreamingResponse:
+    """MJPEG (multipart/x-mixed-replace) of the latest annotated frame.
+
+    Consumed directly by an <img src="/stream"> in the dashboard. Polls the
+    frame version ~25x/s and emits whenever a new frame arrives.
+    """
+    boundary = "frame"
+
+    async def gen():
+        last_sent = -1
+        idle = 0
+        while True:
+            if hub.frame_version != last_sent and hub.last_frame is not None:
+                last_sent = hub.frame_version
+                idle = 0
+                yield (
+                    b"--" + boundary.encode() + b"\r\n"
+                    b"Content-Type: image/jpeg\r\n"
+                    b"Content-Length: " + str(len(hub.last_frame)).encode() + b"\r\n\r\n"
+                    + hub.last_frame + b"\r\n"
+                )
+            else:
+                idle += 1
+                # Stop a stale connection after ~30s with no new frames so the
+                # client can fall back to /frame.jpg or the synthetic map.
+                if idle > 750:
+                    break
+            await asyncio.sleep(0.04)
+
+    return StreamingResponse(
+        gen(), media_type=f"multipart/x-mixed-replace; boundary={boundary}"
+    )
 
 
 @app.post("/ingest")

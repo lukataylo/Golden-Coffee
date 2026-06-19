@@ -68,6 +68,44 @@ def _blur_faces_inplace(frame, det, w: int, h: int) -> None:
             frame[hy1:hy2, hx1:hx2] = cv2.GaussianBlur(roi, (0, 0), 12)
 
 
+# Zone draw colors (BGR) — kept visually consistent with the dashboard palette.
+ZONE_DRAW_COLORS = {
+    Zone.ENTRY: (120, 120, 120),
+    Zone.QUEUE: (224, 182, 111),   # cool blue-ish
+    Zone.COUNTER: (65, 164, 217),  # gold
+    Zone.SEATING: (160, 200, 120), # teal-green
+}
+
+
+def _annotate_frame(frame, det, w: int, h: int):
+    """Draw translucent zone polygons + person boxes/ids onto a COPY of the frame,
+    so the streamed video carries the CCTV-style overlay (the dashboard just
+    displays it). Returns the annotated frame."""
+    import cv2
+    import numpy as np
+
+    out = frame.copy()
+    overlay = out.copy()
+    for z, poly in ZONE_POLYS_NORM.items():
+        pts = np.array([(int(x * w), int(y * h)) for x, y in poly], dtype=np.int32)
+        color = ZONE_DRAW_COLORS.get(z, (120, 120, 120))
+        cv2.fillPoly(overlay, [pts], color)
+        cv2.polylines(out, [pts], True, color, 2)
+        cx = int(min(p[0] for p in poly) * w) + 8
+        cy = int(min(p[1] for p in poly) * h) + 22
+        cv2.putText(out, z.value.upper(), (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+    cv2.addWeighted(overlay, 0.18, out, 0.82, 0, out)
+
+    if det.xyxy is not None:
+        for i in range(len(det)):
+            x1, y1, x2, y2 = (int(v) for v in det.xyxy[i])
+            tid = int(det.tracker_id[i]) if det.tracker_id is not None else -1
+            cv2.rectangle(out, (x1, y1), (x2, y2), (90, 220, 120), 2)
+            label = f"#{tid}"
+            cv2.putText(out, label, (x1, max(14, y1 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (90, 220, 120), 2)
+    return out
+
+
 class TrackState:
     """Per-tracker funnel/dwell/activity bookkeeping. tracker_id is ephemeral."""
 
@@ -272,6 +310,14 @@ def main() -> None:
     parser.add_argument(
         "--max-frames", type=int, default=0, help="stop after N frames (0 = no cap)"
     )
+    parser.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="do not POST annotated MJPEG frames to the backend (events only)",
+    )
+    parser.add_argument(
+        "--stream-fps", type=float, default=10.0, help="annotated frame POST rate"
+    )
     args = parser.parse_args()
 
     import cv2
@@ -310,10 +356,16 @@ def main() -> None:
         flush=True,
     )
 
+    stream_on = not args.dry_run and not args.no_stream
+    stream_w = 720 if w > 720 else w  # downscale wide frames for a light payload
+    frame_interval = 1.0 / args.stream_fps if args.stream_fps > 0 else 0.1
+
     frame_idx = 0
     last_emit_t = -1e9
+    last_frame_t = -1e9
     wall_start = time.time()
     emitted = 0
+    frames_sent = 0
 
     while True:
         ok, frame = cap.read()
@@ -332,6 +384,24 @@ def main() -> None:
         _blur_faces_inplace(frame, det, w, h)  # privacy: blur heads before bbox leaves
 
         tracks, occupancy, productivity, grid = pipe.process(det, video_t, dt)
+
+        # Stream the annotated frame (zones + boxes baked in) to the backend.
+        if stream_on and video_t - last_frame_t >= frame_interval:
+            annotated = _annotate_frame(frame, det, w, h)
+            if stream_w != w:
+                annotated = cv2.resize(annotated, (stream_w, int(h * stream_w / w)))
+            okj, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 65])
+            if okj:
+                try:
+                    client.post(
+                        f"{BACKEND_URL}/frame",
+                        content=buf.tobytes(),
+                        headers={"Content-Type": "image/jpeg"},
+                    )
+                    frames_sent += 1
+                except Exception:
+                    pass  # don't let a dropped frame kill the pipeline
+            last_frame_t = video_t
 
         if video_t - last_emit_t >= EMIT_EVERY_S:
             event = SceneEvent(
@@ -365,7 +435,7 @@ def main() -> None:
     eff_fps = frame_idx / elapsed if elapsed > 0 else 0.0
     print(
         f"[perception] done: {frame_idx} frames, {emitted} events, "
-        f"{eff_fps:.1f} fps effective",
+        f"{frames_sent} frames streamed, {eff_fps:.1f} fps effective",
         flush=True,
     )
 
