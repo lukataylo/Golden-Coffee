@@ -11,7 +11,24 @@ Built for the Encode Vibe Coding Hackathon.
 Not a surveillance tool: no employee scoring, no demographics, no surge pricing, no using
 discomfort to move people along. Every action helps the customer or the staff.
 
-Full plan & team split: `~/.claude/plans/help-plan-a-hackathon-crystalline-papert.md`.
+## What we pivoted to
+
+Golden Coffee began as the viral *"dystopian café"* idea — grading employee productivity
+and nudging customers out with discomfort. **We pivoted away from that.** It is now an
+**ambient + ops copilot for cafés *and* restaurants** that only ever acts to help people:
+
+- **Comfort autopilot** — music, lights, scent, and AC tuned to the room (cosy in a lull, fresh & comfortable when busy).
+- **Rush copilot** — queue / walk-off detection → "open a second till" before you lose the sale.
+- **Table service** — per-table wait-times (seated → waiting → overdue).
+- **Cleaning** — table bussing + restroom cleaning cadence, by usage *and* time.
+- **Revenue at risk** — the £ that walked away from the queue, surfaced live.
+
+Privacy-first throughout (no faces stored, anonymous track IDs). The wedge: a **single
+existing camera** + **business-aware perception** + **an agent that takes real comfort/ops
+actions** — a combination no existing product (commercial or OSS) actually does. See
+[RESEARCH.md](RESEARCH.md) for the competitive landscape.
+
+Full plan & team split: see [TRACKS.md](TRACKS.md).
 
 ## Architecture
 
