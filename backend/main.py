@@ -15,11 +15,13 @@ dashboard (or the agent) gets immediate state instead of a blank screen.
 from __future__ import annotations
 
 import asyncio
+import json
+import os
 import time
 from collections import deque
 from pathlib import Path
 
-from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -28,7 +30,44 @@ from shared.schemas import AgentAction, SceneEvent
 
 # Repo root is the parent of this file's directory (backend/). Resolve to an
 # absolute path so static serving works regardless of the container CWD.
-DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "dashboard"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DASHBOARD_DIR = REPO_ROOT / "dashboard"
+
+# Optional shared-secret: if INGEST_TOKEN is set, producers must send it as
+# X-Token on /ingest and /frame. Left empty in dev so the demo "just works".
+INGEST_TOKEN = os.environ.get("INGEST_TOKEN", "")
+# Append-only metrics history (for Track B's footfall/labour forecasting).
+METRICS_PATH = REPO_ROOT / "data" / "metrics.jsonl"
+
+
+def _require_token(x_token: str | None) -> None:
+    if INGEST_TOKEN and x_token != INGEST_TOKEN:
+        raise HTTPException(status_code=401, detail="bad or missing X-Token")
+
+
+def _log_metrics(event: dict) -> None:
+    """Append a compact metrics row so forecasting has history. Best-effort."""
+    f = event.get("funnel", {}) or {}
+    row = {
+        "ts": event.get("ts"),
+        "occupancy": event.get("occupancy", 0),
+        "queue_len": event.get("queue_len", 0),
+        "entered": f.get("entered", 0),
+        "ordered": f.get("ordered", 0),
+        "abandoned": f.get("abandoned", 0),
+        "tables_waiting": sum(
+            1 for t in event.get("tables", []) if t.get("status") in ("waiting", "overdue")
+        ),
+        "cleaning_overdue": sum(
+            1 for c in event.get("cleaning", []) if c.get("status") == "overdue"
+        ),
+    }
+    try:
+        METRICS_PATH.parent.mkdir(exist_ok=True)
+        with METRICS_PATH.open("a") as fh:
+            fh.write(json.dumps(row) + "\n")
+    except Exception:
+        pass  # never let logging break ingestion
 
 app = FastAPI(title="Golden Coffee Hub")
 
@@ -97,8 +136,9 @@ async def health() -> dict:
 
 
 @app.post("/frame")
-async def frame(request: Request) -> dict:
+async def frame(request: Request, x_token: str | None = Header(None)) -> dict:
     """Perception POSTs the latest annotated JPEG (raw image/jpeg body) here."""
+    _require_token(x_token)
     data = await request.body()
     if data:
         hub.set_frame(data)
@@ -153,12 +193,33 @@ async def stream() -> StreamingResponse:
 
 
 @app.post("/ingest")
-async def ingest(event: SceneEvent) -> dict:
+async def ingest(event: SceneEvent, x_token: str | None = Header(None)) -> dict:
     """Producers (mock_events or perception) push scenes here."""
+    _require_token(x_token)
     payload = event.model_dump()
     hub.last_scene = payload
+    _log_metrics(payload)
     await hub.broadcast(payload)
     return {"ok": True}
+
+
+@app.get("/metrics")
+async def metrics(limit: int = 200) -> dict:
+    """Recent metrics history + a small summary (for forecasting / the pitch)."""
+    rows: list[dict] = []
+    if METRICS_PATH.exists():
+        lines = METRICS_PATH.read_text().splitlines()[-limit:]
+        for ln in lines:
+            try:
+                rows.append(json.loads(ln))
+            except Exception:
+                continue
+    summary = {
+        "samples": len(rows),
+        "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
+        "total_abandoned": rows[-1]["abandoned"] if rows else 0,
+    }
+    return {"summary": summary, "recent": rows}
 
 
 @app.post("/action")

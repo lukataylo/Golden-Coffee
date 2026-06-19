@@ -24,3 +24,6 @@ node_modules/
 
 # Eval artifacts (frames are large; keep manifest/report/judgments in git)
 eval/frames/
+
+# Runtime metrics history
+data/

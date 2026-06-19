@@ -22,6 +22,7 @@ Env:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import time
 
@@ -35,6 +36,7 @@ except ImportError:
 from shared.schemas import Funnel, Role, SceneEvent, Track, Zone
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+_TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
 EMIT_EVERY_S = float(os.environ.get("PERCEPTION_EMIT_S", "1.0"))
 
 # --- Tunables ----------------------------------------------------------------
@@ -130,6 +132,42 @@ CLEAN_DUE_USES = 8       # uses since last clean => "due"
 CLEAN_OVERDUE_USES = 15  # => "overdue"
 CLEAN_DUE_S = 1800.0     # 30 min since clean => "due"
 CLEAN_OVERDUE_S = 3600.0  # 60 min => "overdue"
+
+
+def load_geometry(path: str) -> None:
+    """Override zone/table/cleaning polygons (normalized 0..1) from a JSON file,
+    in place. Lets a track tune real camera geometry without touching code.
+    Format: {"zones": {"entry": [[x,y],...]}, "tables": {"T1": [...]}, "cleaning": {...}}.
+    """
+    with open(path) as f:
+        cfg = json.load(f)
+    if "zones" in cfg:
+        ZONE_POLYS_NORM.clear()
+        for name, poly in cfg["zones"].items():
+            ZONE_POLYS_NORM[Zone(name)] = [tuple(p) for p in poly]
+    if "tables" in cfg:
+        TABLE_POLYS_NORM.clear()
+        TABLE_POLYS_NORM.update({k: [tuple(p) for p in v] for k, v in cfg["tables"].items()})
+    if "cleaning" in cfg:
+        CLEAN_POLYS_NORM.clear()
+        CLEAN_POLYS_NORM.update({k: [tuple(p) for p in v] for k, v in cfg["cleaning"].items()})
+    print(
+        f"[perception] geometry from {path}: {len(ZONE_POLYS_NORM)} zones, "
+        f"{len(TABLE_POLYS_NORM)} tables, {len(CLEAN_POLYS_NORM)} cleaning zones",
+        flush=True,
+    )
+
+
+def dump_geometry(path: str) -> None:
+    """Write the current (default) geometry to JSON as a starting point to edit."""
+    cfg = {
+        "zones": {z.value: [list(p) for p in poly] for z, poly in ZONE_POLYS_NORM.items()},
+        "tables": {k: [list(p) for p in v] for k, v in TABLE_POLYS_NORM.items()},
+        "cleaning": {k: [list(p) for p in v] for k, v in CLEAN_POLYS_NORM.items()},
+    }
+    with open(path, "w") as f:
+        json.dump(cfg, f, indent=2)
+    print(f"[perception] wrote default geometry -> {path} (edit the normalized coords)")
 
 
 def _point_in_poly(pt, poly) -> bool:
@@ -485,14 +523,26 @@ def main() -> None:
     parser.add_argument(
         "--stream-fps", type=float, default=10.0, help="annotated frame POST rate"
     )
+    parser.add_argument(
+        "--model", default="yolo11n.pt",
+        help="YOLO weights: yolo11n (fast) .. yolo11m/x (more accurate on small/dense people)",
+    )
+    parser.add_argument("--zones", help="load zone/table/cleaning geometry from a JSON file")
+    parser.add_argument("--dump-zones", help="write the default geometry to this JSON path and exit")
     args = parser.parse_args()
+
+    if args.dump_zones:
+        dump_geometry(args.dump_zones)
+        return
+    if args.zones:
+        load_geometry(args.zones)
 
     import cv2
     import supervision as sv
     from ultralytics import YOLO
 
     source = _resolve_source(args.source)
-    model = YOLO("yolo11n.pt")
+    model = YOLO(args.model)
     tracker = sv.ByteTrack()
 
     # Use the FFMPEG backend for network streams (HLS/RTSP); default otherwise.
@@ -564,7 +614,7 @@ def main() -> None:
                     client.post(
                         f"{BACKEND_URL}/frame",
                         content=buf.tobytes(),
-                        headers={"Content-Type": "image/jpeg"},
+                        headers={"Content-Type": "image/jpeg", **_TOKEN_HEADERS},
                     )
                     frames_sent += 1
                 except Exception:
@@ -589,7 +639,7 @@ def main() -> None:
                 print(event.model_dump_json(), flush=True)
             else:
                 try:
-                    client.post(f"{BACKEND_URL}/ingest", json=event.model_dump())
+                    client.post(f"{BACKEND_URL}/ingest", json=event.model_dump(), headers=_TOKEN_HEADERS)
                 except Exception as exc:
                     print(f"[perception] backend unreachable: {exc}", flush=True)
             last_emit_t = video_t
