@@ -1,0 +1,338 @@
+[
+  {
+    "id": "grocery-store_0",
+    "video": "grocery-store",
+    "frame": 100,
+    "raw": "eval/frames/grocery-store_0_raw.jpg",
+    "annotated": "eval/frames/grocery-store_0_pred.jpg",
+    "pred_count": 0,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 0,
+      "seating": 0
+    }
+  },
+  {
+    "id": "grocery-store_1",
+    "video": "grocery-store",
+    "frame": 250,
+    "raw": "eval/frames/grocery-store_1_raw.jpg",
+    "annotated": "eval/frames/grocery-store_1_pred.jpg",
+    "pred_count": 1,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 1,
+      "seating": 0
+    }
+  },
+  {
+    "id": "grocery-store_2",
+    "video": "grocery-store",
+    "frame": 400,
+    "raw": "eval/frames/grocery-store_2_raw.jpg",
+    "annotated": "eval/frames/grocery-store_2_pred.jpg",
+    "pred_count": 1,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 1,
+      "seating": 0
+    }
+  },
+  {
+    "id": "grocery-store_3",
+    "video": "grocery-store",
+    "frame": 551,
+    "raw": "eval/frames/grocery-store_3_raw.jpg",
+    "annotated": "eval/frames/grocery-store_3_pred.jpg",
+    "pred_count": 1,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 1,
+      "seating": 0
+    }
+  },
+  {
+    "id": "grocery-store_4",
+    "video": "grocery-store",
+    "frame": 701,
+    "raw": "eval/frames/grocery-store_4_raw.jpg",
+    "annotated": "eval/frames/grocery-store_4_pred.jpg",
+    "pred_count": 1,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 1,
+      "seating": 0
+    }
+  },
+  {
+    "id": "grocery-store_5",
+    "video": "grocery-store",
+    "frame": 851,
+    "raw": "eval/frames/grocery-store_5_raw.jpg",
+    "annotated": "eval/frames/grocery-store_5_pred.jpg",
+    "pred_count": 1,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 1,
+      "seating": 0
+    }
+  },
+  {
+    "id": "market-square_0",
+    "video": "market-square",
+    "frame": 47,
+    "raw": "eval/frames/market-square_0_raw.jpg",
+    "annotated": "eval/frames/market-square_0_pred.jpg",
+    "pred_count": 6,
+    "pred_zone_counts": {
+      "entry": 1,
+      "queue": 1,
+      "counter": 2,
+      "seating": 2
+    }
+  },
+  {
+    "id": "market-square_1",
+    "video": "market-square",
+    "frame": 118,
+    "raw": "eval/frames/market-square_1_raw.jpg",
+    "annotated": "eval/frames/market-square_1_pred.jpg",
+    "pred_count": 4,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 1,
+      "counter": 3,
+      "seating": 0
+    }
+  },
+  {
+    "id": "market-square_2",
+    "video": "market-square",
+    "frame": 189,
+    "raw": "eval/frames/market-square_2_raw.jpg",
+    "annotated": "eval/frames/market-square_2_pred.jpg",
+    "pred_count": 5,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 2,
+      "counter": 3,
+      "seating": 0
+    }
+  },
+  {
+    "id": "market-square_3",
+    "video": "market-square",
+    "frame": 260,
+    "raw": "eval/frames/market-square_3_raw.jpg",
+    "annotated": "eval/frames/market-square_3_pred.jpg",
+    "pred_count": 7,
+    "pred_zone_counts": {
+      "entry": 2,
+      "queue": 2,
+      "counter": 2,
+      "seating": 1
+    }
+  },
+  {
+    "id": "market-square_4",
+    "video": "market-square",
+    "frame": 331,
+    "raw": "eval/frames/market-square_4_raw.jpg",
+    "annotated": "eval/frames/market-square_4_pred.jpg",
+    "pred_count": 7,
+    "pred_zone_counts": {
+      "entry": 1,
+      "queue": 1,
+      "counter": 4,
+      "seating": 1
+    }
+  },
+  {
+    "id": "market-square_5",
+    "video": "market-square",
+    "frame": 402,
+    "raw": "eval/frames/market-square_5_raw.jpg",
+    "annotated": "eval/frames/market-square_5_pred.jpg",
+    "pred_count": 3,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 1,
+      "counter": 1,
+      "seating": 1
+    }
+  },
+  {
+    "id": "subway_0",
+    "video": "subway",
+    "frame": 129,
+    "raw": "eval/frames/subway_0_raw.jpg",
+    "annotated": "eval/frames/subway_0_pred.jpg",
+    "pred_count": 10,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 7,
+      "seating": 3
+    }
+  },
+  {
+    "id": "subway_1",
+    "video": "subway",
+    "frame": 324,
+    "raw": "eval/frames/subway_1_raw.jpg",
+    "annotated": "eval/frames/subway_1_pred.jpg",
+    "pred_count": 8,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 7,
+      "seating": 1
+    }
+  },
+  {
+    "id": "subway_2",
+    "video": "subway",
+    "frame": 519,
+    "raw": "eval/frames/subway_2_raw.jpg",
+    "annotated": "eval/frames/subway_2_pred.jpg",
+    "pred_count": 7,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 2,
+      "counter": 2,
+      "seating": 3
+    }
+  },
+  {
+    "id": "subway_3",
+    "video": "subway",
+    "frame": 713,
+    "raw": "eval/frames/subway_3_raw.jpg",
+    "annotated": "eval/frames/subway_3_pred.jpg",
+    "pred_count": 10,
+    "pred_zone_counts": {
+      "entry": 2,
+      "queue": 2,
+      "counter": 5,
+      "seating": 1
+    }
+  },
+  {
+    "id": "subway_4",
+    "video": "subway",
+    "frame": 908,
+    "raw": "eval/frames/subway_4_raw.jpg",
+    "annotated": "eval/frames/subway_4_pred.jpg",
+    "pred_count": 9,
+    "pred_zone_counts": {
+      "entry": 1,
+      "queue": 1,
+      "counter": 4,
+      "seating": 3
+    }
+  },
+  {
+    "id": "subway_5",
+    "video": "subway",
+    "frame": 1103,
+    "raw": "eval/frames/subway_5_raw.jpg",
+    "annotated": "eval/frames/subway_5_pred.jpg",
+    "pred_count": 0,
+    "pred_zone_counts": {
+      "entry": 0,
+      "queue": 0,
+      "counter": 0,
+      "seating": 0
+    }
+  },
+  {
+    "id": "people-walking_0",
+    "video": "people-walking",
+    "frame": 34,
+    "raw": "eval/frames/people-walking_0_raw.jpg",
+    "annotated": "eval/frames/people-walking_0_pred.jpg",
+    "pred_count": 15,
+    "pred_zone_counts": {
+      "entry": 4,
+      "queue": 4,
+      "counter": 4,
+      "seating": 3
+    }
+  },
+  {
+    "id": "people-walking_1",
+    "video": "people-walking",
+    "frame": 85,
+    "raw": "eval/frames/people-walking_1_raw.jpg",
+    "annotated": "eval/frames/people-walking_1_pred.jpg",
+    "pred_count": 18,
+    "pred_zone_counts": {
+      "entry": 2,
+      "queue": 5,
+      "counter": 5,
+      "seating": 6
+    }
+  },
+  {
+    "id": "people-walking_2",
+    "video": "people-walking",
+    "frame": 136,
+    "raw": "eval/frames/people-walking_2_raw.jpg",
+    "annotated": "eval/frames/people-walking_2_pred.jpg",
+    "pred_count": 17,
+    "pred_zone_counts": {
+      "entry": 1,
+      "queue": 9,
+      "counter": 5,
+      "seating": 2
+    }
+  },
+  {
+    "id": "people-walking_3",
+    "video": "people-walking",
+    "frame": 187,
+    "raw": "eval/frames/people-walking_3_raw.jpg",
+    "annotated": "eval/frames/people-walking_3_pred.jpg",
+    "pred_count": 20,
+    "pred_zone_counts": {
+      "entry": 3,
+      "queue": 7,
+      "counter": 7,
+      "seating": 3
+    }
+  },
+  {
+    "id": "people-walking_4",
+    "video": "people-walking",
+    "frame": 238,
+    "raw": "eval/frames/people-walking_4_raw.jpg",
+    "annotated": "eval/frames/people-walking_4_pred.jpg",
+    "pred_count": 17,
+    "pred_zone_counts": {
+      "entry": 2,
+      "queue": 4,
+      "counter": 9,
+      "seating": 2
+    }
+  },
+  {
+    "id": "people-walking_5",
+    "video": "people-walking",
+    "frame": 289,
+    "raw": "eval/frames/people-walking_5_raw.jpg",
+    "annotated": "eval/frames/people-walking_5_pred.jpg",
+    "pred_count": 12,
+    "pred_zone_counts": {
+      "entry": 2,
+      "queue": 2,
+      "counter": 7,
+      "seating": 1
+    }
+  }
+]

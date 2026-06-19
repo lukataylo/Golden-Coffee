@@ -1,0 +1,29 @@
+{
+  "grocery-store_0": {"total": 1, "zones": {"entry":0,"queue":0,"counter":1,"seating":0}, "notes": "single masked shopper, body center ~56% -> counter"},
+  "grocery-store_1": {"total": 1, "zones": {"entry":0,"queue":0,"counter":1,"seating":0}, "notes": "same shopper farther down aisle"},
+  "grocery-store_2": {"total": 1, "zones": {"entry":0,"queue":0,"counter":1,"seating":0}, "notes": "one shopper with cart"},
+  "grocery-store_3": {"total": 1, "zones": {"entry":0,"queue":0,"counter":1,"seating":0}, "notes": "one shopper reaching left shelf"},
+  "grocery-store_4": {"total": 1, "zones": {"entry":0,"queue":0,"counter":1,"seating":0}, "notes": "single shopper behind cart"},
+  "grocery-store_5": {"total": 1, "zones": {"entry":0,"queue":0,"counter":1,"seating":0}, "notes": "one shopper facing camera"},
+
+  "market-square_0": {"total": 64, "zones": {"entry":16,"queue":15,"counter":17,"seating":16}, "notes": "very dense aerial plaza, many tiny/overlapping figures"},
+  "market-square_1": {"total": 58, "zones": {"entry":14,"queue":14,"counter":16,"seating":14}, "notes": "dark clothing blends into shadowed paving"},
+  "market-square_2": {"total": 55, "zones": {"entry":14,"queue":13,"counter":15,"seating":13}, "notes": "central fountain cluster overlaps heavily"},
+  "market-square_3": {"total": 60, "zones": {"entry":15,"queue":15,"counter":16,"seating":14}, "notes": "dense central knot hard to resolve"},
+  "market-square_4": {"total": 57, "zones": {"entry":14,"queue":14,"counter":15,"seating":14}, "notes": "tight mid-frame group overlapping"},
+  "market-square_5": {"total": 56, "zones": {"entry":13,"queue":15,"counter":15,"seating":13}, "notes": "mid-frame horizontal cluster overlaps"},
+
+  "subway_0": {"total": 18, "zones": {"entry":0,"queue":1,"counter":14,"seating":3}, "notes": "platform recedes to center; ~5 small queue figures + balcony people"},
+  "subway_1": {"total": 13, "zones": {"entry":0,"queue":1,"counter":11,"seating":1}, "notes": "most feet fall in center band; distant blur"},
+  "subway_2": {"total": 19, "zones": {"entry":0,"queue":2,"counter":12,"seating":5}, "notes": "busy walking crowd, +/-2 uncertain"},
+  "subway_3": {"total": 26, "zones": {"entry":2,"queue":6,"counter":12,"seating":6}, "notes": "most crowded; heavy overlap, +/-3-4"},
+  "subway_4": {"total": 15, "zones": {"entry":3,"queue":2,"counter":5,"seating":5}, "notes": "motion blur on several walkers"},
+  "subway_5": {"total": 2, "zones": {"entry":1,"queue":0,"counter":1,"seating":0}, "notes": "nearly empty platform"},
+
+  "people-walking_0": {"total": 37, "zones": {"entry":12,"queue":9,"counter":8,"seating":8}, "notes": "tight cluster mid-left; tiny background figures"},
+  "people-walking_1": {"total": 35, "zones": {"entry":10,"queue":8,"counter":7,"seating":10}, "notes": "dense top row, left-side huddle"},
+  "people-walking_2": {"total": 33, "zones": {"entry":9,"queue":9,"counter":7,"seating":8}, "notes": "left group of ~5 overlaps heavily"},
+  "people-walking_3": {"total": 34, "zones": {"entry":9,"queue":10,"counter":9,"seating":6}, "notes": "mid-left cluster + stroller area"},
+  "people-walking_4": {"total": 33, "zones": {"entry":9,"queue":8,"counter":9,"seating":7}, "notes": "left huddle of ~4-5 overlapping"},
+  "people-walking_5": {"total": 32, "zones": {"entry":8,"queue":9,"counter":8,"seating":7}, "notes": "left-side group clustered; cropped top-edge figures"}
+}

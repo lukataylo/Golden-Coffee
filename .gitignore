@@ -21,3 +21,6 @@ node_modules/
 
 # OS
 .DS_Store
+
+# Eval artifacts (frames are large; keep manifest/report/judgments in git)
+eval/frames/
