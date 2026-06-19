@@ -134,9 +134,16 @@ The constant across all phases: **everything reads/writes the normalized-polygon
 already defined by `build_geometry`, so generation and rendering stay decoupled (same discipline
 as `SceneEvent`/`AgentAction`).
 
-- **P0 — Render what we already have (½ day, highest demo ROI).** Three.js isometric extrusion of
-  the current `zones.json` + tables, bound to live `SceneEvent` (zone heat, table status, staff
-  alert pulse, **comfort-action glow**). Vanilla `<canvas>` CSS-isometric as the no-WebGL fallback.
+- **P0 — Render what we already have (½ day, highest demo ROI). ✅ SHIPPED.**
+  `dashboard/floor3d.js` — a Three.js isometric extrusion of the current zone bands + tables, bound
+  to live `SceneEvent` (zone occupancy heat, per-zone head-count, anonymous track dots, table-status
+  pucks, a staff-alert beacon, and **comfort-action glow**: room light brightness/warmth follow
+  `set_lighting`, a counter ring pulses with `set_music_volume`). Three.js is **vendored locally**
+  (`dashboard/vendor/three.min.js`, MIT) so it works offline; a 3D/2D toggle falls back to the
+  original `<canvas>` heatmap if WebGL is unavailable. Ships with a **Demo mode** (header button /
+  `?demo=1` / auto-starts on `file://`) — a self-contained synthetic café that mirrors
+  `shared/mock_events.py` and fires believable agent actions, so the whole product runs from a
+  single file with no backend, perception, or camera.
 - **P1 — Honest geometry via homography (½–1 day, highest accuracy ROI).** `draw_zones --calibrate`
   (4 floor corners → H in `zones.json`); project track foot-points top-down; warped floor plate as
   the map background. Removes the perspective smear from heatmap + dots.
