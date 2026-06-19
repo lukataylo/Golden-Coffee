@@ -55,11 +55,13 @@ python -m agent.agent                         # P2: rule-based (or Claude) polic
 python -m actuators.run                       # P3: subscribe to /ws and drive real devices
 ```
 
-## Workstreams (4 people)
-- **P1 Perception** — `perception/`, `clips/`. YOLO11 + supervision (ByteTrack, zones, dwell, heatmap, funnel). Emit real `SceneEvent`s + annotated `/stream`.
-- **P2 Agent** — `agent/`, `federated/`. Rule-based / Claude tool-use policy + discount engine + FLock.
-- **P3 Backend/Actuators** — `backend/`, `actuators/`. WS hub + actuator executor: Spotify volume, **IR AC/heater** (Broadlink), **Telegram** alerts, discount board.
-- **P4 Frontend/Pitch** — `dashboard/`. Feed-dominant dashboard (live feed + stats + floorplan); demo deck.
+## Workstreams (4 tracks)
+Full breakdown with current tasks per track: **[TRACKS.md](TRACKS.md)** (and the
+matching GitHub issues, one per track).
+- **Track A · Perception** — `perception/`, `clips/`, `eval/`. Detection/tracking, zones, funnel, heatmap, **table wait-times + cleaning**, MJPEG stream.
+- **Track B · Agent & Intelligence** — `agent/`, `federated/`. Comfort + rush + table/cleaning policy; Claude path; walkaway £ metric; forecast; FLock.
+- **Track C · Backend & Actuators** — `backend/`, `actuators/`. WS hub + executor: Spotify, **IR AC**, **Hue lights**, **scent**, **Telegram**.
+- **Track D · Frontend & Product** — `dashboard/`. Live / Floorplan / Tables views, Comfort panel; pitch deck + demo.
 
 ## Pre-hackathon prep
 - Spotify **Premium** + app credentials + run the OAuth consent once (`python -m actuators.spotify 40`).
