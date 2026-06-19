@@ -27,3 +27,6 @@ eval/frames/
 
 # Runtime metrics history
 data/
+
+# Locally re-trained music-model weights (baked defaults live in music_model.py)
+agent/music_weights.json

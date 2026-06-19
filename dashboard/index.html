@@ -553,7 +553,7 @@
               <div class="crow">
                 <span class="cic" aria-hidden="true">🔊</span>
                 <div class="cmeta">
-                  <div class="cname">Music volume</div>
+                  <div class="cname">Music <span id="cm-music-mood" class="tag" style="font-weight:600"></span></div>
                   <div class="cval" id="cm-music-val">volume —</div>
                 </div>
               </div>
@@ -1074,7 +1074,7 @@
     }
 
     // ---------- action render ----------
-    var ACTION_ICON = { set_music_volume:"🔊", set_temperature:"🌡", set_lighting:"💡", set_scent:"🌸", push_discount:"💸", notify_staff:"🔔", suggest_layout:"🧭" };
+    var ACTION_ICON = { set_music_volume:"🔊", set_music:"🎵", set_temperature:"🌡", set_lighting:"💡", set_scent:"🌸", push_discount:"💸", notify_staff:"🔔", suggest_layout:"🧭" };
     function inferZone(text) {
       var t = (text || "").toLowerCase();
       if (/seat|table|dining/.test(t)) return "seating";
@@ -1178,6 +1178,12 @@
     }
     function renderMusic() {
       var fill = $("cm-music-fill"), val = $("cm-music-val");
+      var moodEl = $("cm-music-mood");
+      if (moodEl) {
+        moodEl.textContent = comfort.mood
+          ? ("♪ " + comfort.mood + (comfort.bpm ? " · " + comfort.bpm + " BPM" : ""))
+          : "";
+      }
       if (comfort.volume == null) { fill.style.width = "0"; val.textContent = "volume —"; return; }
       fill.style.width = comfort.volume + "%";
       val.innerHTML = "volume <b>" + comfort.volume + "%</b>";
@@ -1198,6 +1204,11 @@
           if (p.scent) comfort.scent = p.scent;
           renderScent(); break;
         case "set_music_volume":
+          if (typeof p.volume === "number") comfort.volume = Math.max(0, Math.min(100, p.volume));
+          renderMusic(); break;
+        case "set_music":
+          if (p.label || p.mood) comfort.mood = p.label || p.mood;
+          if (typeof p.bpm === "number") comfort.bpm = p.bpm;
           if (typeof p.volume === "number") comfort.volume = Math.max(0, Math.min(100, p.volume));
           renderMusic(); break;
       }

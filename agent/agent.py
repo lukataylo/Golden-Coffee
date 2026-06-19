@@ -54,6 +54,7 @@ SYSTEM = (
 # whether the rule engine or Claude fires an action.
 _CLAUDE_DEBOUNCE: dict[str, str] = {
     "set_music_volume": "music",
+    "set_music":        "music_mood",
     "set_temperature":  "temperature",
     "set_lighting":     "lighting",
     "set_scent":        "scent",
@@ -70,6 +71,29 @@ TOOLS = [
             "type": "object",
             "properties": {"volume": {"type": "integer"}, "rationale": {"type": "string"}},
             "required": ["volume", "rationale"],
+        },
+    },
+    {
+        "name": "set_music",
+        "description": (
+            "Change WHAT music is playing (mood/genre/playlist), not just volume. "
+            "Use the local music model's vibes: 'sunrise_acoustic' (quiet morning), "
+            "'daytime_focus' (steady daytime), 'upbeat_lift' (flat/low-energy room), "
+            "'rush_flow' (queue building — steady groove keeps the line moving), "
+            "'busy_calm' (full room — soft so it stays talkable), 'evening_warm' (evening wind-down). "
+            "Switch the mood when the room's state clearly calls for a different vibe."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mood": {
+                    "type": "string",
+                    "enum": ["sunrise_acoustic", "daytime_focus", "upbeat_lift",
+                             "rush_flow", "busy_calm", "evening_warm"],
+                },
+                "rationale": {"type": "string"},
+            },
+            "required": ["mood", "rationale"],
         },
     },
     {
@@ -251,6 +275,20 @@ class Agent:
             policy._mark(self.state, debounce_key, now)
             params = dict(block.input)
             rationale = params.pop("rationale", "")
+            if block.name == "set_music":
+                # Claude only chooses a mood; expand it to the full directive
+                # (playlist/BPM/volume/descriptors) from the local music catalog.
+                from agent.music_model import MOODS, playlist_for
+                mood = params.get("mood", "")
+                m = MOODS.get(mood)
+                if m is not None:
+                    params = {
+                        "mood": m.key, "label": m.label,
+                        "playlist_uri": playlist_for(m.key),
+                        "descriptors": m.descriptors, "bpm": m.bpm,
+                        "energy": round(m.energy, 2), "volume": m.volume,
+                    }
+                    self.state["music_mood"] = m.key
             out.append({
                 "type": "action", "ts": now, "action": block.name,
                 "params": params, "rationale": rationale,

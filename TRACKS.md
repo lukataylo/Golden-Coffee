@@ -44,6 +44,9 @@ Claude tool-use path gated behind `ANTHROPIC_API_KEY`.
 - [ ] **Footfall forecast**: simple time-series over occupancy → next-hour staffing /
       prep suggestion (the recurring-value, gap-in-market feature).
 - [ ] **Time-of-day comfort**: morning = brighter + citrus; evening = warm + dim.
+- [x] **Local music model** (`agent/music_model.py`): on-device softmax model maps
+      the scene (occupancy/queue/energy/time-of-day) → a café mood (genre + BPM +
+      playlist), emitting `set_music`. Trained locally, no API key. See MUSIC.md.
 - [ ] **FLock**: minimal federated integration (privacy story + sponsor bounty).
 
 ## Track C — Backend & Actuators / Integrations  ·  `backend/` `actuators/`

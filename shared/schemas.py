@@ -95,6 +95,7 @@ class SceneEvent(BaseModel):
 # ---------------------------------------------------------------------------
 ActionName = Literal[
     "set_music_volume",   # Spotify volume 0-100
+    "set_music",          # local music model: switch mood/playlist {mood, playlist_uri, bpm, energy, volume}
     "set_temperature",    # AC/heater via IR: {delta_c}
     "set_lighting",       # smart lights: {brightness 0-100, warmth: warm|neutral|cool}
     "set_scent",          # scent diffuser: {intensity 0-100, scent}

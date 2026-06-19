@@ -30,6 +30,7 @@ import time
 from shared.schemas import AgentAction
 
 from agent.discounts import quiet_hour_discount, takeaway_discount
+from agent.music_model import MusicModel
 
 # --- thresholds (all named so they're easy to tune in a demo) -------------
 LULL_OCCUPANCY = 3          # <= this many people => the room feels flat
@@ -42,6 +43,10 @@ MANY_LONG_DWELLERS = 2      # >= this many settled guests in a full room
 HIGH_QUEUE = 3              # queue at/over this => service is slipping
 ABANDON_DELTA = 1           # walk-offs rising by >= this since last scene => act
 AVG_TICKET_GBP = 4.80       # average spend per customer (for walkaway £ metric)
+
+# local music model — picks the *track/mood* (genre, BPM, playlist) from the data.
+# Volume rules below still apply; this chooses *what's playing*.
+_MUSIC_MODEL = MusicModel()
 
 # music — ambient autopilot tunes energy both ways
 MUSIC_LULL_VOLUME = 60      # lift the vibe in a flat room
@@ -81,6 +86,7 @@ def _ambient_scent(hour: int) -> tuple[int, str]:
 # each other (e.g. a queue alert won't suppress an unattended-guest nudge).
 DEBOUNCE_S = {
     "music": 90,
+    "music_mood": 120,  # switching the *track/mood* (vs. just volume) — a bit slower
     "discount_quiet": 600,
     "discount_togo": 600,
     "temperature": 300,
@@ -178,6 +184,21 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             {"text": f"Queue building{gbp_note} — can someone open a second till?",
              "priority": "high"},
             f"{why}; open another till so we don't lose the sale.",
+        ))
+
+    # --- 1b. LOCAL MUSIC MODEL: pick the track/mood from the room's data ------
+    # A small on-device softmax model maps occupancy/queue/energy/time-of-day to
+    # a café "mood" (genre, BPM, playlist). It changes *what's playing* (the
+    # volume rules below still tune loudness). Hysteresis avoids thrashing.
+    current_mood = state.get("music_mood")
+    directive, changed = _MUSIC_MODEL.recommend(scene, current_mood)
+    if changed and _due(state, "music_mood", now):
+        # Only advance the stored mood when we actually switch the track, so a
+        # debounced switch is retried next tick rather than silently dropped.
+        _mark(state, "music_mood", now)
+        state["music_mood"] = directive.mood
+        actions.append(_action(
+            now, "set_music", directive.params(), directive.rationale,
         ))
 
     # --- 2. AMBIENT: busy room -> cool for comfort + soften the music --------

@@ -17,7 +17,7 @@ Golden Coffee began as the viral *"dystopian café"* idea — grading employee p
 and nudging customers out with discomfort. **We pivoted away from that.** It is now an
 **ambient + ops copilot for cafés *and* restaurants** that only ever acts to help people:
 
-- **Comfort autopilot** — music, lights, scent, and AC tuned to the room (cosy in a lull, fresh & comfortable when busy).
+- **Comfort autopilot** — music, lights, scent, and AC tuned to the room (cosy in a lull, fresh & comfortable when busy). A **local music model** even picks the *playlist/mood* (genre + tempo) from the data — see [MUSIC.md](MUSIC.md).
 - **Rush copilot** — queue / walk-off detection → "open a second till" before you lose the sale.
 - **Table service** — per-table wait-times (seated → waiting → overdue).
 - **Cleaning** — table bussing + restroom cleaning cadence, by usage *and* time.

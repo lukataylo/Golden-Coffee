@@ -38,6 +38,14 @@ def dispatch(action: dict) -> None:
     try:
         if name == "set_music_volume":
             spotify.set_volume(int(p.get("volume", 50)))
+        elif name == "set_music":
+            vol = p.get("volume")
+            spotify.set_music(
+                playlist_uri=str(p.get("playlist_uri", "")),
+                descriptors=str(p.get("descriptors", "")),
+                volume=int(vol) if vol is not None else None,
+                mood=str(p.get("mood", "")),
+            )
         elif name == "set_temperature":
             infrared.set_temperature(float(p.get("delta_c", 0)))
         elif name == "set_lighting":

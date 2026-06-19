@@ -58,5 +58,50 @@ def set_volume(percent: int) -> bool:
         return False
 
 
+def set_music(
+    playlist_uri: str = "",
+    descriptors: str = "",
+    volume: int | None = None,
+    mood: str = "",
+) -> bool:
+    """Switch what's playing to match a mood chosen by the local music model.
+
+    Starts playback of `playlist_uri` on the active device (and optionally sets
+    `volume`). If no URI is given, falls back to searching Spotify for a playlist
+    matching `descriptors`. Degrades gracefully (returns False) when creds or an
+    active device are missing, so the demo never crashes on music.
+    """
+    if not os.environ.get("SPOTIPY_CLIENT_ID"):
+        print(f"[spotify] (not configured) would play mood={mood!r} "
+              f"uri={playlist_uri or '(search: '+descriptors+')'} vol={volume}")
+        return False
+    try:
+        sp = _client()
+        devices = sp.devices().get("devices", [])
+        if not devices:
+            print("[spotify] no active device — open Spotify and press play")
+            return False
+        device_id = next((d["id"] for d in devices if d.get("is_active")), devices[0]["id"])
+
+        uri = playlist_uri
+        if not uri and descriptors:
+            res = sp.search(q=descriptors, type="playlist", limit=1)
+            items = (res.get("playlists", {}) or {}).get("items", []) or []
+            if items:
+                uri = items[0]["uri"]
+        if not uri:
+            print(f"[spotify] no playlist for mood={mood!r}; leaving playback as-is")
+            return False
+
+        sp.start_playback(device_id=device_id, context_uri=uri)
+        if volume is not None:
+            sp.volume(max(0, min(100, int(volume))), device_id=device_id)
+        print(f"[spotify] mood={mood!r} -> {uri}" + (f" @ vol {volume}" if volume is not None else ""))
+        return True
+    except Exception as exc:
+        print(f"[spotify] set_music failed: {exc}")
+        return False
+
+
 if __name__ == "__main__":
     set_volume(int(sys.argv[1]) if len(sys.argv) > 1 else 40)
