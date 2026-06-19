@@ -582,10 +582,10 @@
                     data-rationale="Operator boosted music to lift energy."
                     aria-label="Boost music volume to 70">
               <span class="ic">🔊</span><span><span class="t">Boost music</span><br><span class="d">volume → 70</span></span></button>
-            <button class="ovr" data-action="set_temperature" data-params='{"celsius":20}'
+            <button class="ovr" data-action="set_temperature" data-params='{"delta_c":-2}'
                     data-rationale="Operator cooled the room for comfort."
-                    aria-label="Cool room to 20 degrees">
-              <span class="ic">🌡</span><span><span class="t">Cool room</span><br><span class="d">temp → 20°C</span></span></button>
+                    aria-label="Cool the room">
+              <span class="ic">🌡</span><span><span class="t">Cool room</span><br><span class="d">cooler · −2°C</span></span></button>
             <button class="ovr" data-action="push_discount" data-params='{"text":"20% off pastries"}'
                     data-rationale="Operator pushed a discount to drive conversion."
                     aria-label="Push 20 percent off pastries discount">
@@ -1222,7 +1222,14 @@
     function connect() {
       setConn(retry === 0 ? "connecting" : "down");
       try { sock = new WebSocket(EP.ws); } catch (e) { scheduleReconnect(); return; }
-      sock.onopen = function () { retry = 0; setConn("live"); };
+      sock.onopen = function () {
+        retry = 0; setConn("live");
+        // The backend replays its full action log on every (re)connect. Reset
+        // derived state so replays are idempotent: otherwise each temp nudge is
+        // re-added and the feed gets duplicate entries on every reconnect.
+        comfort = { tempNudge:null, tempAbs:null, brightness:null, warmth:null, intensity:null, scent:null, volume:null };
+        $("feed").innerHTML = ""; feedHasItems = false;
+      };
       sock.onmessage = function (e) {
         var m; try { m = JSON.parse(e.data); } catch (err) { return; }
         if (m.type === "scene") renderScene(m);

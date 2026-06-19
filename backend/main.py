@@ -114,7 +114,9 @@ class Hub:
     async def broadcast(self, message: dict) -> None:
         async with self._lock:
             dead = []
-            for ws in self.clients:
+            # Iterate a snapshot: connect()/disconnect() can mutate self.clients
+            # during the await below (set-changed-size-during-iteration -> 500).
+            for ws in list(self.clients):
                 try:
                     await ws.send_json(message)
                 except Exception:
@@ -218,7 +220,7 @@ async def metrics(limit: int = 200) -> dict:
     summary = {
         "samples": len(rows),
         "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
-        "total_abandoned": rows[-1]["abandoned"] if rows else 0,
+        "total_abandoned": rows[-1].get("abandoned", 0) if rows else 0,
     }
     return {"summary": summary, "recent": rows}
 

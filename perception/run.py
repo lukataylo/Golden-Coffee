@@ -228,6 +228,9 @@ class TableMonitor:
             if occupied and not s["was_occ"]:        # new party seated
                 s["occ_since"] = t
                 s["uses"] += 1
+                if s["dirty"]:                       # table reused -> treat as turned over
+                    s["dirty"] = False
+                    s["clean_t"] = t
             if not occupied and s["was_occ"]:        # party left -> needs bussing
                 s["dirty"] = True
             s["was_occ"] = occupied
@@ -363,16 +366,21 @@ class Pipeline:
     def _on_zone_change(self, st: TrackState, new_zone: Zone, t: float) -> None:
         """Advance the conversion funnel on a zone transition."""
         old = st.zone
-        # abandoned: was queueing, leaves to anywhere but the counter, never ordered
+        # abandoned: was queueing, leaves the line entirely (not to counter/queue
+        # and not to a seat) without ever ordering. SEATING is excluded so a guest
+        # who queues then sits isn't double-counted as abandoned + seated.
         if (
             old == Zone.QUEUE
-            and new_zone not in (Zone.COUNTER, Zone.QUEUE)
+            and new_zone not in (Zone.COUNTER, Zone.QUEUE, Zone.SEATING)
             and Zone.COUNTER not in st.visited
             and not st.ordered
             and not st.abandoned
         ):
             st.abandoned = True
             self.funnel.abandoned += 1
+        # counter dwell is only a purchase proxy when CONTIGUOUS — reset on leaving.
+        if old == Zone.COUNTER and new_zone != Zone.COUNTER:
+            st.counter_dwell = 0.0
         st.zone = new_zone
         st.zone_since = t
         st.visited.add(new_zone)
@@ -420,7 +428,20 @@ class Pipeline:
                     self.funnel.ordered += 1
                 # someone living behind the counter looks like staff, not a customer
                 if st.counter_dwell >= STAFF_DWELL_S:
-                    st.role = Role.STAFF
+                    if st.role != Role.STAFF:
+                        st.role = Role.STAFF
+                        # Roll back this track's customer-funnel contributions — a
+                        # barista parked at the counter must not inflate
+                        # entered/approached/ordered (and thus cups_made).
+                        if st.entered:
+                            self.funnel.entered -= 1
+                            st.entered = False
+                        if st.approached:
+                            self.funnel.approached -= 1
+                            st.approached = False
+                        if st.ordered:
+                            self.funnel.ordered -= 1
+                            st.ordered = False
                 elif st.role == Role.UNKNOWN:
                     st.role = Role.CUSTOMER
             elif st.role == Role.UNKNOWN and st.entered:
