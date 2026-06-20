@@ -404,40 +404,126 @@ async def action(act: AgentAction, x_token: Optional[str] = Header(None)) -> dic
     return {"ok": True}
 
 
+# ---------------------------------------------------------------------------
+# Spotify OAuth — server-side token store so any desktop can use the SDK.
+# One-time setup: visit  GET /spotify/auth  in a browser, click Allow.
+# After that /spotify/token returns a fresh token to any dashboard client.
+# ---------------------------------------------------------------------------
+import base64 as _b64
+import httpx as _httpx
+
+_SP_SCOPE = "user-modify-playback-state user-read-playback-state streaming"
+_sp_refresh_tok: Optional[str] = None
+_sp_access_tok:  Optional[str] = None
+_sp_expires_at:  float = 0.0
+
+
+def _sp_callback_uri() -> str:
+    base = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
+    return f"{base}/spotify/callback"
+
+
+async def _sp_do_refresh(refresh_token: str) -> str | None:
+    global _sp_access_tok, _sp_expires_at
+    cid  = os.environ.get("SPOTIPY_CLIENT_ID", "")
+    csec = os.environ.get("SPOTIPY_CLIENT_SECRET", "")
+    if not (cid and csec):
+        return None
+    creds = _b64.b64encode(f"{cid}:{csec}".encode()).decode()
+    try:
+        async with _httpx.AsyncClient() as client:
+            r = await client.post(
+                "https://accounts.spotify.com/api/token",
+                headers={"Authorization": f"Basic {creds}",
+                         "Content-Type": "application/x-www-form-urlencoded"},
+                data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+            )
+        if r.status_code == 200:
+            tok = r.json()
+            _sp_access_tok = tok["access_token"]
+            _sp_expires_at = time.time() + tok.get("expires_in", 3600) - 60
+            return _sp_access_tok
+    except Exception:
+        pass
+    return None
+
+
+@app.get("/spotify/auth")
+async def spotify_auth():
+    """Redirect to Spotify OAuth. Visit once in any browser; token stored server-side
+    so every dashboard client can call /spotify/token without their own auth."""
+    from fastapi.responses import RedirectResponse
+    from urllib.parse import urlencode
+    cid = os.environ.get("SPOTIPY_CLIENT_ID", "")
+    if not cid:
+        raise HTTPException(status_code=503, detail="SPOTIPY_CLIENT_ID not set — add it to .env / Railway vars")
+    params = urlencode({
+        "client_id": cid,
+        "response_type": "code",
+        "redirect_uri": _sp_callback_uri(),
+        "scope": _SP_SCOPE,
+    })
+    return RedirectResponse(f"https://accounts.spotify.com/authorize?{params}")
+
+
+@app.get("/spotify/callback")
+async def spotify_callback(code: Optional[str] = None, error: Optional[str] = None) -> dict:
+    """Spotify redirects here after the user clicks Allow. Exchanges the code for
+    access + refresh tokens and stores them in memory for all subsequent requests."""
+    global _sp_refresh_tok, _sp_access_tok, _sp_expires_at
+    if error:
+        raise HTTPException(status_code=400, detail=f"Spotify auth denied: {error}")
+    if not code:
+        raise HTTPException(status_code=400, detail="missing code parameter")
+    cid  = os.environ.get("SPOTIPY_CLIENT_ID", "")
+    csec = os.environ.get("SPOTIPY_CLIENT_SECRET", "")
+    if not (cid and csec):
+        raise HTTPException(status_code=503, detail="Spotify credentials not configured")
+    creds = _b64.b64encode(f"{cid}:{csec}".encode()).decode()
+    async with _httpx.AsyncClient() as client:
+        r = await client.post(
+            "https://accounts.spotify.com/api/token",
+            headers={"Authorization": f"Basic {creds}",
+                     "Content-Type": "application/x-www-form-urlencoded"},
+            data={"grant_type": "authorization_code",
+                  "code": code,
+                  "redirect_uri": _sp_callback_uri()},
+        )
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Token exchange failed: {r.text}")
+    tok = r.json()
+    _sp_refresh_tok = tok.get("refresh_token")
+    _sp_access_tok  = tok.get("access_token")
+    _sp_expires_at  = time.time() + tok.get("expires_in", 3600) - 60
+    return {"ok": True, "message": "Spotify connected — dashboard is ready on any device. You can close this tab."}
+
+
 @app.get("/spotify/token")
 async def spotify_token() -> dict:
     """Return a fresh Spotify access token for the Web Playback SDK.
-    Reads the spotipy cache and refreshes if expired. Returns {"error":...}
-    (not 4xx) so the dashboard can degrade gracefully when unconfigured."""
-    import json as _json
-    from pathlib import Path as _Path
-    cache = _Path(".spotipy-cache")
-    if not cache.exists():
-        return {"error": "not authenticated — run: python -m actuators.spotify"}
-    try:
-        data = _json.loads(cache.read_text())
-        if data.get("expires_at", 0) < time.time() + 60:
-            cid = os.environ.get("SPOTIPY_CLIENT_ID", "")
-            csec = os.environ.get("SPOTIPY_CLIENT_SECRET", "")
-            ruri = os.environ.get("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
-            if not (cid and csec):
-                return {"error": "SPOTIPY_CLIENT_ID / SECRET not set"}
-            try:
-                import spotipy
-                from spotipy.oauth2 import SpotifyOAuth
-                auth = SpotifyOAuth(client_id=cid, client_secret=csec,
-                                    redirect_uri=ruri,
-                                    scope="user-modify-playback-state user-read-playback-state streaming",
-                                    cache_path=".spotipy-cache")
-                refreshed = await asyncio.to_thread(
-                    auth.refresh_access_token, data["refresh_token"]
-                )
-                return {"access_token": refreshed["access_token"]}
-            except Exception as exc:
-                return {"error": f"refresh failed: {exc}"}
-        return {"access_token": data["access_token"]}
-    except Exception as exc:
-        return {"error": str(exc)}
+    Returns {"error":...} (not 4xx) so the dashboard degrades gracefully."""
+    global _sp_access_tok, _sp_expires_at
+    # 1. In-memory tokens (set after /spotify/callback)
+    if _sp_refresh_tok:
+        if _sp_access_tok and time.time() < _sp_expires_at:
+            return {"access_token": _sp_access_tok}
+        refreshed = await _sp_do_refresh(_sp_refresh_tok)
+        if refreshed:
+            return {"access_token": refreshed}
+    # 2. Fall back to local spotipy cache (dev machines that ran OAuth locally)
+    cache = Path(".spotipy-cache")
+    if cache.exists():
+        try:
+            data = json.loads(cache.read_text())
+            if data.get("expires_at", 0) > time.time() + 60:
+                return {"access_token": data["access_token"]}
+            if data.get("refresh_token"):
+                refreshed = await _sp_do_refresh(data["refresh_token"])
+                if refreshed:
+                    return {"access_token": refreshed}
+        except Exception:
+            pass
+    return {"error": "not authenticated — visit /spotify/auth to connect Spotify"}
 
 
 @app.get("/music/mode")
