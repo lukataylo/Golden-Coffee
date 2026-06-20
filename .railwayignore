@@ -1,0 +1,33 @@
+# Keep the `railway up` upload small — the backend image only needs
+# backend/, shared/, actuators/, onchain/, agent/, dashboard/ + start files.
+# Everything below is either huge, local-only, or irrelevant to the hub.
+.venv/
+venv/
+.git/
+__pycache__/
+**/__pycache__/
+*.pyc
+node_modules/
+**/node_modules/
+.next/
+.vercel/
+.env
+.DS_Store
+
+# Large / unrelated trees
+web/
+controller-ios/
+visual-tests-antigravity/
+clips/
+codeplain/
+eval/
+landing/
+federated/
+perception/
+data/
+
+# Model weights / media (not used by the hub container)
+*.pt
+*.tflite
+*.mp4
+*.mov
