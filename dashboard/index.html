@@ -1209,9 +1209,7 @@
     return Math.round(clamp(x / rect.width, 0, 1) * 100);
   }
   $("light-track").addEventListener("click", function (e) { doManual("set_lighting", { brightness: trackPct(this, e), warmth:"warm" }, "Set the lighting level."); });
-  $("scent-track").addEventListener("click", function (e) { doManual("set_scent", { intensity: trackPct(this, e), scent: comfort.scent }, "Set the scent level."); });
   $("light-track").addEventListener("keydown", function (e) { var d = e.key === "ArrowRight" ? 5 : e.key === "ArrowLeft" ? -5 : 0; if (d) { e.preventDefault(); doManual("set_lighting", { brightness: clamp(comfort.brightness + d, 0, 100), warmth:"warm" }, "Set the lighting level."); } });
-  $("scent-track").addEventListener("keydown", function (e) { var d = e.key === "ArrowRight" ? 5 : e.key === "ArrowLeft" ? -5 : 0; if (d) { e.preventDefault(); doManual("set_scent", { intensity: clamp(comfort.intensity + d, 0, 100), scent: comfort.scent }, "Set the scent level."); } });
 
   // command bar
   $("cmd-form").addEventListener("submit", function (e) { e.preventDefault(); var v = $("cmd-input").value; $("cmd-input").value = ""; runCommand(v); });
