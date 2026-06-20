@@ -45,6 +45,18 @@ except ImportError:
 
 from shared.schemas import Role, SceneEvent, Track, Zone
 
+
+class Funnel:
+    """Internal conversion-funnel counters. The funnel was removed from the
+    public SceneEvent schema (comfort-first pivot), so it's kept locally for the
+    zone-transition logic but no longer emitted."""
+    def __init__(self) -> None:
+        self.entered = 0
+        self.approached = 0
+        self.ordered = 0
+        self.seated = 0
+        self.abandoned = 0
+
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 _TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
 EMIT_EVERY_S = float(os.environ.get("PERCEPTION_EMIT_S", "1.0"))
@@ -477,6 +489,7 @@ class Pipeline:
         # cumulative dwell-density heatmap (seconds spent per cell)
         self.heat = [[0.0] * HEATMAP_N for _ in range(HEATMAP_N)]
         self.tablemon = TableMonitor()
+        self.funnel = Funnel()   # conversion funnel counters (entered→ordered→seated/abandoned)
 
     def _zone_of(self, single) -> Zone:
         for z, pz in self.zones.items():
