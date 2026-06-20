@@ -87,6 +87,8 @@ class SceneEvent(BaseModel):
     cleaning: list[CleaningZone] = Field(default_factory=list)  # cleaning cadence by zone
     walkaway_gbp: Optional[float] = None   # cumulative revenue lost to queue walk-offs today
     forecast_next_hour: Optional[int] = None  # predicted occupancy for the next clock hour
+    outdoor_temp_c: Optional[float] = None   # outdoor thermometer (°C) — sets seasonal baseline
+    indoor_humidity_rh: Optional[float] = None  # indoor relative humidity % — humidity offset
     source: Literal["mock", "perception"] = "mock"
 
 

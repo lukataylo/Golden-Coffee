@@ -52,33 +52,132 @@ _MUSIC_MODEL = MusicModel()
 MUSIC_LULL_VOLUME = 60      # lift the vibe in a flat room
 MUSIC_LOW_ENERGY_VOLUME = 52  # gentler bump when the room just feels low-energy
 MUSIC_BUSY_VOLUME = 38      # soften music when it's busy so it stays pleasant
-# temperature — COMFORT, never eviction
-COMFORT_COOL_DELTA_C = -1.5  # a full room warms up; cool slightly for comfort
 # lighting (brightness 0-100, warmth) — busy stays bright+neutral; quiet is time-aware
 LIGHT_BUSY = (90, "neutral")
 # scent — busy room: fresh citrus to keep the air pleasant; quiet is time-aware
 SCENT_BUSY = (60, "fresh citrus")
 
+# thermal baselines (°C) by outdoor temperature
+TEMP_BASELINE_WINTER = 23.0   # outdoor < 12°C
+TEMP_BASELINE_SUMMER = 21.0   # outdoor > 24°C
+TEMP_BASELINE_DEFAULT = 22.0  # transition / no sensor
+TEMP_HYSTERESIS = 0.5         # only act if target moves > ±0.5°C from last setpoint
+TEMP_HIGH_OCC_GATE_S = 240    # busy for 4 min before cooling kicks in
+TEMP_RECOVERY_S = 600         # low occ for 10 min before resetting to baseline
+
+
+def _thermal_target(scene: dict, state: dict, now: float) -> tuple[float | None, str]:
+    """Compute the HVAC absolute target (°C) using the 4-component model.
+
+    Returns (target_c, rationale) or (None, "") when no change is warranted.
+    Priority chain: baseline → occupancy load (sustained) → humidity → psychological.
+    Hysteresis prevents thrashing; recovery resets baseline when the room empties.
+    """
+    outdoor_temp = scene.get("outdoor_temp_c")
+    indoor_rh    = scene.get("indoor_humidity_rh")
+    occupancy    = int(scene.get("occupancy", 0))
+
+    # 1. Seasonal baseline
+    if outdoor_temp is None:
+        baseline = TEMP_BASELINE_DEFAULT
+    elif outdoor_temp < 12:
+        baseline = TEMP_BASELINE_WINTER
+    elif outdoor_temp > 24:
+        baseline = TEMP_BASELINE_SUMMER
+    else:
+        baseline = TEMP_BASELINE_DEFAULT
+
+    # 2. Occupancy load — with sustained gate so a brief spike doesn't blast the AC
+    if occupancy >= HIGH_OCCUPANCY:
+        if state.get("high_occ_since") is None:
+            state["high_occ_since"] = now
+        sustained = now - state["high_occ_since"]
+        occ_offset = -1.5 if sustained >= TEMP_HIGH_OCC_GATE_S else 0.0
+        state["low_occ_since"] = None
+    elif occupancy < 5:
+        occ_offset = +0.5
+        if state.get("low_occ_since") is None:
+            state["low_occ_since"] = now
+        state["high_occ_since"] = None
+    else:
+        occ_offset = 0.0
+        state["high_occ_since"] = None
+        state["low_occ_since"] = None
+
+    # Recovery: room has been quiet for 10+ min → silently drift back to baseline
+    low_since = state.get("low_occ_since")
+    if low_since and (now - low_since) >= TEMP_RECOVERY_S:
+        last = state.get("temp_target")
+        if last is None or abs(baseline - last) <= TEMP_HYSTERESIS:
+            return None, ""
+        state["temp_target"] = baseline
+        return baseline, (
+            f"Room has been quiet for 10+ min — resetting to baseline {baseline:.1f}°C."
+        )
+
+    # 3. Humidity factor
+    if indoor_rh is not None:
+        if indoor_rh > 60:
+            hum_offset = -0.5
+        elif indoor_rh < 35:
+            hum_offset = +0.5
+        else:
+            hum_offset = 0.0
+    else:
+        hum_offset = 0.0
+
+    # 4. Psychological offset (winter only) — warm vanilla + dim warm lighting makes
+    # the room feel warmer than it is; lower the heating setpoint to save energy.
+    psych_offset = 0.0
+    if baseline >= TEMP_BASELINE_WINTER:
+        if (state.get("lighting_warmth") == "warm"
+                and state.get("lighting_brightness", 100) <= 40
+                and "vanilla" in state.get("scent_name", "")):
+            psych_offset = -0.5
+
+    final_target = round(baseline + occ_offset + hum_offset + psych_offset, 1)
+
+    # Hysteresis: skip if within ±0.5°C of last setpoint
+    last = state.get("temp_target")
+    if last is not None and abs(final_target - last) <= TEMP_HYSTERESIS:
+        return None, ""
+
+    # Build rationale
+    parts: list[str] = []
+    if outdoor_temp is not None:
+        parts.append(f"outdoor {outdoor_temp:.0f}°C → baseline {baseline:.0f}°C")
+    else:
+        parts.append(f"baseline {baseline:.0f}°C")
+    if occ_offset:
+        parts.append(f"occupancy {occ_offset:+.1f}")
+    if hum_offset and indoor_rh is not None:
+        parts.append(f"humidity {indoor_rh:.0f}%RH {hum_offset:+.1f}")
+    if psych_offset:
+        parts.append(f"warm-dim ambiance {psych_offset:+.1f}")
+
+    state["temp_target"] = final_target
+    return final_target, f"{', '.join(parts)} → target {final_target:.1f}°C."
+
 
 def _ambient_lighting(hour: int) -> tuple[int, str]:
-    """Time-aware ambient lighting for a quiet room.
-    Morning: bright + neutral (wake-up energy).
-    Afternoon: warm-neutral (relaxed productivity).
-    Evening: dim + warm (cosy wind-down).
+    """Time-aware ambient lighting aligned to the music time slots (7/11/15).
+    Morning Rush  (07–10): bright + neutral (wake-up energy).
+    Midday Dwell  (11–14): warm-neutral (relaxed productivity).
+    Afternoon Lounge (15+): dim + warm (cosy wind-down).
     """
-    if 6 <= hour < 11:
+    if 7 <= hour < 11:
         return (80, "neutral")
-    if 17 <= hour:
-        return (30, "warm")
-    return (55, "warm")
+    if 11 <= hour < 15:
+        return (55, "warm")
+    return (30, "warm")
 
 
 def _ambient_scent(hour: int) -> tuple[int, str]:
-    """Time-aware scent for a quiet room.
+    """Time-aware scent aligned to music slots.
     Morning: fresh citrus (energising).
-    Afternoon/evening: warm vanilla (cosy and welcoming).
+    Midday/Afternoon: warm vanilla (cosy and welcoming).
     """
-    if 6 <= hour < 11:
+    if 7 <= hour < 11:
         return (50, "fresh citrus")
     return (40, "warm vanilla")
 
@@ -205,16 +304,20 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
                 now, "set_music", directive.params(), directive.rationale,
             ))
 
-    # --- 2. AMBIENT: busy room -> cool for comfort + soften the music --------
-    if busy and len(long_dwellers) >= MANY_LONG_DWELLERS:
-        if _due(state, "temperature", now):
+    # --- 2. AMBIENT: thermal comfort (absolute target, 4-component model) ------
+    # Runs for all occupancy levels — thermal_target handles the logic internally.
+    if _due(state, "temperature", now):
+        target_c, temp_rationale = _thermal_target(scene, state, now)
+        if target_c is not None:
             _mark(state, "temperature", now)
             actions.append(_action(
                 now, "set_temperature",
-                {"delta_c": COMFORT_COOL_DELTA_C},
-                f"Room is full ({occupancy}) and will be warming up; a slight "
-                f"cool-down keeps it comfortable.",
+                {"target_c": target_c},
+                temp_rationale,
             ))
+
+    # --- 2b. AMBIENT: busy room -> soften music + boost lighting + freshen scent --
+    if busy and len(long_dwellers) >= MANY_LONG_DWELLERS:
         if music_auto and _due(state, "music", now):
             _mark(state, "music", now)
             actions.append(_action(
@@ -225,6 +328,8 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
         if _due(state, "lighting", now):
             bri, warmth = LIGHT_BUSY
             _mark(state, "lighting", now)
+            state["lighting_brightness"] = bri
+            state["lighting_warmth"] = warmth
             actions.append(_action(
                 now, "set_lighting", {"brightness": bri, "warmth": warmth},
                 f"Busy room — brighten the lights to a clean, neutral level so it "
@@ -233,13 +338,12 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
         if _due(state, "scent", now):
             inten, sc = SCENT_BUSY
             _mark(state, "scent", now)
+            state["scent_name"] = sc
             actions.append(_action(
                 now, "set_scent", {"intensity": inten, "scent": sc},
                 f"A full room gets stuffy; freshen the air with a light {sc} scent "
                 f"to keep it pleasant.",
             ))
-        # A gentle grab-and-go offer for guests in a hurry during the rush
-        # (convenience, not eviction).
         if _due(state, "discount_togo", now):
             promo = takeaway_discount(now)
             _mark(state, "discount_togo", now)
@@ -268,15 +372,18 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
         if _due(state, "lighting", now):
             bri, warmth = _ambient_lighting(hour)
             _mark(state, "lighting", now)
-            tod = "morning" if hour < 11 else "evening" if hour >= 17 else "afternoon"
+            state["lighting_brightness"] = bri
+            state["lighting_warmth"] = warmth
+            slot = "morning" if hour < 11 else "afternoon lounge" if hour >= 15 else "midday"
             actions.append(_action(
                 now, "set_lighting", {"brightness": bri, "warmth": warmth},
-                f"Quiet {tod} ({occupancy} in) — {warmth}, {bri}% lighting sets "
+                f"Quiet {slot} ({occupancy} in) — {warmth}, {bri}% lighting sets "
                 f"the right mood for this time of day.",
             ))
         if _due(state, "scent", now):
             inten, sc = _ambient_scent(hour)
             _mark(state, "scent", now)
+            state["scent_name"] = sc
             actions.append(_action(
                 now, "set_scent", {"intensity": inten, "scent": sc},
                 f"A {sc} scent complements the {('morning energy' if hour < 11 else 'cosy atmosphere')}.",

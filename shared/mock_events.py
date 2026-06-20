@@ -91,6 +91,13 @@ def _synthetic_scene(t: int) -> SceneEvent:
 
     walkaway_gbp = round(funnel.abandoned * AVG_TICKET_GBP, 2)
 
+    # Synthetic environmental sensors.
+    # Outdoor temp follows a day curve: ~10°C at dawn, ~20°C midday, ~14°C evening.
+    hour = time.localtime().tm_hour
+    outdoor_temp_c = round(10.0 + 10.0 * math.sin((hour - 6) * math.pi / 12), 1)
+    # Indoor humidity rises with occupancy (breathing, hot drinks).
+    indoor_humidity_rh = round(45.0 + 20.0 * wave, 1)  # 45–65 %RH
+
     return SceneEvent(
         ts=time.time(),
         tracks=tracks,
@@ -103,6 +110,8 @@ def _synthetic_scene(t: int) -> SceneEvent:
         tables=tables,
         cleaning=cleaning,
         walkaway_gbp=walkaway_gbp,
+        outdoor_temp_c=outdoor_temp_c,
+        indoor_humidity_rh=indoor_humidity_rh,
         source="mock",
     )
 
