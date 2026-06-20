@@ -780,6 +780,19 @@ def main() -> None:
         "--model", default="yolo11n.pt",
         help="YOLO weights: yolo11n (fast) .. yolo11m/x (more accurate on small/dense people)",
     )
+    parser.add_argument(
+        "--device", default="auto",
+        help="inference device: auto (mps on Apple Silicon, else cpu) | mps | cpu | cuda | 0",
+    )
+    parser.add_argument(
+        "--imgsz", type=int, default=640,
+        help="YOLO inference size; lower = lower latency (try 480/384 for live phone feeds)",
+    )
+    parser.add_argument(
+        "--face-blur", choices=["head", "detect", "off"], default="head",
+        help="privacy blur (default 'head'): 'head' = fast, blurs each person's head "
+             "region; 'detect' = accurate face detector (slower, full-frame scan); 'off' = none",
+    )
     parser.add_argument("--zones", help="load zone/table/cleaning geometry from a JSON file")
     parser.add_argument("--dump-zones", help="write the default geometry to this JSON path and exit")
     parser.add_argument(
@@ -822,8 +835,21 @@ def main() -> None:
     model = YOLO(args.model)
     tracker = sv.ByteTrack()
 
-    # Fix 5: MediaPipe face detector (always attempted; falls back to bbox proxy).
-    face_detector = _build_face_detector()
+    # Resolve the inference device — on Apple Silicon 'auto' picks the GPU (mps),
+    # which roughly halves per-frame latency vs CPU at no accuracy cost.
+    device = args.device
+    if device == "auto":
+        try:
+            import torch
+            device = "mps" if torch.backends.mps.is_available() else (
+                "cuda" if torch.cuda.is_available() else "cpu")
+        except Exception:
+            device = "cpu"
+    print(f"[perception] inference device={device} imgsz={args.imgsz} face-blur={args.face_blur}", flush=True)
+
+    # Face detector only needed for the (slower) 'detect' blur mode; 'head' blurs
+    # each person's head region directly (no detector) and 'off' skips it.
+    face_detector = _build_face_detector() if args.face_blur == "detect" else None
 
     # Use the FFMPEG backend for network streams (HLS/RTSP/RTMP); default otherwise.
     is_network = isinstance(source, str) and source.startswith(("http", "rtsp", "rtmp"))
@@ -898,12 +924,15 @@ def main() -> None:
         video_t = frame_idx / fps
         dt = 1.0 / fps
 
-        result = model(frame, verbose=False)[0]
+        result = model(frame, imgsz=args.imgsz, device=device, verbose=False)[0]
         det = sv.Detections.from_ultralytics(result)
         det = det[det.class_id == 0]  # person only
         det = tracker.update_with_detections(det)
 
-        _blur_faces_inplace(frame, det, w, h, face_detector)  # privacy: blur faces
+        if args.face_blur != "off":
+            # 'head' forces the fast bbox-head fallback (face_detector is None);
+            # 'detect' uses the configured detector.
+            _blur_faces_inplace(frame, det, w, h, face_detector)  # privacy: blur faces
 
         tracks, occupancy, productivity, grid, tables, cleaning = pipe.process(det, video_t, dt)
 
