@@ -418,9 +418,20 @@ _sp_access_tok:  Optional[str] = None
 _sp_expires_at:  float = 0.0
 
 
+def _sp_public_base() -> str:
+    """Public base URL of this backend, for the OAuth redirect URI.
+    Prefers BACKEND_URL, then Railway's injected public domain, then localhost."""
+    base = os.environ.get("BACKEND_URL", "").rstrip("/")
+    if base:
+        return base
+    dom = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").rstrip("/")
+    if dom:
+        return f"https://{dom}"
+    return "http://127.0.0.1:8000"
+
+
 def _sp_callback_uri() -> str:
-    base = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
-    return f"{base}/spotify/callback"
+    return f"{_sp_public_base()}/spotify/callback"
 
 
 async def _sp_do_refresh(refresh_token: str) -> str | None:
