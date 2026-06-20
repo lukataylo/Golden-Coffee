@@ -1,6 +1,6 @@
 """Local music model — picks the *music itself* from the room's data.
 
-Golden Coffee already tunes music **volume** (`set_music_volume`). This module
+Coffee Steve already tunes music **volume** (`set_music_volume`). This module
 goes further: a small, fully **local** model that chooses *what should be
 playing* — the mood/genre, tempo (BPM), energy and the Spotify playlist — from
 the anonymized scene metrics (occupancy, queue, room energy, time of day).

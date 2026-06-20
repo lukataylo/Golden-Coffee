@@ -1,6 +1,6 @@
 {
-  "name": "Golden Coffee Floorplan Scanner",
-  "short_name": "GC Scanner",
+  "name": "Coffee Steve Floorplan Scanner",
+  "short_name": "Steve Scanner",
   "description": "Scan a cafe or restaurant floorplan and generate a 3D twin.",
   "display": "standalone",
   "orientation": "portrait",

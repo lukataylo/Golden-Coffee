@@ -1,4 +1,4 @@
-"""Shared data contracts for Golden Coffee.
+"""Shared data contracts for Coffee Steve.
 
 These are the ONLY thing the four workstreams must agree on. Perception produces
 `SceneEvent`s; the agent produces `AgentAction`s. Everything else (backend,

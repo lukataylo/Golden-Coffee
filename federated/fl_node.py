@@ -1,6 +1,6 @@
 """Federated learning node — the per-venue intelligence contributor.
 
-Each Golden Coffee venue runs one of these. It:
+Each Coffee Steve venue runs one of these. It:
   1. Listens to the local scene stream (WS /ws) to collect training examples
   2. Every FL_ROUND_S seconds: trains CaféComfortNet locally with DP-SGD
   3. Submits the sanitised gradient delta to Flock.io for global aggregation

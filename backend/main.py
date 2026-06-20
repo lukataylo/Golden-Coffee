@@ -1,4 +1,4 @@
-"""Golden Coffee backend — the realtime hub.
+"""Coffee Steve backend — the realtime hub.
 
 Decouples producers from consumers so all four workstreams can run independently:
 
@@ -83,7 +83,7 @@ def _log_metrics(event: dict) -> None:
     except Exception:
         pass  # never let logging break ingestion
 
-app = FastAPI(title="Golden Coffee Hub")
+app = FastAPI(title="Coffee Steve Hub")
 
 # CORS so the Vercel-hosted dashboard can hit the REST endpoints.
 app.add_middleware(
@@ -340,7 +340,12 @@ async def get_config() -> dict:
 @app.post("/config")
 async def set_config(request: Request) -> dict:
     """Persist venue config written by the setup wizard (camera source, etc.)."""
-    body = await request.json()
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid JSON body")
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="expected a JSON object")
     CONFIG_PATH.parent.mkdir(exist_ok=True)
     # Merge with existing config so we don't overwrite unrelated keys
     existing: dict = {}
@@ -441,6 +446,8 @@ async def integrations_announce(request: Request) -> dict:
     try:
         body = await request.json()
     except Exception:
+        body = {}
+    if not isinstance(body, dict):
         body = {}
     target = str(body.get("target", "")).lower()
     text = (str(body.get("text", "") or "Hello from Coffee Steve").strip())[:200]

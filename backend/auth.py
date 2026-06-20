@@ -1,4 +1,4 @@
-"""Golden Coffee — user management & sign-up.
+"""Coffee Steve — user management & sign-up.
 
 A small, dependency-free account layer for the landing-page sign-up flow:
 

@@ -3,7 +3,7 @@ import { DashboardClient } from "./dashboard-client";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Your Golden Coffee command center.",
+  description: "Your Coffee Steve command center.",
 };
 
 export default function DashboardPage() {

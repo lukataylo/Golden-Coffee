@@ -1,4 +1,4 @@
-"""Federation server — dual-purpose aggregation hub for Golden Coffee.
+"""Federation server — dual-purpose aggregation hub for Coffee Steve.
 
 1. Ratio federation (existing): collects P20/P80 occupancy/queue ratios from
    each venue and returns a capacity-weighted global average that the agent
@@ -34,7 +34,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="Golden Coffee Federation Server")
+app = FastAPI(title="Coffee Steve Federation Server")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # node_id -> latest submission

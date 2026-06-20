@@ -1,4 +1,4 @@
-# Golden Coffee — backend hub ONLY (no torch/ultralytics/opencv).
+# Coffee Steve — backend hub ONLY (no torch/ultralytics/opencv).
 # Use this for the Railway/Render/Fly deploy of the WebSocket hub.
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0

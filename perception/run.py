@@ -874,7 +874,7 @@ class _BackgroundPoster:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Golden Coffee perception pipeline")
+    parser = argparse.ArgumentParser(description="Coffee Steve perception pipeline")
     parser.add_argument(
         "--source",
         default="0",

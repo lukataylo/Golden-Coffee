@@ -1,4 +1,4 @@
-// Non-agentic verification harness for the Golden Coffee static pages.
+// Non-agentic verification harness for the Coffee Steve static pages.
 // Serves the dir over HTTP, drives headless Chrome via the DevTools Protocol,
 // and reports console errors / uncaught exceptions / failed requests + screenshots.
 // No external deps — uses Node 22+ global fetch & WebSocket.

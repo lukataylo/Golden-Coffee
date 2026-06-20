@@ -1,5 +1,5 @@
 /**
- * Inline SVG wordmark/logo mark for Golden Coffee — a stylized coffee bean
+ * Inline SVG wordmark/logo mark for Coffee Steve — a stylized coffee bean
  * inside a gold ring. Self-contained, no image assets.
  */
 export default function Wordmark({

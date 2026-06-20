@@ -1,4 +1,4 @@
-"""Accuracy eval harness for the Golden Coffee perception pipeline.
+"""Accuracy eval harness for the Coffee Steve perception pipeline.
 
 Strategy: there is no ground-truth label set for café footage, so we use
 **vision LLM judges as the reference**. This script does the deterministic half:

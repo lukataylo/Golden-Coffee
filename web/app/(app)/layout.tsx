@@ -13,7 +13,7 @@ export default function AppLayout({
       <header className="sticky top-0 z-30 border-b border-cream/10 bg-ink-950/80 backdrop-blur">
         <div className="gc-container flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" aria-label="Golden Coffee dashboard">
+            <Link href="/dashboard" aria-label="Coffee Steve dashboard">
               <Wordmark />
             </Link>
             <span className="hidden h-5 w-px bg-cream/10 sm:block" />

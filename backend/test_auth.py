@@ -1,4 +1,4 @@
-"""Tests for Golden Coffee user management (backend/auth.py + /auth routes).
+"""Tests for Coffee Steve user management (backend/auth.py + /auth routes).
 
 Run with pytest:        .venv/bin/python -m pytest backend/test_auth.py -q
 Or standalone (no dep): .venv/bin/python backend/test_auth.py

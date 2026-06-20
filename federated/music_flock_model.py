@@ -1,4 +1,4 @@
-"""Golden Coffee × FLock (Layer 2) — federate the *music model's* softmax weights.
+"""Coffee Steve × FLock (Layer 2) — federate the *music model's* softmax weights.
 
 The first FLock port (`federated.flock_model`) shares three policy *ratios*. This
 one federates something richer and more obviously "real ML": the weights of the
@@ -192,7 +192,7 @@ class MusicFlockModel(_FlockModelBase):
 def _run_local_demo() -> dict:
     bar = "═" * 72
     print("\n" + bar)
-    print("  🎵  Golden Coffee × FLock — federated music model (no platform)")
+    print("  🎵  Coffee Steve × FLock — federated music model (no platform)")
     print(bar)
     print(f"  flock_sdk installed: {HAS_FLOCK_SDK}  "
           f"(MusicFlockModel is a {'real FlockModel subclass' if HAS_FLOCK_SDK else 'standalone class'})")

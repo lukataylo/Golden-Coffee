@@ -1,6 +1,8 @@
-# Golden Coffee Control — native iOS/iPadOS controller
+# Coffee Steve — native iOS/iPadOS café controller
 
-A native **SwiftUI** controller for the Golden Coffee café‑ambiance system, styled
+App icon + brand: **Coffee Steve** (`App/Assets.xcassets/AppIcon.appiconset`, from `CoffeeSteve.svg`). Xcode project/bundle id and the `GoldenCoffeeKit` package keep their internal names.
+
+A native **SwiftUI** controller for the café‑ambiance system, styled
 after Apple Home, with an **on‑device autopilot** (Yao's rules ported to Swift),
 **Apple Foundation Models** for natural‑language commands (no cloud AI calls), a
 **3D coffee‑shop model** wired to the live CCTV, and a **Gemini‑powered layout

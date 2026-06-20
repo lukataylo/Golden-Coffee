@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Golden Coffee — Your café, but it runs itself",
+  title: "Coffee Steve — Your café, but it runs itself",
   description:
     "An ambient + ops copilot for cafés and restaurants. One camera, privacy-first perception, and an AI agent that tunes the atmosphere and protects speed-of-service.",
   openGraph: {
-    title: "Golden Coffee — Your café, but it runs itself",
+    title: "Coffee Steve — Your café, but it runs itself",
     description:
       "An ambient + ops copilot for cafés and restaurants. Privacy-first perception meets an AI agent that tunes the room and protects service.",
     type: "website",

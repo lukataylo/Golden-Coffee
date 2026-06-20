@@ -69,7 +69,7 @@ export function DashboardClient() {
             <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-cream/10 bg-ink-950">
               <iframe
                 src={env.dashboardUrl}
-                title="Golden Coffee live dashboard"
+                title="Coffee Steve live dashboard"
                 className="absolute inset-0 h-full w-full"
                 loading="lazy"
                 referrerPolicy="no-referrer"

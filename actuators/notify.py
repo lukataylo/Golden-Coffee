@@ -64,4 +64,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--chat-id":
         _print_chat_id()
     else:
-        notify_staff(sys.argv[1] if len(sys.argv) > 1 else "Golden Coffee test alert")
+        notify_staff(sys.argv[1] if len(sys.argv) > 1 else "Coffee Steve test alert")

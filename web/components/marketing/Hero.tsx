@@ -42,7 +42,7 @@ export default function Hero() {
           className="gc-fade-up mt-6 max-w-xl text-pretty text-lg leading-relaxed text-white/65"
           style={{ animationDelay: "120ms" }}
         >
-          Golden Coffee turns a single existing camera into an ambient + ops
+          Coffee Steve turns a single existing camera into an ambient + ops
           copilot that reads the room and quietly tunes music, lighting, scent
           and temperature — while protecting your speed-of-service.
         </p>

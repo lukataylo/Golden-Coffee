@@ -1,4 +1,4 @@
-// End-to-end test of the Golden Coffee sign-up / user-management flow.
+// End-to-end test of the Coffee Steve sign-up / user-management flow.
 //
 // Spins up a REAL local backend (FastAPI, throwaway SQLite), serves the static
 // landing dir, drives headless Chrome via the DevTools Protocol through the whole

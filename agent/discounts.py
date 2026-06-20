@@ -1,4 +1,4 @@
-"""Tiny time / occupancy-aware discount engine for Golden Coffee.
+"""Tiny time / occupancy-aware discount engine for Coffee Steve.
 
 Given the wall-clock hour and the current room conditions, pick a promo line to
 push to the in-store board. The goal is to smooth demand: lift conversion during

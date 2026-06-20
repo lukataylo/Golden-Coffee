@@ -134,7 +134,7 @@ def main() -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
             points[cur()].append((x, y))
 
-    win = "Golden Coffee — draw zones"
+    win = "Coffee Steve — draw zones"
     try:
         cv2.namedWindow(win)
         cv2.setMouseCallback(win, on_mouse)

@@ -3,7 +3,7 @@ import { OnboardingWizard } from "./onboarding-wizard";
 
 export const metadata: Metadata = {
   title: "Get set up",
-  description: "Set up your café with Golden Coffee in a few quick steps.",
+  description: "Set up your café with Coffee Steve in a few quick steps.",
 };
 
 export default function OnboardingPage() {
