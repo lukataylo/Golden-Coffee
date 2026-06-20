@@ -202,9 +202,11 @@ async def stream() -> StreamingResponse:
                 idle += 1
                 # Stop a stale connection after ~30s with no new frames so the
                 # client can fall back to /frame.jpg or the synthetic map.
-                if idle > 750:
+                if idle > 3750:
                     break
-            await asyncio.sleep(0.04)
+            # Poll fast (~8ms) so a new frame reaches the browser with minimal added
+            # latency (the old 40ms poll added up to 40ms and capped /stream at 25fps).
+            await asyncio.sleep(0.008)
 
     return StreamingResponse(
         gen(), media_type=f"multipart/x-mixed-replace; boundary={boundary}"

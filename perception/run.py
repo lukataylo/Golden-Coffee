@@ -31,7 +31,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import queue
 import re
+import threading
 import time
 
 try:
@@ -154,19 +156,31 @@ def _blur_faces_inplace(frame, det, w: int, h: int, face_detector=None) -> None:
                 frame[fy:fy + fh, fx:fx + fw] = cv2.GaussianBlur(roi, (0, 0), 15)
         return
 
-    # Fallback: blur the top ~30% (head region) of each person bbox.
+    # Fallback: blur each person's head region. The height ADAPTS to the box aspect
+    # so the WHOLE face is covered for both far (full-body box) and near (head+torso)
+    # people — a head is ~as tall as it is wide, and shoulders span ~2-3 head widths,
+    # so head_height ≈ 1.3× box width, clamped to 40–60% of the box height. We also
+    # pad slightly so chin/hair aren't clipped, and mosaic (downscale→upscale) for an
+    # irreversible blur rather than a light Gaussian.
     if det.xyxy is None:
         return
     for x1, y1, x2, y2 in det.xyxy:
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-        head_h = int((y2 - y1) * 0.3)
-        hx1, hy1 = max(0, x1), max(0, y1)
-        hx2, hy2 = min(w, x2), min(h, y1 + head_h)
+        box_h, box_w = y2 - y1, x2 - x1
+        if box_h <= 0 or box_w <= 0:
+            continue
+        head_h = int(min(0.6 * box_h, max(0.4 * box_h, 1.3 * box_w)))
+        pad = int(0.08 * box_w)
+        hx1, hy1 = max(0, x1 - pad), max(0, y1)
+        hx2, hy2 = min(w, x2 + pad), min(h, y1 + head_h)
         if hx2 <= hx1 or hy2 <= hy1:
             continue
         roi = frame[hy1:hy2, hx1:hx2]
         if roi.size:
-            frame[hy1:hy2, hx1:hx2] = cv2.GaussianBlur(roi, (0, 0), 12)
+            small = cv2.resize(roi, (max(1, roi.shape[1] // 12), max(1, roi.shape[0] // 12)),
+                               interpolation=cv2.INTER_LINEAR)
+            frame[hy1:hy2, hx1:hx2] = cv2.resize(
+                small, (roi.shape[1], roi.shape[0]), interpolation=cv2.INTER_NEAREST)
 
 
 # Zone draw colors (BGR) — kept visually consistent with the dashboard palette.
@@ -699,15 +713,24 @@ class MJPEGCapture:
                 resp = urllib.request.urlopen(self.url, timeout=8)
                 buf = b""
                 while not self._stop:
-                    chunk = resp.read(8192)
+                    chunk = resp.read(65536)  # larger reads = fewer syscalls
                     if not chunk:
                         break
                     buf += chunk
-                    start = buf.find(b"\xff\xd8")  # JPEG SOI
-                    end = buf.find(b"\xff\xd9", start + 2)  # JPEG EOI
-                    if start != -1 and end != -1:
-                        jpg = buf[start : end + 2]
-                        buf = buf[end + 2 :]
+                    # SKIP-TO-LATEST: if the phone delivered faster than we consume,
+                    # several JPEGs may be buffered. Decode only the NEWEST and discard
+                    # the rest — this both removes decode backlog and minimises latency
+                    # (we always hold the freshest frame, never a stale queued one).
+                    jpg = None
+                    while True:
+                        start = buf.find(b"\xff\xd8")          # JPEG SOI
+                        end = buf.find(b"\xff\xd9", start + 2)  # JPEG EOI
+                        if start != -1 and end != -1:
+                            jpg = buf[start : end + 2]
+                            buf = buf[end + 2 :]
+                        else:
+                            break
+                    if jpg is not None:
                         img = cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_COLOR)
                         if img is not None:
                             with self._lock:
@@ -729,14 +752,15 @@ class MJPEGCapture:
         import time as _t
 
         # Briefly wait for a fresh frame to avoid re-processing duplicates / busy-spin.
-        for _ in range(100):  # up to ~1s
+        # Fine-grained poll (3ms) so we pick up a new frame promptly (lower latency).
+        for _ in range(330):  # up to ~1s
             with self._lock:
                 if self._frame is not None and self._seq != self._last_read_seq:
                     self._last_read_seq = self._seq
                     return True, self._frame.copy()
             if self._stop:
                 break
-            _t.sleep(0.01)
+            _t.sleep(0.003)
         with self._lock:  # no new frame; hand back the last good one so we keep running
             return (self._frame is not None, None if self._frame is None else self._frame.copy())
 
@@ -751,6 +775,88 @@ class MJPEGCapture:
 
     def release(self):
         self._stop = True
+
+
+class _BackgroundPoster:
+    """Encode + POST frames/events to the backend OFF the capture loop.
+
+    The capture+YOLO loop must never block on JPEG encoding or HTTP, or it caps the
+    live frame rate (with a 29 fps phone source we were stuck at ~16 fps because the
+    sync encode+POST ran inline). This owns one httpx client and two worker threads:
+
+      * frame worker — only ever encodes+posts the LATEST handed frame (stale frames
+        are dropped, which is the correct behaviour for live video);
+      * event worker — posts scene events in order.
+
+    The loop just hands over a frame reference and moves on.
+    """
+
+    def __init__(self, base_url, headers, src_w, src_h, quality=65):
+        import httpx
+        self.base, self.headers, self.quality = base_url, headers, quality
+        self.src_w, self.src_h = src_w, src_h
+        self.stream_w = 720 if src_w > 720 else src_w
+        self.client = httpx.Client(timeout=2.0)
+        self._frame = None
+        self._flock = threading.Lock()
+        self._wake = threading.Event()
+        self._events: "queue.Queue" = queue.Queue(maxsize=64)
+        self._stop = False
+        self.frames_sent = 0
+        threading.Thread(target=self._frame_worker, daemon=True).start()
+        threading.Thread(target=self._event_worker, daemon=True).start()
+
+    def post_frame(self, frame_bgr) -> None:
+        with self._flock:
+            self._frame = frame_bgr  # keep only the latest
+        self._wake.set()
+
+    def post_event(self, payload: dict) -> None:
+        try:
+            self._events.put_nowait(payload)
+        except queue.Full:
+            pass
+
+    def _frame_worker(self) -> None:
+        import cv2
+        while not self._stop:
+            self._wake.wait(0.5)
+            self._wake.clear()
+            with self._flock:
+                frame = self._frame
+                self._frame = None
+            if frame is None:
+                continue
+            if self.stream_w != self.src_w:
+                frame = cv2.resize(frame, (self.stream_w, int(self.src_h * self.stream_w / self.src_w)))
+            ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, self.quality])
+            if not ok:
+                continue
+            try:
+                self.client.post(f"{self.base}/frame", content=buf.tobytes(),
+                                 headers={"Content-Type": "image/jpeg", **self.headers})
+                self.frames_sent += 1
+            except Exception:
+                pass
+
+    def _event_worker(self) -> None:
+        while not self._stop:
+            try:
+                payload = self._events.get(timeout=0.3)
+            except queue.Empty:
+                continue
+            try:
+                self.client.post(f"{self.base}/ingest", json=payload, headers=self.headers)
+            except Exception as exc:
+                print(f"[perception] backend unreachable: {exc}", flush=True)
+
+    def close(self) -> None:
+        self._stop = True
+        self._wake.set()
+        try:
+            self.client.close()
+        except Exception:
+            pass
 
 
 def main() -> None:
@@ -774,7 +880,7 @@ def main() -> None:
         help="do not POST annotated MJPEG frames to the backend (events only)",
     )
     parser.add_argument(
-        "--stream-fps", type=float, default=10.0, help="annotated frame POST rate"
+        "--stream-fps", type=float, default=30.0, help="max annotated-frame POST rate (poster drops stale frames)"
     )
     parser.add_argument(
         "--model", default="yolo11n.pt",
@@ -882,11 +988,9 @@ def main() -> None:
     if args.privacy_mode:
         print("[perception] --privacy-mode: bboxes stripped, heatmap DP-noised, video stream disabled")
 
-    client = None
+    poster = None
     if not args.dry_run:
-        import httpx
-
-        client = httpx.Client(timeout=2.0)
+        poster = _BackgroundPoster(BACKEND_URL, _TOKEN_HEADERS, w, h)
 
     # Fix 6: federated emit thread — posts aggregate ratios only (no tracks/bboxes)
     # to the federation server so cross-shop learning works without sharing raw data.
@@ -936,8 +1040,9 @@ def main() -> None:
 
         tracks, occupancy, productivity, grid, tables, cleaning = pipe.process(det, video_t, dt)
 
-        # Stream face-blurred frame with person boxes only (no zone/table overlays).
-        if stream_on and video_t - last_frame_t >= frame_interval:
+        # Hand the annotated frame to the background poster (it resizes/encodes/POSTs
+        # off-loop and drops stale frames). Gated so we don't draw faster than needed.
+        if stream_on and poster is not None and video_t - last_frame_t >= frame_interval:
             out = frame.copy()
             if det.xyxy is not None:
                 for i in range(len(det)):
@@ -946,19 +1051,7 @@ def main() -> None:
                     cv2.rectangle(out, (x1, y1), (x2, y2), (90, 220, 120), 2)
                     cv2.putText(out, f"#{tid}", (x1, max(14, y1 - 6)),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (90, 220, 120), 2)
-            if stream_w != w:
-                out = cv2.resize(out, (stream_w, int(h * stream_w / w)))
-            okj, buf = cv2.imencode(".jpg", out, [cv2.IMWRITE_JPEG_QUALITY, 65])
-            if okj:
-                try:
-                    client.post(
-                        f"{BACKEND_URL}/frame",
-                        content=buf.tobytes(),
-                        headers={"Content-Type": "image/jpeg", **_TOKEN_HEADERS},
-                    )
-                    frames_sent += 1
-                except Exception:
-                    pass  # don't let a dropped frame kill the pipeline
+            poster.post_frame(out)
             last_frame_t = video_t
 
         if video_t - last_emit_t >= EMIT_EVERY_S:
@@ -980,10 +1073,7 @@ def main() -> None:
             else:
                 payload = event.model_dump()
                 _latest_scene.update(payload)  # feed the federated emit thread
-                try:
-                    client.post(f"{BACKEND_URL}/ingest", json=payload, headers=_TOKEN_HEADERS)
-                except Exception as exc:
-                    print(f"[perception] backend unreachable: {exc}", flush=True)
+                poster.post_event(payload)     # non-blocking; posted off-loop
             last_emit_t = video_t
             emitted += 1
 
@@ -991,8 +1081,9 @@ def main() -> None:
             break
 
     cap.release()
-    if client is not None:
-        client.close()
+    if poster is not None:
+        frames_sent = poster.frames_sent
+        poster.close()
     elapsed = time.time() - wall_start
     eff_fps = frame_idx / elapsed if elapsed > 0 else 0.0
     print(
