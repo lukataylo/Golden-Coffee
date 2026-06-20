@@ -65,10 +65,14 @@ def _require_token(x_token: Optional[str]) -> None:
 
 def _log_metrics(event: dict) -> None:
     """Append a compact metrics row so history has a record. Best-effort."""
+    abandons = int(event.get("abandons", 0) or 0)
+    avg_ticket = float(event.get("avg_ticket_gbp", 5.50) or 5.50)
     row = {
         "ts": event.get("ts"),
         "occupancy": event.get("occupancy", 0),
         "queue_len": event.get("queue_len", 0),
+        "abandons": abandons,
+        "lost_gbp": round(abandons * avg_ticket, 2),  # £ walked away today (avg ticket × walk-offs)
         "tables_waiting": sum(
             1 for t in event.get("tables", []) if t.get("status") in ("waiting", "overdue")
         ),
@@ -248,6 +252,9 @@ async def metrics(limit: int = 200) -> dict:
     summary = {
         "samples": len(rows),
         "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
+        # The headline: total £ walked away (max of the cumulative running total).
+        "lost_gbp_today": max((r.get("lost_gbp", 0) for r in rows), default=0),
+        "abandons_today": max((r.get("abandons", 0) for r in rows), default=0),
     }
     return {"summary": summary, "recent": rows}
 
@@ -276,6 +283,7 @@ async def onchain_snapshot(limit: int = 500) -> dict:
             "metric_samples": len(rows),
             "actions_logged": len(hub.action_log),
             "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
+            "lost_gbp_today": max((r.get("lost_gbp", 0) for r in rows), default=0),
         },
     }
     try:

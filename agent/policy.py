@@ -219,6 +219,7 @@ DEBOUNCE_S = {
     "lighting": 300,
     "scent": 600,
     "notify_queue": 120,
+    "notify_walkoff": 120,
     "notify_unattended": 600,
     "notify_table": 180,
     "notify_clean": 600,
@@ -368,6 +369,34 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             now, "notify_staff",
             {"text": text, "priority": "high"},
             why,
+        ))
+
+    # --- 1a. WALK-OFF / £-AT-RISK: abandons climbing -> urgent alert + £ lost --
+    # The ownable headline: "you lost ~£120 today to the queue". A walk-off is a
+    # customer who joined the queue then left without ordering. We track the
+    # cumulative count and the running £ lost (abandons × avg ticket), and escalate
+    # the moment the rate of abandonment rises — act before more customers leave.
+    abandons = int(scene.get("abandons", 0))
+    avg_ticket = float(scene.get("avg_ticket_gbp", 5.50))
+    lost_gbp = round(abandons * avg_ticket, 2)
+    state["lost_gbp_today"] = lost_gbp
+    state["abandons_today"] = abandons
+    last_ab = state.get("_last_abandons")
+    state["_last_abandons"] = abandons
+    if last_ab is not None and abandons > last_ab and _due(state, "notify_walkoff", now):
+        new_walkoffs = abandons - last_ab
+        _mark(state, "notify_walkoff", now)
+        actions.append(_action(
+            now, "notify_staff",
+            {
+                "text": (f"Walk-offs rising — {new_walkoffs} just left the queue. "
+                         f"Open a second till. (~£{lost_gbp:.0f} walked away today)"),
+                "priority": "urgent",
+                "lost_gbp": lost_gbp,
+                "abandons": abandons,
+            },
+            f"{new_walkoffs} customer(s) abandoned the queue since the last check; "
+            f"~£{lost_gbp:.2f} has walked away today — act before more leave.",
         ))
 
     # --- 1b. LOCAL MUSIC MODEL: pick the track/mood from the room's data ------

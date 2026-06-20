@@ -36,6 +36,12 @@ def _synthetic_scene(t: int) -> SceneEvent:
     queue_len = int(wave * 4)
     productivity = round(0.4 + 0.5 * (1 - wave), 2)  # busy => higher activity
 
+    # Cumulative walk-offs today: customers give up when the queue is long. Grows
+    # monotonically with sustained queue pressure (queue² × time), so the agent's
+    # rush copilot can surface the £ walked away. ~£5.50 average ticket.
+    abandons = int(0.012 * queue_len * queue_len * t)
+    avg_ticket_gbp = 5.50
+
     tracks: list[Track] = []
     for i in range(occupancy):
         zone = ZONES[i % len(ZONES)]
@@ -100,6 +106,8 @@ def _synthetic_scene(t: int) -> SceneEvent:
         tracks=tracks,
         occupancy=occupancy,
         queue_len=queue_len,
+        abandons=abandons,
+        avg_ticket_gbp=avg_ticket_gbp,
         heatmap_grid=grid,
         tables=tables,
         cleaning=cleaning,

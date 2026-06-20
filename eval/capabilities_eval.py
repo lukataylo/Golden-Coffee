@@ -84,9 +84,9 @@ def eval_music_model() -> None:
         "rush_flow":         {"occupancy": 9, "queue_len": 4, "ts": ts_at(13)},
         "busy_calm":         {"occupancy": 11, "queue_len": 1, "ts": ts_at(13)},
         "upbeat_lift":       {"occupancy": 2, "queue_len": 0, "ts": ts_at(14)},
-        "sunrise_acoustic":  {"occupancy": 5, "queue_len": 1, "ts": ts_at(8)},
-        "daytime_focus":     {"occupancy": 6, "queue_len": 1, "ts": ts_at(14)},
-        "evening_warm":      {"occupancy": 5, "queue_len": 1, "ts": ts_at(20)},
+        "morning_rush":      {"occupancy": 5, "queue_len": 1, "ts": ts_at(8)},
+        "midday_dwell":      {"occupancy": 6, "queue_len": 1, "ts": ts_at(14)},
+        "afternoon_lounge":  {"occupancy": 5, "queue_len": 1, "ts": ts_at(20)},
     }
     for mood, scene in reach.items():
         p = m.probabilities(scene)
@@ -96,12 +96,12 @@ def eval_music_model() -> None:
     # hysteresis: a tiny change holds, a clear change switches
     quiet_morning = {"occupancy": 5, "queue_len": 1, "ts": ts_at(8)}
     d0, ch0 = m.recommend(quiet_morning, current=None)
-    check(g, "first recommend marks a change", ch0 and d0.mood == "sunrise_acoustic", d0.mood)
+    check(g, "first recommend marks a change", ch0 and d0.mood == "morning_rush", d0.mood)
     _, ch_hold = m.recommend({"occupancy": 6, "queue_len": 1, "ts": ts_at(9)},
-                             current="sunrise_acoustic")
+                             current="morning_rush")
     check(g, "hysteresis holds on a small change", ch_hold is False)
     d_sw, ch_sw = m.recommend({"occupancy": 9, "queue_len": 4, "ts": ts_at(9)},
-                              current="sunrise_acoustic")
+                              current="morning_rush")
     check(g, "switches on a clear change", ch_sw and d_sw.mood == "rush_flow", d_sw.mood)
 
     # controller bias (#1): a soft lean raises the hinted mood's probability...
@@ -132,9 +132,9 @@ def eval_music_model() -> None:
 def eval_policy() -> None:
     g = "policy"
 
-    # rush copilot: queue building -> staff alert + music shifts to rush_flow
+    # rush copilot: queue over threshold -> staff alert + music shifts to rush_flow
     st = {}
-    acts = policy.decide({"occupancy": 9, "queue_len": 4,
+    acts = policy.decide({"occupancy": 9, "queue_len": 5,
                           "ts": ts_at(13)}, st)
     check(g, "rush -> notify_staff (open till)", "notify_staff" in names(acts))
     sm = [a for a in acts if a.action == "set_music"]
@@ -188,13 +188,16 @@ def eval_policy() -> None:
           "ts": ts_at(14), "tables": [{"id": "T1", "status": "free", "needs_cleaning": True}]}
     check(g, "dirty table -> notify_staff (buss)", "notify_staff" in names(policy.decide(dt, {})))
 
-    # walk-offs rising across two scenes -> alert on the rise
+    # walk-offs rising across two scenes -> urgent alert + £-at-risk on the rise
     stw = {}
-    policy.decide({"occupancy": 7, "queue_len": 1,
-                   "ts": ts_at(13)}, stw)
-    a2 = policy.decide({"occupancy": 7, "queue_len": 1,
-                        "ts": ts_at(13, 5)}, stw)
+    policy.decide({"occupancy": 7, "queue_len": 1, "abandons": 2,
+                   "avg_ticket_gbp": 5.5, "ts": ts_at(13)}, stw)
+    a2 = policy.decide({"occupancy": 7, "queue_len": 1, "abandons": 6,
+                        "avg_ticket_gbp": 5.5, "ts": ts_at(13, 5)}, stw)
+    wo = [a for a in a2 if a.action == "notify_staff" and a.params.get("priority") == "urgent"]
     check(g, "walk-offs rising -> notify_staff", "notify_staff" in names(a2))
+    check(g, "walk-offs alert carries £-at-risk", bool(wo) and wo[0].params.get("lost_gbp") == 33.0,
+          wo[0].params.get("lost_gbp") if wo else "none")
 
     # debounce: identical busy scene fired twice in quick succession is suppressed
     std = {}
@@ -230,9 +233,9 @@ def eval_agent() -> None:
     check(g, "emitted actions carry rationale", all("rationale" in a for a in out))
 
     # #3: the music-inform context string the Claude path injects
-    ag.state["music_mood"] = "daytime_focus"
+    ag.state["music_mood"] = "midday_dwell"
     ctx = ag._music_context({"occupancy": 6, "queue_len": 1, "ts": ts_at(14)})
-    check(g, "music context names current mood", "music_model(now=" in ctx and "Daytime focus" in ctx, ctx)
+    check(g, "music context names current mood", "music_model(now=" in ctx and "Midday Dwell" in ctx, ctx)
     check(g, "music context lists suggestions with %", "%" in ctx, ctx)
     ag.state["music_bias"] = {"upbeat_lift": 1.5}
     ctx_b = ag._music_context({"occupancy": 6, "queue_len": 1, "ts": ts_at(14)})
