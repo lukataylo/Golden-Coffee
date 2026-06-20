@@ -1,5 +1,13 @@
 # Golden Coffee — Team Tracks
 
+**Owners (live task lists are the matching GitHub issues #1–#4):**
+| Track | Area | Owner |
+|---|---|---|
+| **A** | Perception & **Video** (`perception/`, `clips/`, `eval/`) | video teammate |
+| **B** | Agent & **Policy** (`agent/`, `federated/`) | policy teammate |
+| **C** | Backend, Actuators & **Bounties** (`backend/`, `actuators/`, `onchain/`) | Claude |
+| **D** | **Frontend** & Product (`dashboard/`, pitch) | you |
+
 Four parallel tracks, one owner each, paired with their AI coding agent. Everyone
 works against two shared contracts so the tracks never block each other:
 `shared/schemas.py` (SceneEvent + AgentAction) and the backend WebSocket. Start the
