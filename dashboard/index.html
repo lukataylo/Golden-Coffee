@@ -361,9 +361,114 @@
       .floor-alert::before { animation:none; opacity:.5; }
       * { transition-duration:.001ms !important; }
     }
+
+    /* ===================================================================
+       GRAPHITE SKIN — dark liquid glass + animated warm-orange backbone.
+       Appended overrides only; all element IDs / data hooks untouched so
+       the live WebSocket dashboard keeps working.
+       =================================================================== */
+    :root {
+      --bg:#0D0E11; --bg2:#16181D; --bg3:#1B1E25;
+      --line:rgba(255,255,255,0.08); --line2:rgba(255,255,255,0.06);
+      --ink:#ECEAE6; --muted:#8B8A86; --muted2:#B7B5AF;
+      --gold:#E0913E; --gold-soft:#EDB36A;
+      --green:#5BC98C; --red:#E0876F; --red-hot:#E8674C; --blue:#6FB6E0; --violet:#B58FE0;
+      --shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.30);
+      --glass:rgba(22,24,30,0.55); --glass-solid:#15171c;
+    }
+    body {
+      background:radial-gradient(120% 100% at 50% 0%, #14161B 0%, #0D0E11 44%, #0A0B0E 100%) !important;
+    }
+    /* --- backbone background layers --- */
+    .bg-layer{position:fixed;inset:0;z-index:-3;
+      background:radial-gradient(120% 100% at 50% 0%, #14161B 0%, #0D0E11 44%, #0A0B0E 100%);}
+    .aurora{position:fixed;inset:-12%;z-index:-2;pointer-events:none;overflow:hidden;
+      filter:blur(20px) saturate(150%);}
+    .aurora .rib{position:absolute;left:-32%;right:-32%;mix-blend-mode:screen;will-change:transform,opacity;}
+    .aurora .rib.r1{top:-4%;height:42vh;
+      background:radial-gradient(58% 50% at 50% 50%, rgba(236,132,60,0.78), rgba(206,92,42,0.22) 54%, transparent 74%);
+      animation:flow1 26s ease-in-out infinite alternate, glow 9s ease-in-out infinite;}
+    .aurora .rib.r2{top:30%;height:40vh;
+      background:radial-gradient(56% 46% at 50% 50%, rgba(238,108,78,0.82), rgba(228,150,66,0.26) 52%, transparent 72%);
+      animation:flow2 32s ease-in-out infinite alternate, glow 11s ease-in-out infinite .9s;}
+    .aurora .rib.r3{top:58%;height:40vh;
+      background:radial-gradient(60% 50% at 50% 50%, rgba(228,150,66,0.62), rgba(206,124,48,0.20) 55%, transparent 74%);
+      animation:flow3 30s ease-in-out infinite alternate, glow 10s ease-in-out infinite .5s;}
+    .aurora .rib.r4{top:82%;height:34vh;
+      background:radial-gradient(60% 50% at 50% 50%, rgba(232,103,76,0.50), rgba(201,90,40,0.16) 55%, transparent 74%);
+      animation:flow1 34s ease-in-out infinite alternate-reverse, glow 12s ease-in-out infinite .3s;}
+    @keyframes flow1{0%{transform:translate(-9%,0) rotate(-4deg);}100%{transform:translate(8%,-4%) rotate(-9deg);}}
+    @keyframes flow2{0%{transform:translate(7%,2%) rotate(3deg);}100%{transform:translate(-8%,-2%) rotate(8deg);}}
+    @keyframes flow3{0%{transform:translate(-6%,1%) rotate(-2deg);}100%{transform:translate(8%,-3%) rotate(3deg);}}
+    @keyframes glow{0%,100%{opacity:0.62;}50%{opacity:1;}}
+    .noise{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.06;mix-blend-mode:overlay;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+    /* --- glassy header --- */
+    header{
+      background:rgba(13,14,17,0.62) !important;
+      -webkit-backdrop-filter:blur(14px) saturate(160%); backdrop-filter:blur(14px) saturate(160%);
+      border-bottom:1px solid var(--line) !important;
+    }
+    /* --- glass cards --- */
+    .card{
+      background:var(--glass) !important;
+      -webkit-backdrop-filter:blur(20px) saturate(160%); backdrop-filter:blur(20px) saturate(160%);
+      border:1px solid var(--line) !important;
+      box-shadow:var(--shadow) !important;
+    }
+    .comfort-card{ box-shadow:var(--shadow), inset 0 0 0 1px rgba(224,145,62,0.08) !important;
+      border-color:rgba(224,145,62,0.22) !important; }
+    /* KPI specular catch-light (top-left) */
+    .kpi::after{content:"";position:absolute;inset:0;border-radius:14px;padding:1px;pointer-events:none;
+      background:linear-gradient(135deg, rgba(255,255,255,0.30), rgba(255,255,255,0.04) 40%, rgba(255,255,255,0) 70%);
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+      mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;}
+    /* inner surfaces read cleanly on glass */
+    .stage-main, #view-tables{ background:#0A0B0E !important; }
+    #stream-img, #frame-img, #synth-canvas, #floor-canvas{ background:#0A0B0E; }
+    .cdev, .ttile, .clean-row, .feed .action, .ovr, .cbtn{ background:rgba(255,255,255,0.03) !important; }
+    .seg, .badge{ background:rgba(255,255,255,0.04) !important; }
+
+    /* --- the whole money row, warmed into the orange material --- */
+    .rev-banner,
+    .rev-banner.lvl-amber,
+    .rev-banner.lvl-red{
+      background:linear-gradient(105deg,#E0913E 0%, #D2643C 50%, #BB4329 100%) !important;
+      border:1px solid rgba(255,255,255,0.20) !important;
+      border-left:1px solid rgba(255,255,255,0.20) !important;
+      box-shadow:0 18px 50px rgba(201,90,40,0.40), inset 0 1px 0 rgba(255,255,255,0.30) !important;
+      position:relative; overflow:hidden;
+    }
+    .rev-banner::after{content:"";position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.16) 48%, transparent 64%);
+      transform:translateX(-100%); animation:moneysheen 9s ease-in-out infinite;}
+    @keyframes moneysheen{0%,100%{transform:translateX(-100%);}55%,70%{transform:translateX(100%);}}
+    .rev-banner .rev-main, .rev-banner .rev-sub{ position:relative; z-index:1; }
+    .rev-banner .rev-amount,
+    .rev-banner.lvl-amber .rev-amount,
+    .rev-banner.lvl-red .rev-amount{ color:#FFF6EE !important; text-shadow:0 1px 14px rgba(120,40,20,0.35); }
+    .rev-banner .rev-label{ color:#fff !important; }
+    .rev-banner .rev-sub{ color:rgba(255,255,255,0.92) !important; }
+    .rev-banner .rev-tag{ color:rgba(255,255,255,0.92) !important;
+      background:rgba(255,255,255,0.12) !important; border:1px solid rgba(255,255,255,0.38) !important; }
+
+    /* --- accessibility fallbacks for the new layers --- */
+    @media (prefers-reduced-motion: reduce){
+      .aurora .rib, .rev-banner::after{ animation:none !important; }
+    }
+    @media (prefers-reduced-transparency: reduce){
+      .aurora, .noise{ display:none; }
+      .card, header{ background:var(--glass-solid) !important;
+        -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+    }
   </style>
 </head>
 <body class="nodata">
+  <!-- Graphite ambient backdrop: animated warm-orange backbone behind the glass -->
+  <div class="bg-layer"></div>
+  <div class="aurora"><span class="rib r1"></span><span class="rib r2"></span><span class="rib r3"></span><span class="rib r4"></span></div>
+  <div class="noise"></div>
   <header>
     <div class="brand">
       <h1>☕ Golden Coffee</h1>

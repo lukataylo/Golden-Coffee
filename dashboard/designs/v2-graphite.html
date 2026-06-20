@@ -43,21 +43,24 @@
     radial-gradient(120% 100% at 50% 0%, #14161B 0%, var(--canvas) 42%, var(--canvas-2) 100%);}
   /* animated warm-orange "backbone" — flowing ribbons of light behind the glass */
   .aurora{position:fixed;inset:-12%;z-index:-1;pointer-events:none;overflow:hidden;
-    filter:blur(26px) saturate(140%);}
+    filter:blur(20px) saturate(150%);}
   .aurora .rib{position:absolute;left:-32%;right:-32%;mix-blend-mode:screen;will-change:transform,opacity;}
-  .aurora .rib.r1{top:6%;height:36vh;
-    background:radial-gradient(58% 50% at 50% 50%, rgba(232,124,56,0.55), rgba(201,90,40,0.16) 54%, transparent 72%);
+  .aurora .rib.r1{top:-4%;height:42vh;
+    background:radial-gradient(58% 50% at 50% 50%, rgba(236,132,60,0.78), rgba(206,92,42,0.22) 54%, transparent 74%);
     animation:flow1 26s ease-in-out infinite alternate, glow 9s ease-in-out infinite;}
-  .aurora .rib.r2{top:36%;height:32vh; /* the bright central spine */
-    background:radial-gradient(56% 46% at 50% 50%, rgba(232,103,76,0.58), rgba(224,145,62,0.18) 52%, transparent 70%);
+  .aurora .rib.r2{top:30%;height:40vh; /* the bright central spine */
+    background:radial-gradient(56% 46% at 50% 50%, rgba(238,108,78,0.82), rgba(228,150,66,0.26) 52%, transparent 72%);
     animation:flow2 32s ease-in-out infinite alternate, glow 11s ease-in-out infinite .9s;}
-  .aurora .rib.r3{top:62%;height:30vh;
-    background:radial-gradient(60% 50% at 50% 50%, rgba(224,145,62,0.42), rgba(201,119,47,0.13) 55%, transparent 72%);
+  .aurora .rib.r3{top:58%;height:40vh;
+    background:radial-gradient(60% 50% at 50% 50%, rgba(228,150,66,0.62), rgba(206,124,48,0.20) 55%, transparent 74%);
     animation:flow3 30s ease-in-out infinite alternate, glow 10s ease-in-out infinite .5s;}
+  .aurora .rib.r4{top:82%;height:34vh;
+    background:radial-gradient(60% 50% at 50% 50%, rgba(232,103,76,0.50), rgba(201,90,40,0.16) 55%, transparent 74%);
+    animation:flow1 34s ease-in-out infinite alternate-reverse, glow 12s ease-in-out infinite .3s;}
   @keyframes flow1{0%{transform:translate(-9%,0) rotate(-4deg);}100%{transform:translate(8%,-4%) rotate(-9deg);}}
   @keyframes flow2{0%{transform:translate(7%,2%) rotate(3deg);}100%{transform:translate(-8%,-2%) rotate(8deg);}}
   @keyframes flow3{0%{transform:translate(-6%,1%) rotate(-2deg);}100%{transform:translate(8%,-3%) rotate(3deg);}}
-  @keyframes glow{0%,100%{opacity:0.5;}50%{opacity:0.92;}}
+  @keyframes glow{0%,100%{opacity:0.62;}50%{opacity:1;}}
   .noise{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.07;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
 
@@ -345,7 +348,7 @@
 </head>
 <body>
   <div class="bg-layer"></div>
-  <div class="aurora"><span class="rib r1"></span><span class="rib r2"></span><span class="rib r3"></span></div>
+  <div class="aurora"><span class="rib r1"></span><span class="rib r2"></span><span class="rib r3"></span><span class="rib r4"></span></div>
   <div class="noise"></div>
 
   <div class="shell">
