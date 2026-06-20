@@ -6,14 +6,21 @@ Built on roboflow/supervision (MIT):
   -> per-track dwell timers -> conversion-funnel state machine
   -> coarse dwell heatmap + movement-based staff-productivity proxy.
 
-Faces are blurred (head region of each person box) before any bbox leaves this
-process — the privacy/ethics requirement. No identities are ever stored; tracker
-ids are ephemeral.
+Privacy guarantees (all active by default; --privacy-mode tightens further):
+  - MediaPipe face detection blurs actual detected faces (falls back to top-30%
+    bbox proxy if MediaPipe is not installed).
+  - Stale tracks are purged after TRACK_EXPIRY_S so dead IDs never accumulate.
+  - --privacy-mode: strips all bboxes from emitted SceneEvents + adds Laplacian
+    differential-privacy noise to the heatmap so individual paths cannot be
+    reconstructed from the aggregate grid.
+  - Federated emit thread posts only anonymised aggregate ratios (no tracks, no
+    positions) to the federation server for cross-shop learning (Flock.io).
 
 Run:
   python -m perception.run --source 0                       # webcam, POST to backend
   python -m perception.run --source clips/people-walking.mp4
   python -m perception.run --source clips/x.mp4 --dry-run --max-frames 60
+  python -m perception.run --source 0 --privacy-mode        # full privacy demo
 
 Env:
   BACKEND_URL        (default http://127.0.0.1:8000)
@@ -44,6 +51,7 @@ ORDER_DWELL_S = 4.0     # dwell at counter beyond this => "ordered" (purchase pr
 STAFF_DWELL_S = 25.0    # a track living behind the counter this long looks like staff
 ACTIVITY_FULL = 0.05    # per-frame normalized centroid displacement that maps to activity=1.0
 HEATMAP_N = 8           # heatmap grid resolution (N x N)
+TRACK_EXPIRY_S = 30.0   # purge a track if unseen for this many video-time seconds
 
 # Default zones as fractions of the frame (x, y) — these vertical bands suit the
 # people-walking demo clip. For a REAL camera, replace them with venue geometry:
@@ -59,12 +67,93 @@ ZONE_POLYS_NORM = {
 }
 
 
-def _blur_faces_inplace(frame, det, w: int, h: int) -> None:
-    """Ethics hook: blur the top ~30% (head region) of each detected person box so
-    no recognizable face ever leaves this process. Cheap stand-in for a dedicated
-    face detector — good enough for the privacy demo, and operates in-place."""
+_MP_MODEL_PATH = "face_detector.tflite"
+_MP_MODEL_URL = (
+    "https://storage.googleapis.com/mediapipe-models/face_detector/"
+    "blaze_face_short_range/float16/1/blaze_face_short_range.tflite"
+)
+
+
+def _build_face_detector():
+    """Return a (kind, detector) tuple for face blurring.
+
+    Priority:
+      1. MediaPipe Tasks API (mediapipe >= 0.10.13) — most accurate. Downloads
+         a ~700 KB tflite model on first run; cached as face_detector.tflite.
+      2. OpenCV Haar cascade — ships with cv2, no download needed.
+      3. None — falls back to blurring the top-30% of each person bbox.
+    """
+    # 1. MediaPipe Tasks API
+    try:
+        import urllib.request
+        import mediapipe as mp
+        from mediapipe.tasks import python as _mp_python
+        from mediapipe.tasks.python import vision as _mp_vision
+
+        if not os.path.exists(_MP_MODEL_PATH):
+            print(f"[perception] downloading MediaPipe face model (~700 KB) -> {_MP_MODEL_PATH}")
+            urllib.request.urlretrieve(_MP_MODEL_URL, _MP_MODEL_PATH)
+
+        base_opts = _mp_python.BaseOptions(model_asset_path=_MP_MODEL_PATH)
+        opts = _mp_vision.FaceDetectorOptions(
+            base_options=base_opts, min_detection_confidence=0.4
+        )
+        detector = _mp_vision.FaceDetector.create_from_options(opts)
+        print("[perception] MediaPipe Tasks face detector active")
+        return ("mp_tasks", detector)
+    except Exception as exc:
+        print(f"[perception] MediaPipe Tasks unavailable ({exc})")
+
+    # 2. OpenCV Haar cascade
+    try:
+        import cv2
+        cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        cascade = cv2.CascadeClassifier(cascade_path)
+        if not cascade.empty():
+            print("[perception] OpenCV Haar cascade face detector active")
+            return ("haar", cascade)
+    except Exception as exc:
+        print(f"[perception] Haar cascade unavailable ({exc})")
+
+    print("[perception] using bbox-top-30% face blur fallback")
+    return (None, None)
+
+
+def _blur_faces_inplace(frame, det, w: int, h: int, face_detector=None) -> None:
+    """Blur faces before any pixel leaves this process.
+
+    face_detector is a (kind, obj) tuple from _build_face_detector(), or None.
+    """
     import cv2
 
+    kind, obj = face_detector if face_detector else (None, None)
+
+    if kind == "mp_tasks":
+        import mediapipe as mp
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        result = obj.detect(mp_img)
+        for detection in result.detections:
+            bb = detection.bounding_box
+            fx1 = max(0, bb.origin_x)
+            fy1 = max(0, bb.origin_y)
+            fx2 = min(w, bb.origin_x + bb.width)
+            fy2 = min(h, bb.origin_y + bb.height)
+            roi = frame[fy1:fy2, fx1:fx2]
+            if roi.size:
+                frame[fy1:fy2, fx1:fx2] = cv2.GaussianBlur(roi, (0, 0), 15)
+        return
+
+    if kind == "haar":
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = obj.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(20, 20))
+        for (fx, fy, fw, fh) in faces:
+            roi = frame[fy:fy + fh, fx:fx + fw]
+            if roi.size:
+                frame[fy:fy + fh, fx:fx + fw] = cv2.GaussianBlur(roi, (0, 0), 15)
+        return
+
+    # Fallback: blur the top ~30% (head region) of each person bbox.
     if det.xyxy is None:
         return
     for x1, y1, x2, y2 in det.xyxy:
@@ -331,7 +420,7 @@ class TrackState:
     __slots__ = (
         "first_t", "zone", "zone_since", "counter_dwell", "last_center",
         "visited", "entered", "approached", "ordered", "seated", "abandoned",
-        "role",
+        "role", "last_seen_t",
     )
 
     def __init__(self, t: float, center):
@@ -340,6 +429,7 @@ class TrackState:
         self.zone_since = t
         self.counter_dwell = 0.0
         self.last_center = center
+        self.last_seen_t = t
         self.visited: set[Zone] = set()
         # funnel flags (each customer counted at most once per stage)
         self.entered = False
@@ -353,11 +443,12 @@ class TrackState:
 class Pipeline:
     """Stateful scene processor: zones, dwell, funnel state machine, heatmap."""
 
-    def __init__(self, w: int, h: int):
+    def __init__(self, w: int, h: int, privacy_mode: bool = False):
         import numpy as np
         import supervision as sv
 
         self.w, self.h = w, h
+        self.privacy_mode = privacy_mode
         self.zones = {
             z: sv.PolygonZone(
                 polygon=np.array([(int(x * w), int(y * h)) for x, y in poly]),
@@ -429,6 +520,7 @@ class Pipeline:
                 if not st.entered:
                     st.entered = True
                     self.funnel.entered += 1
+            st.last_seen_t = t
 
             zone = self._zone_of(det[i : i + 1])
             if zone != st.zone:
@@ -484,9 +576,17 @@ class Pipeline:
                     zone=zone,
                     dwell_s=round(t - st.zone_since, 1),
                     activity=round(activity, 2),
-                    bbox=[x1 / self.w, y1 / self.h, x2 / self.w, y2 / self.h],
+                    # Fix 1: strip bbox in privacy mode — coordinates reveal
+                    # individual positions even when video faces are blurred.
+                    bbox=None if self.privacy_mode else [x1 / self.w, y1 / self.h, x2 / self.w, y2 / self.h],
                 )
             )
+
+        # Fix 3: purge tracks that haven't been seen for TRACK_EXPIRY_S so the
+        # dict doesn't grow without bound across a long session.
+        stale = [tid for tid, st in self.tracks.items() if t - st.last_seen_t > TRACK_EXPIRY_S]
+        for tid in stale:
+            del self.tracks[tid]
 
         # staff_productivity: anonymized aggregate movement of staff if any, else all
         staff_act = [
@@ -501,6 +601,17 @@ class Pipeline:
             grid = [[round(c / peak, 3) for c in row] for row in self.heat]
         else:
             grid = [[0.0] * HEATMAP_N for _ in range(HEATMAP_N)]
+
+        # Fix 2: Laplacian differential-privacy noise on the heatmap in privacy
+        # mode so individual movement paths can't be reconstructed from the grid.
+        if self.privacy_mode and peak > 0:
+            sensitivity = 1.0 / (HEATMAP_N * HEATMAP_N)
+            noise = np.random.laplace(0.0, sensitivity, (HEATMAP_N, HEATMAP_N))
+            grid = [
+                [max(0.0, min(1.0, round(grid[r][c] + float(noise[r, c]), 3)))
+                 for c in range(HEATMAP_N)]
+                for r in range(HEATMAP_N)
+            ]
 
         tables, cleaning = self.tablemon.update(tracks, t)
 
@@ -569,6 +680,11 @@ def main() -> None:
         "counter_top | counter_left | bands. Use with --gen-zones to save, or alone to run with it.")
     parser.add_argument("--gen-zones", help="with --preset: write the generated geometry here and exit")
     parser.add_argument("--tables", type=int, default=4, help="table count for --preset (default 4)")
+    parser.add_argument(
+        "--privacy-mode",
+        action="store_true",
+        help="strip bboxes from events, add DP noise to heatmap, skip video stream (Flock.io demo)",
+    )
     args = parser.parse_args()
 
     if args.dump_zones:
@@ -599,6 +715,9 @@ def main() -> None:
     model = YOLO(args.model)
     tracker = sv.ByteTrack()
 
+    # Fix 5: MediaPipe face detector (always attempted; falls back to bbox proxy).
+    face_detector = _build_face_detector()
+
     # Use the FFMPEG backend for network streams (HLS/RTSP/RTMP); default otherwise.
     is_network = isinstance(source, str) and source.startswith(("http", "rtsp", "rtmp"))
     if is_network and source.startswith("rtsp"):
@@ -620,7 +739,9 @@ def main() -> None:
     if fps <= 0:
         fps = 30.0
 
-    pipe = Pipeline(w, h)
+    pipe = Pipeline(w, h, privacy_mode=args.privacy_mode)
+    if args.privacy_mode:
+        print("[perception] --privacy-mode: bboxes stripped, heatmap DP-noised, video stream disabled")
 
     client = None
     if not args.dry_run:
@@ -628,13 +749,23 @@ def main() -> None:
 
         client = httpx.Client(timeout=2.0)
 
+    # Fix 6: federated emit thread — posts aggregate ratios only (no tracks/bboxes)
+    # to the federation server so cross-shop learning works without sharing raw data.
+    if not args.dry_run:
+        from perception.federated_emit import start as _fed_start
+        _latest_scene: dict = {}
+        _fed_start(lambda: _latest_scene)
+    else:
+        _latest_scene = {}
+
     mode = "dry-run (stdout)" if args.dry_run else f"POST {BACKEND_URL}/ingest"
     print(
         f"[perception] source={source} {w}x{h}@{fps:.0f}fps emit/{EMIT_EVERY_S}s -> {mode}",
         flush=True,
     )
 
-    stream_on = not args.dry_run and not args.no_stream
+    # In privacy mode, never stream annotated video — aggregate events only.
+    stream_on = not args.dry_run and not args.no_stream and not args.privacy_mode
     stream_w = 720 if w > 720 else w  # downscale wide frames for a light payload
     frame_interval = 1.0 / args.stream_fps if args.stream_fps > 0 else 0.1
 
@@ -659,17 +790,23 @@ def main() -> None:
         det = det[det.class_id == 0]  # person only
         det = tracker.update_with_detections(det)
 
-        _blur_faces_inplace(frame, det, w, h)  # privacy: blur heads before bbox leaves
+        _blur_faces_inplace(frame, det, w, h, face_detector)  # privacy: blur faces
 
         tracks, occupancy, productivity, grid, tables, cleaning = pipe.process(det, video_t, dt)
 
-        # Stream the annotated frame (zones + boxes + tables baked in) to the backend.
+        # Stream face-blurred frame with person boxes only (no zone/table overlays).
         if stream_on and video_t - last_frame_t >= frame_interval:
-            annotated = _annotate_frame(frame, det, w, h)
-            annotated = _draw_tables(annotated, tables, w, h)
+            out = frame.copy()
+            if det.xyxy is not None:
+                for i in range(len(det)):
+                    x1, y1, x2, y2 = (int(v) for v in det.xyxy[i])
+                    tid = int(det.tracker_id[i]) if det.tracker_id is not None else -1
+                    cv2.rectangle(out, (x1, y1), (x2, y2), (90, 220, 120), 2)
+                    cv2.putText(out, f"#{tid}", (x1, max(14, y1 - 6)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (90, 220, 120), 2)
             if stream_w != w:
-                annotated = cv2.resize(annotated, (stream_w, int(h * stream_w / w)))
-            okj, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 65])
+                out = cv2.resize(out, (stream_w, int(h * stream_w / w)))
+            okj, buf = cv2.imencode(".jpg", out, [cv2.IMWRITE_JPEG_QUALITY, 65])
             if okj:
                 try:
                     client.post(
@@ -699,8 +836,10 @@ def main() -> None:
             if args.dry_run:
                 print(event.model_dump_json(), flush=True)
             else:
+                payload = event.model_dump()
+                _latest_scene.update(payload)  # feed the federated emit thread
                 try:
-                    client.post(f"{BACKEND_URL}/ingest", json=event.model_dump(), headers=_TOKEN_HEADERS)
+                    client.post(f"{BACKEND_URL}/ingest", json=payload, headers=_TOKEN_HEADERS)
                 except Exception as exc:
                     print(f"[perception] backend unreachable: {exc}", flush=True)
             last_emit_t = video_t

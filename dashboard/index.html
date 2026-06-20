@@ -1116,7 +1116,7 @@
       setLiveSrc("connecting");
       img.onload = function () { if (vState.indexOf("stream") === 0) { vState = "stream"; setLiveSrc("STREAM · /stream"); $("live-msg").hidden = true; } };
       img.onerror = function () { if (vState.indexOf("stream") === 0) tryFrame(); };
-      img.src = EP.http + "/stream";
+      img.src = EP.http + "/stream?t=" + Date.now();
       // MJPEG may never fire onload; treat a decoded frame within ~3s as success.
       streamTimer = setTimeout(function () {
         if (vState === "stream") return;
