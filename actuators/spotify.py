@@ -116,11 +116,16 @@ def verify_playlists() -> None:
         uri = mood.playlist
         try:
             pid = uri.split(":")[-1]
-            info = sp.playlist(pid, fields="name,tracks.total")
-            print(f"  ✓ {key:20s}  '{info['name']}'  ({info['tracks']['total']} tracks)  {uri}")
+            info = sp.playlist(pid)
+            name = info.get("name", "?")
+            total = (info.get("tracks") or {}).get("total", "?")
+            owner = (info.get("owner") or {}).get("display_name", "?")
+            print(f"  ✓ {key:20s}  '{name}'  ({total} tracks)  by {owner}")
+            print(f"    {uri}")
             ok += 1
         except Exception as exc:
-            print(f"  ✗ {key:20s}  FAILED: {exc}  {uri}")
+            print(f"  ✗ {key:20s}  FAILED: {exc}")
+            print(f"    {uri}")
     print(f"\n{ok}/{len(MOODS)} playlists verified.")
 
 

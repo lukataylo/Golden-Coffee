@@ -66,37 +66,37 @@ MOODS: dict[str, Mood] = {
         "morning_rush", "Morning Rush",
         "upbeat acoustic pop light indie rock bright cheerful mid-to-fast tempo",
         bpm=118, energy=0.72, volume=58,
-        playlist="spotify:playlist:37i9dQZF1DX0jgyAiPl8Af",
+        playlist="spotify:playlist:0l0z9lLKk9lLzbP3IXHPiw",  # Happy cafe music
     ),
     "midday_dwell": Mood(
         "midday_dwell", "Midday Dwell",
         "neo-soul lo-fi hip hop instrumental smooth mellow focus background",
         bpm=78, energy=0.38, volume=44,
-        playlist="spotify:playlist:37i9dQZF1DWWQRwui0ExPn",
+        playlist="spotify:playlist:2Al9G2jrWkwDlRFMZaw1GX",  # lofi Jazz cafe Study Beats & Chill Vibes
     ),
     "afternoon_lounge": Mood(
         "afternoon_lounge", "Afternoon Lounge",
         "bossa nova indie folk jazz soul warm textured premium relaxing wind-down",
         bpm=85, energy=0.40, volume=46,
-        playlist="spotify:playlist:37i9dQZF1DXbITWG1ZJKYt",
+        playlist="spotify:playlist:2t8P74P2FbdqrS0PJKefbL",  # Bossa Nova Lounge 2026
     ),
     "rush_flow": Mood(
         "rush_flow", "Rush Flow",
         "steady mid-tempo groove soulful nu-jazz keep the line moving",
         bpm=104, energy=0.55, volume=46,
-        playlist="spotify:playlist:37i9dQZF1DX2sUQwD7tbmL",
+        playlist="spotify:playlist:3jJoNehRX6KY8V0JnAWeGr",  # GROOVY CAFE UPBEAT VIBES
     ),
     "busy_calm": Mood(
         "busy_calm", "Busy & Calm",
         "soft downtempo chill ambient so a full room stays talkable",
         bpm=80, energy=0.38, volume=38,
-        playlist="spotify:playlist:37i9dQZF1DWTvNyxOwkztu",
+        playlist="spotify:playlist:0WDSPABTByYd8uFU8ADLvq",  # The Best of Café del Mar
     ),
     "upbeat_lift": Mood(
         "upbeat_lift", "Upbeat Lift",
         "bright feel-good indie pop sunny energetic vibe-lifter",
         bpm=116, energy=0.70, volume=60,
-        playlist="spotify:playlist:37i9dQZF1DX9XIFQuFvzM4",
+        playlist="spotify:playlist:0gtptp3fU4x9oXSf6TAJEv",  # Energy bops and indie pop
     ),
 }
 MOOD_KEYS: list[str] = list(MOODS.keys())
