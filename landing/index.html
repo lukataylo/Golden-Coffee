@@ -342,7 +342,30 @@ class Component extends DCLogic {
     { q: "Will it work during a rush?", a: "That's the point. Rush copilot watches the queue and walk-offs in real time and nudges staff to open a second till before a line costs you the sale." },
   ];
 
-  componentDidMount(){ this._tries = 0; this._revealAll(); this._initAnim(); }
+  componentDidMount(){ this._tries = 0; this._revealAll(); this._scrollReveal(); this._initAnim(); }
+
+  // Scroll reveals via IntersectionObserver — each element animates up exactly
+  // ONCE and is then unobserved, so the pinned-SUN ScrollTrigger refreshes can no
+  // longer re-fire them (that re-firing was the double-trigger "bounce"). Pure CSS
+  // transform/transition; opacity stays 1 so nothing is ever invisible.
+  _scrollReveal(){
+    const els = [...document.querySelectorAll('[data-rv]')];
+    document.querySelectorAll('[data-rv-group]').forEach(grp =>
+      Array.from(grp.children).forEach((c, i) => { c.dataset.rvDelay = (i * 0.09).toFixed(2); els.push(c); }));
+    els.forEach(el => {
+      el.style.opacity = 1;
+      el.style.transform = 'translateY(28px)';
+      el.style.transition = `transform .85s cubic-bezier(.22,.61,.36,1) ${el.dataset.rvDelay || 0}s`;
+      el.style.willChange = 'transform';
+    });
+    if(!('IntersectionObserver' in window)){ els.forEach(el => { el.style.transform = 'none'; }); return; }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){ e.target.style.transform = 'none'; io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
+    els.forEach(el => io.observe(el));
+  }
 
   _initAnim(){
     const g = window.gsap, ST = window.ScrollTrigger;
@@ -356,24 +379,13 @@ class Component extends DCLogic {
     const h1 = d.querySelectorAll('[data-h="1"]');
     const h2 = d.querySelectorAll('[data-h="2"]');
     if(h1.length || h2.length){
-      g.timeline({ defaults:{ ease:'power3.out', duration:1 }, onComplete:() => this._revealAll() })
+      g.timeline({ defaults:{ ease:'power3.out', duration:1 } })
         .from(h1, { y:30, clearProps:'transform' }, 0.15)
         .from(h2, { y:30, clearProps:'transform' }, 0.35);
     }
 
-    // staggered group reveals — explicit fromTo (no clearProps) so a ScrollTrigger
-    // refresh (the pinned SUN forces several) can't re-record the start and replay
-    // the slide, which caused a double-trigger "bounce". once:true kills each after.
-    d.querySelectorAll('[data-rv-group]').forEach(grp => {
-      const kids = grp.children;
-      g.fromTo(kids, { y:30 }, { y:0, duration:1, ease:'power3.out', stagger:0.13, overwrite:'auto',
-        scrollTrigger:{ trigger:grp, start:'top 92%', once:true } });
-    });
-    // single-element reveals
-    d.querySelectorAll('[data-rv]').forEach(el => {
-      g.fromTo(el, { y:30 }, { y:0, duration:1, ease:'power3.out', overwrite:'auto',
-        scrollTrigger:{ trigger:el, start:'top 94%', once:true } });
-    });
+    // (scroll reveals handled by _scrollReveal / IntersectionObserver — not GSAP,
+    // so they can't be re-fired by the SUN pin's ScrollTrigger refreshes.)
 
     // hero photo parallax
     const img = d.querySelector('[data-parallax]');
