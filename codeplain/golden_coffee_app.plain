@@ -1,0 +1,36 @@
+---
+import:
+  - typescript-react-app-template
+---
+
+***definitions***
+
+- :Comfort-score: is an integer from 0 to 100 describing how pleasant the room currently feels.
+
+- :Comfort-band: is derived from a :Comfort-score:: 0 to 39 is "Quiet", 40 to 74 is "Balanced", and 75 to 100 is "Buzzing".
+
+- :Sample-reading: is a built-in object used when no live data is available, with the integer fields: comfort (equal to 62, a :Comfort-score:), occupancy (equal to 18), queue (equal to 3), sound (equal to 58), crowd (equal to 64), and flow (equal to 71). The sound, crowd and flow fields are each a 0 to 100 score.
+
+- :Sample-activity: is a built-in list of exactly four autopilot-action objects, newest first, each with the fields time (a string such as "14:36"), title (a short string such as "Lowered music to 40%"), and reason (a short string such as "room is buzzing"). The four items are: ("14:36", "Lowered music to 40%", "room is buzzing"); ("14:21", "Warmed the lights", "afternoon lull, keeping people cosy"); ("13:58", "Nudged staff to open a 2nd till", "queue hit 5"); ("13:30", "Started a citrus diffuse", "post-lunch reset").
+
+***functional specs***
+
+- Implement the entry point for :App:.
+
+- :App: should present a mobile-first layout: a single column centered on the page with a maximum width of 480 pixels and a warm off-white background. It has a fixed top header showing the title "Golden Coffee", and a fixed bottom navigation bar with four tabs labelled "Room", "Controls", "Activity", and "Settings". Tapping a tab switches the visible screen, and the active tab is visually highlighted. The "Room" screen is shown by default.
+
+- :App: should store a café backend base URL in browser localStorage under the key "gc_backend". The Settings screen should show a labelled text input pre-filled with the stored value, defaulting to "https://golden-coffee-production.up.railway.app" when nothing is stored, and a "Save" button that writes the current input value to localStorage and shows a brief "Saved" confirmation.
+
+- The Room screen should display the current :Comfort-score: as a large number shown as "<score> / 100" together with its :Comfort-band: label underneath, and below that a row of two stats: "In room" showing the occupancy and "In queue" showing the queue. When the app first loads, these values come from the :Sample-reading:.
+
+- Below the stats, the Room screen should show a "Comfort breakdown" section with three labelled rows — "Sound", "Crowd", and "Flow" — each rendered as a horizontal bar filled left-to-right in proportion to that field's 0 to 100 value from the current reading, with the numeric value shown at the end of the row.
+
+- While the Room screen is visible, :App: should refresh the reading by sending an HTTP GET to "<base>/comfort" (where <base> is the stored backend base URL) once when the screen is shown and then every 5 seconds. A successful JSON response containing any of the numeric fields comfort, occupancy, queue, sound, crowd, flow replaces those displayed values. Any network error, non-OK response, or malformed body leaves the previously displayed values unchanged (starting from the :Sample-reading:).
+
+- The Controls screen should let the owner nudge the room. It shows three cards — "Music", "Lighting", and "Scent". The Music card has buttons "Quieter" and "Louder"; the Lighting card has buttons "Warmer" and "Brighter"; the Scent card has buttons "On" and "Off". Tapping any button sends an HTTP POST to "<base>/override" with a JSON body of the shape { control, action } (for example { "control": "music", "action": "quieter" }) and then shows a confirmation line under that card reading "Sent: <action>". The confirmation is shown even if the request fails (the nudge is optimistic), and a failure must never crash the screen.
+
+- The Activity screen should show a vertically scrollable feed of autopilot actions, newest first — this is the agent's audit trail. Each row shows the action's time, its title in bold, and its reason in a muted second line. The feed initially shows :Sample-activity:.
+
+- The Settings screen should also show a "Tamper-proof record" card explaining that the autopilot's action history is anchored to Walrus decentralized storage so it can be independently verified. The card has a "Verify latest snapshot" button that opens, in a new browser tab, the URL "https://aggregator.walrus-testnet.walrus.space/v1/blobs/<blobId>", where <blobId> is read from localStorage under the key "gc_blob" (defaulting to "demo-snapshot" when nothing is stored).
+
+- :App: should be installable to an iPhone home screen as a PWA: its HTML head must link a web app manifest declaring the name "Golden Coffee", "standalone" display, a theme colour and a background colour, and at least one icon; and must include the meta tags apple-mobile-web-app-capable set to "yes" and apple-mobile-web-app-title set to "Golden Coffee", plus an apple-touch-icon link. A service worker should be registered that caches the app shell so the app still loads when offline.

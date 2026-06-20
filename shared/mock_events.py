@@ -16,11 +16,10 @@ import time
 
 import httpx
 
-from shared.schemas import CleaningZone, Funnel, Role, SceneEvent, Table, Track, Zone
+from shared.schemas import CleaningZone, Role, SceneEvent, Table, Track, Zone
 
-BACKEND_URL    = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
-TICK_S         = float(os.environ.get("MOCK_TICK_S", "1.0"))
-AVG_TICKET_GBP = float(os.environ.get("AVG_TICKET_GBP", "4.80"))
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+TICK_S      = float(os.environ.get("MOCK_TICK_S", "1.0"))
 
 ZONES = [Zone.QUEUE, Zone.COUNTER, Zone.SEATING, Zone.SEATING, Zone.ENTRY]
 
@@ -52,14 +51,6 @@ def _synthetic_scene(t: int) -> SceneEvent:
             )
         )
 
-    funnel = Funnel(
-        entered=10 + t // 5,
-        approached=8 + t // 6,
-        ordered=6 + t // 8,
-        seated=5 + t // 9,
-        abandoned=t // 20,
-    )
-
     # 8x8 coarse heatmap with a hot spot near the counter.
     grid = [[round(wave * math.exp(-((r - 2) ** 2 + (c - 5) ** 2) / 6), 3) for c in range(8)] for r in range(8)]
 
@@ -89,8 +80,6 @@ def _synthetic_scene(t: int) -> SceneEvent:
         since_clean_s=float((t * 30) % 4000), status=clean_status,
     )]
 
-    walkaway_gbp = round(funnel.abandoned * AVG_TICKET_GBP, 2)
-
     hour = time.localtime().tm_hour
 
     # Outdoor temp: day curve 10°C dawn → 20°C midday → 14°C evening.
@@ -111,13 +100,9 @@ def _synthetic_scene(t: int) -> SceneEvent:
         tracks=tracks,
         occupancy=occupancy,
         queue_len=queue_len,
-        funnel=funnel,
-        cups_made=6 + t // 8,
         heatmap_grid=grid,
-        staff_productivity=productivity,
         tables=tables,
         cleaning=cleaning,
-        walkaway_gbp=walkaway_gbp,
         outdoor_temp_c=outdoor_temp_c,
         indoor_temp_c=indoor_temp_c,
         indoor_humidity_rh=indoor_humidity_rh,

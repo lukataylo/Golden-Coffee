@@ -15,5 +15,7 @@ COPY . .
 
 EXPOSE 8000
 
-# Railway injects $PORT; default to 8000 locally. Use sh -c so $PORT expands.
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Railway injects $PORT. start.sh runs the backend hub + the in-container actuator
+# executor (drives the Xiaomi Wi-Fi light over the Mi cloud) so the deployed
+# dashboard controls real devices during the demo.
+CMD ["sh", "start.sh"]

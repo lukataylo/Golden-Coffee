@@ -59,15 +59,11 @@ def _require_token(x_token: Optional[str]) -> None:
 
 
 def _log_metrics(event: dict) -> None:
-    """Append a compact metrics row so forecasting has history. Best-effort."""
-    f = event.get("funnel", {}) or {}
+    """Append a compact metrics row so history has a record. Best-effort."""
     row = {
         "ts": event.get("ts"),
         "occupancy": event.get("occupancy", 0),
         "queue_len": event.get("queue_len", 0),
-        "entered": f.get("entered", 0),
-        "ordered": f.get("ordered", 0),
-        "abandoned": f.get("abandoned", 0),
         "tables_waiting": sum(
             1 for t in event.get("tables", []) if t.get("status") in ("waiting", "overdue")
         ),
@@ -244,13 +240,9 @@ async def metrics(limit: int = 200) -> dict:
                 rows.append(json.loads(ln))
             except Exception:
                 continue
-    latest_abandoned = next(
-        (r["abandoned"] for r in reversed(rows) if "abandoned" in r), 0
-    )
     summary = {
         "samples": len(rows),
         "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
-        "latest_abandoned": latest_abandoned,
     }
     return {"summary": summary, "recent": rows}
 

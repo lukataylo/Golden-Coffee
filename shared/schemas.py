@@ -42,14 +42,6 @@ class Track(BaseModel):
     bbox: Optional[list[float]] = None  # [x1,y1,x2,y2] normalized 0..1 (faces blurred upstream)
 
 
-class Funnel(BaseModel):
-    entered: int = 0
-    approached: int = 0   # reached the counter/queue
-    ordered: int = 0      # dwell at counter long enough to be a purchase proxy
-    seated: int = 0
-    abandoned: int = 0    # left the queue without ordering
-
-
 class Table(BaseModel):
     """A named table region: live wait state + cleaning/bussing state."""
     id: str                         # "T1"
@@ -79,14 +71,9 @@ class SceneEvent(BaseModel):
     tracks: list[Track] = Field(default_factory=list)
     occupancy: int = 0              # customers currently inside
     queue_len: int = 0
-    funnel: Funnel = Field(default_factory=Funnel)
-    cups_made: int = 0              # cumulative drinks detected at counter
     heatmap_grid: Optional[list[list[float]]] = None  # coarse dwell-density grid for flow/layout
-    staff_productivity: float = 0.0  # 0..1 aggregate, anonymized
     tables: list[Table] = Field(default_factory=list)       # per-table wait + cleaning
     cleaning: list[CleaningZone] = Field(default_factory=list)  # cleaning cadence by zone
-    walkaway_gbp: Optional[float] = None   # cumulative revenue lost to queue walk-offs today
-    forecast_next_hour: Optional[int] = None  # predicted occupancy for the next clock hour
     outdoor_temp_c: Optional[float] = None     # outdoor thermometer (°C) — sets seasonal baseline
     indoor_temp_c: Optional[float] = None      # measured room temperature (°C) — AC feedback
     indoor_humidity_rh: Optional[float] = None # measured relative humidity % — humidity offset

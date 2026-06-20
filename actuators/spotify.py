@@ -27,13 +27,46 @@ REDIRECT = os.environ.get("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callbac
 SCOPE = "user-modify-playback-state user-read-playback-state streaming"
 
 
-def _client():
-    import spotipy
-    from spotipy.oauth2 import SpotifyOAuth
+def _backend_base() -> str:
+    """HTTP base of the backend (which holds the server-side Spotify token).
+    Prefer SPOTIFY_TOKEN_BASE/BACKEND_URL, else derive from BACKEND_WS."""
+    b = os.environ.get("SPOTIFY_TOKEN_BASE") or os.environ.get("BACKEND_URL")
+    if b:
+        return b.rstrip("/")
+    ws = os.environ.get("BACKEND_WS", "ws://127.0.0.1:8000/ws")
+    return ws.replace("wss://", "https://").replace("ws://", "http://").removesuffix("/ws")
 
-    return spotipy.Spotify(
-        auth_manager=SpotifyOAuth(redirect_uri=REDIRECT, scope=SCOPE, cache_path=".spotipy-cache")
-    )
+
+def _token_from_backend() -> str | None:
+    """Fetch a fresh access token from the backend's /spotify/token (the token
+    the user authorized once, server-side). No local OAuth server needed."""
+    try:
+        import httpx
+        r = httpx.get(f"{_backend_base()}/spotify/token", timeout=6.0)
+        tok = r.json().get("access_token")
+        return tok or None
+    except Exception:
+        return None
+
+
+def _client():
+    """Spotify client. Prefers the backend's server-side token (unified auth);
+    falls back to a local .spotipy-cache if present. Never starts an interactive
+    OAuth server (that caused 'Address already in use' in the headless actuator)."""
+    import spotipy
+
+    tok = _token_from_backend()
+    if tok:
+        return spotipy.Spotify(auth=tok)
+
+    from pathlib import Path
+    if Path(".spotipy-cache").exists():
+        from spotipy.oauth2 import SpotifyOAuth
+        return spotipy.Spotify(
+            auth_manager=SpotifyOAuth(redirect_uri=REDIRECT, scope=SCOPE,
+                                      cache_path=".spotipy-cache", open_browser=False)
+        )
+    return None
 
 
 def set_volume(percent: int) -> bool:
@@ -46,6 +79,9 @@ def set_volume(percent: int) -> bool:
         return False
     try:
         sp = _client()
+        if sp is None:
+            print("[spotify] not authenticated — visit <backend>/spotify/auth once")
+            return False
         devices = sp.devices().get("devices", [])
         if not devices:
             print("[spotify] no active device — open Spotify and press play")
@@ -77,6 +113,9 @@ def set_music(
         return False
     try:
         sp = _client()
+        if sp is None:
+            print("[spotify] not authenticated — visit <backend>/spotify/auth once")
+            return False
         devices = sp.devices().get("devices", [])
         if not devices:
             print("[spotify] no active device — open Spotify and press play")

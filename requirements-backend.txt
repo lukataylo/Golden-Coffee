@@ -6,3 +6,9 @@ pydantic>=2.9.0
 websockets>=13.0
 httpx>=0.27.0
 python-multipart>=0.0.9     # form parsing safety net for FastAPI
+# In-container actuator executor (actuators/run.py) for the live demo: drives the
+# Xiaomi Wi-Fi light over the Mi cloud. Only the cloud transport runs on Railway
+# (no Bluetooth/IR/Spotify hardware there), so just its HTTP + crypto deps.
+requests>=2.32.0            # Mi cloud HTTP
+pycryptodome>=3.20.0        # RC4/HMAC signing for the Mi cloud transport
+python-dotenv>=1.0.0        # optional .env load (harmless no-op on Railway)
