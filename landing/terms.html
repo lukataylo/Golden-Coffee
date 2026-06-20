@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms &amp; Conditions — Golden Coffee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23E8862A%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%278%27 cy=%2721%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%2715%27 cy=%2716%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3C/svg%3E">
+<meta name="description" content="The terms governing your use of Golden Coffee, including subscriptions, the free pilot, fair-use, and how we handle camera data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@6..72,0,300;6..72,0,400;6..72,0,500;6..72,1,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./gc.css">
+<style>
+  .legal-head{padding:70px 0 30px;text-align:center;border-bottom:1px solid var(--line);}
+  .legal-head h1{font-size:clamp(34px,4.4vw,52px);margin:12px 0 14px;}
+  .legal-head .meta{font-size:13.5px;color:var(--muted-2);font-family:var(--mono);}
+  .legal-grid{display:grid;grid-template-columns:240px 1fr;gap:56px;max-width:1100px;margin:0 auto;padding:48px 28px 90px;}
+
+  /* sticky TOC */
+  .toc{position:sticky;top:90px;align-self:start;max-height:calc(100vh - 120px);overflow-y:auto;}
+  .toc h4{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);margin-bottom:14px;}
+  .toc a{display:block;font-size:13.5px;color:#5b4a38;text-decoration:none;padding:6px 0 6px 12px;border-left:2px solid transparent;line-height:1.4;transition:all .2s ease;}
+  .toc a:hover{color:var(--ink);}
+  .toc a.active{color:var(--amber);border-left-color:var(--amber);font-weight:600;}
+
+  .legal-body{max-width:680px;}
+  .legal-body section{margin-bottom:40px;scroll-margin-top:90px;}
+  .legal-body h2{font-size:23px;margin-bottom:14px;display:flex;align-items:baseline;gap:12px;}
+  .legal-body h2 .n{font-family:var(--mono);font-size:14px;color:var(--amber);font-weight:600;}
+  .legal-body h3{font-family:var(--sans);font-size:15.5px;font-weight:700;color:var(--ink);margin:20px 0 8px;}
+  .legal-body p{font-size:15px;line-height:1.7;color:#4f3f2c;margin-bottom:14px;}
+  .legal-body ul{margin:0 0 14px;padding-left:22px;}
+  .legal-body li{font-size:15px;line-height:1.7;color:#4f3f2c;margin-bottom:8px;}
+  .legal-body strong{color:var(--ink);}
+  .legal-body a{color:var(--amber);font-weight:600;text-decoration:none;}
+  .legal-body a:hover{text-decoration:underline;}
+  .callout{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:12px;padding:16px 20px;margin:16px 0;}
+  .callout p{margin:0;font-size:14px;color:var(--muted);}
+  .plain{background:rgba(232,134,42,.08);border-radius:10px;padding:12px 16px;margin:10px 0 16px;font-size:13.5px;color:#6b5326;line-height:1.6;}
+  .plain strong{color:#8a4d12;}
+
+  @media(max-width:860px){
+    .legal-grid{grid-template-columns:1fr;gap:0;}
+    .toc{position:static;max-height:none;margin-bottom:30px;border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--paper);}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./index.html">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+      <span>Golden Coffee</span>
+    </a>
+    <div class="nav-links">
+      <a href="./index.html#how" class="nav-secondary">How it works</a>
+      <a href="./pricing.html" class="nav-secondary">Pricing</a>
+      <a href="./signin.html" class="nav-secondary">Sign in</a>
+      <a href="./onboarding.html" class="btn-pill">Start free pilot</a>
+    </div>
+  </div>
+</nav>
+
+<header class="legal-head">
+  <div class="eyebrow">Legal</div>
+  <h1>Terms &amp; Conditions</h1>
+  <div class="meta">Last updated 20 June 2026 · Version 1.0</div>
+</header>
+
+<div class="legal-grid">
+  <!-- TOC -->
+  <aside class="toc">
+    <h4>On this page</h4>
+    <nav id="toc">
+      <a href="#agreement">1. Agreement</a>
+      <a href="#definitions">2. Definitions</a>
+      <a href="#service">3. The service</a>
+      <a href="#eligibility">4. Eligibility &amp; accounts</a>
+      <a href="#pilot">5. Free pilot</a>
+      <a href="#subscriptions">6. Subscriptions &amp; billing</a>
+      <a href="#renewal">7. Renewal &amp; cancellation</a>
+      <a href="#pricechanges">8. Price changes</a>
+      <a href="#fairuse">9. Fair use</a>
+      <a href="#hardware">10. Hardware &amp; integrations</a>
+      <a href="#privacy">11. Data &amp; privacy</a>
+      <a href="#ip">12. Intellectual property</a>
+      <a href="#warranties">13. Warranties &amp; disclaimers</a>
+      <a href="#liability">14. Limitation of liability</a>
+      <a href="#indemnity">15. Indemnity</a>
+      <a href="#termination">16. Termination</a>
+      <a href="#law">17. Governing law</a>
+      <a href="#changes">18. Changes to these terms</a>
+      <a href="#contact">19. Contact</a>
+    </nav>
+  </aside>
+
+  <!-- BODY -->
+  <div class="legal-body">
+
+    <p style="font-size:15.5px;color:var(--muted);margin-bottom:28px;">These Terms &amp; Conditions (the “<strong>Terms</strong>”) are a legal agreement between you and Golden Coffee. Please read them carefully. By creating an account, starting a pilot, or using the service, you agree to be bound by them. If you do not agree, do not use the service.</p>
+
+    <section id="agreement">
+      <h2><span class="n">01</span> Agreement</h2>
+      <p>These Terms govern your access to and use of the Golden Coffee software, dashboard, mobile and web applications, and related services (together, the “<strong>Service</strong>”), operated by Golden Coffee (“<strong>we</strong>”, “<strong>us</strong>”, “<strong>our</strong>”). “<strong>You</strong>” means the business and the individual accepting these Terms on its behalf, who warrants they are authorised to do so.</p>
+      <p>These Terms incorporate our <a href="#privacy">data &amp; privacy terms</a> and any order or plan details presented at checkout. Together they form the entire agreement between us and supersede any prior understanding on the same subject.</p>
+    </section>
+
+    <section id="definitions">
+      <h2><span class="n">02</span> Definitions</h2>
+      <ul>
+        <li>“<strong>Venue</strong>” means a single physical trading space connected to the Service through one camera feed.</li>
+        <li>“<strong>Camera Data</strong>” means the video stream from your camera, processed on-device as described in clause 11.</li>
+        <li>“<strong>Derived Data</strong>” means the anonymous, aggregated signals the Service produces (e.g. occupancy counts, queue length, dwell time, comfort index) — never faces or identities.</li>
+        <li>“<strong>Actions</strong>” means changes the Service makes or suggests to your devices and operations (e.g. adjusting music, lighting, temperature, or alerting staff).</li>
+        <li>“<strong>Third-Party Services</strong>” means devices, platforms or APIs you connect, such as Spotify, Philips Hue, infrared controllers, smart diffusers, messaging providers, or AI model providers.</li>
+        <li>“<strong>Kit</strong>” means the hardware we provide as part of your membership — typically a smart camera, an infrared controller, a smart plug and a scent dispenser — supplied on loan for the duration of your membership.</li>
+        <li>“<strong>Pilot</strong>” means the free trial period described in clause 5.</li>
+      </ul>
+    </section>
+
+    <section id="service">
+      <h2><span class="n">03</span> The service</h2>
+      <p>Golden Coffee reads your Venue from a single existing camera and helps you (a) tune the atmosphere — music, lighting, scent and temperature — and (b) protect your speed of service through queue alerts, table service reminders, cleaning cadence, and footfall forecasting.</p>
+      <p>The Service operates a deterministic policy engine and may, on eligible plans, use optional AI reasoning. <strong>Actions can run in suggest-only mode or autopilot mode</strong>, configurable by you. You remain responsible for your premises, staff, health-and-safety, pricing and licensing decisions at all times; the Service is a decision-support tool, not a replacement for human judgement.</p>
+      <div class="plain"><strong>In plain English:</strong> we give your room a second pair of eyes and can nudge or adjust things for you. You're still in charge — and you choose whether it asks first or acts on its own.</div>
+    </section>
+
+    <section id="eligibility">
+      <h2><span class="n">04</span> Eligibility &amp; accounts</h2>
+      <p>You must be at least 18 and operating a legitimate business to use the Service. You are responsible for keeping your account credentials secure and for all activity under your account. Notify us promptly of any unauthorised use. You must provide accurate information and keep it up to date.</p>
+      <p>You are responsible for ensuring that staff who access the Service do so in line with these Terms and any applicable workplace and privacy obligations.</p>
+    </section>
+
+    <section id="pilot">
+      <h2><span class="n">05</span> Free pilot</h2>
+      <p>We offer a <strong>14-day free Pilot</strong>, and we ship your Kit free so you can try the whole product. No payment card is required to begin, and you may cancel at any point during the Pilot without charge — in which case you simply return the Kit using the prepaid method provided. Unless you cancel before the Pilot ends, the Pilot will convert into a paid membership, and your first billing period will begin — but only once you have added valid payment details. We will not charge you without a payment method on file; if no payment method is added, the membership does not start and the Service ends when the Pilot expires.</p>
+      <p>One Pilot is available per Venue. We may withdraw or vary the Pilot offer for new sign-ups at any time; this does not affect a Pilot already in progress.</p>
+    </section>
+
+    <section id="subscriptions">
+      <h2><span class="n">06</span> Subscriptions &amp; billing</h2>
+      <p>Membership is sold on a <strong>per-Venue</strong> basis and includes the Kit. Current pricing is shown on our <a href="./pricing.html">pricing page</a>. Because we provide the Kit free, membership runs on an initial <strong>12-month minimum term</strong>, after which it continues on a rolling basis. You may choose <strong>monthly</strong> or <strong>annual</strong> billing:</p>
+      <ul>
+        <li><strong>Monthly</strong> membership is billed in advance each month across the 12-month term, then rolls monthly and may be cancelled effective at the end of any month.</li>
+        <li><strong>Annual</strong> membership is billed in advance for twelve months at a discounted rate (equivalent to two months free).</li>
+      </ul>
+      <p>Prices are quoted <strong>excluding VAT and other applicable taxes</strong>, which are added at checkout based on your billing location. Payments are processed by our third-party payment provider; by subscribing you authorise us to charge your payment method for all fees due. Fees are non-refundable except where required by law or expressly stated in these Terms.</p>
+      <p>If a payment fails, we may retry it and may suspend the Service until the amount due is paid. You are responsible for keeping your billing details current.</p>
+    </section>
+
+    <section id="renewal">
+      <h2><span class="n">07</span> Renewal &amp; cancellation</h2>
+      <p>Subscriptions <strong>renew automatically</strong> at the end of each billing period (monthly or annual) at the then-current price, unless cancelled beforehand. You can cancel at any time from your account settings or by contacting us.</p>
+      <ul>
+        <li><strong>During the free Pilot</strong>, you may cancel at any time at no charge.</li>
+        <li><strong>During the initial 12-month term</strong>, membership may not be cancelled early except where we agree or the law requires; it then ends at the close of that term.</li>
+        <li><strong>After the initial term</strong>, monthly membership rolls and you may cancel effective at the end of any month; annual membership renews unless cancelled before the renewal date.</li>
+        <li>Cancelling an <strong>annual</strong> term stops the next renewal; we do not refund the unused portion of a current annual term except where required by law.</li>
+        <li>On any cancellation you must return the Kit within 30 days (clause 10); we provide the prepaid return method.</li>
+      </ul>
+    </section>
+
+    <section id="pricechanges">
+      <h2><span class="n">08</span> Price changes</h2>
+      <p>We may change our prices. For existing subscribers, we will give at least <strong>30 days' notice</strong> by email before a price change takes effect, and any change will apply only from your next renewal. If you do not accept a price change, you may cancel before it takes effect.</p>
+    </section>
+
+    <section id="fairuse">
+      <h2><span class="n">09</span> Fair use</h2>
+      <p>Our plans are a flat per-Venue fee and are not metered per request, so your bill will not spike with a busy week. To keep this sustainable, normal single-Venue café and restaurant use is expected. We reserve the right to apply reasonable rate limits and to address use that is abusive, automated at scale, or materially beyond typical single-Venue patterns (for example, attempting to serve multiple Venues through one subscription). We will contact you before taking action wherever practicable.</p>
+      <p>You agree not to: resell or sublicense the Service without our written consent; reverse engineer or attempt to extract source code except as permitted by law; use the Service unlawfully or to infringe others' rights; or interfere with the integrity or performance of the Service.</p>
+      <div class="plain"><strong>In plain English:</strong> use it normally for your café and your bill stays flat and predictable. We only step in if someone tries to game one subscription across many sites or abuse the system.</div>
+    </section>
+
+    <section id="hardware">
+      <h2><span class="n">10</span> Kit, hardware &amp; integrations</h2>
+      <p>Your membership includes a hardware <strong>Kit</strong>, supplied <strong>on loan</strong> at no extra charge and shipped pre-paired. <strong>Title to the Kit remains with us</strong>; you are granted the right to use it for as long as your membership is active. You agree to keep the Kit in good condition (fair wear and tear excepted), to install and operate it lawfully — including any landlord, employer or signage obligations relating to cameras on your premises — and not to sell, modify or remove it from the Venue without our consent.</p>
+      <p><strong>On cancellation or termination</strong>, you must return the Kit within 30 days using the prepaid method we provide, or pay its residual value — currently up to <strong>£75</strong> for the full kit, or a pro-rated per-item amount for anything not returned. We replace faulty Kit items at no charge during your membership. We do not otherwise sell or separately warrant hardware, but nothing here affects your non-excludable statutory rights (including, where you deal as a consumer, that goods supplied are of satisfactory quality and fit for purpose). You may also use compatible devices <strong>you already own</strong> instead of, or alongside, the Kit. The Service additionally requires a small always-on computer on your premises (your own, or a low-cost mini-PC we can recommend) on which the on-site vision processing runs.</p>
+      <p>Third-Party Services (such as Spotify, Philips Hue, your own infrared controllers or diffusers, messaging providers, and AI model providers) are governed by their own terms. We are not responsible for their availability, accuracy, pricing or actions. Some features — for example commercial music playback — may require you to hold the appropriate licences and active subscriptions (such as a music licence for public performance). Maintaining those is your responsibility.</p>
+      <div class="callout"><p>Connecting a Third-Party Service authorises Golden Coffee to send instructions to it on your behalf (for example, adjusting volume or lighting). You can disconnect any integration at any time from your account.</p></div>
+    </section>
+
+    <section id="privacy">
+      <h2><span class="n">11</span> Data &amp; privacy</h2>
+      <p>Privacy is built into the Service. The following terms describe how we handle data.</p>
+      <h3>On-device, privacy-first processing</h3>
+      <p>Camera Data is processed <strong>on-device</strong>. Faces are blurred before any analysis, and we generate only anonymous, ephemeral track identifiers. <strong>We do not store video. We do not store faces. We do not perform identity recognition, demographic profiling, or employee scoring.</strong> What leaves the device is Derived Data — anonymous, aggregated signals about the room.</p>
+      <h3>Roles under data-protection law</h3>
+      <p>For Camera Data processed on your premises, <strong>you are the data controller</strong> and you are responsible for lawful camera operation, signage, and informing staff and customers as required by the UK GDPR, the Data Protection Act 2018, and equivalent laws. We act as your <strong>processor</strong> only for the limited Derived Data we process strictly on your instructions to deliver the Service. For your <strong>account, billing and contact information</strong>, we determine the purposes and means of processing and therefore act as a <strong>controller</strong> in our own right, as described under “Account data” below.</p>
+      <h3>Account data</h3>
+      <p>We process account information (such as your name, email, Venue details and billing data) to operate the Service, take payment, provide support and send service communications. We use reputable sub-processors (for example, hosting, authentication and payment providers) under appropriate contractual safeguards.</p>
+      <h3>Aggregated improvement</h3>
+      <p>We may use anonymous, aggregated Derived Data to improve the Service, including cross-Venue model tuning. This is done without sharing your footage. Because this data is aggregated and anonymised so that it no longer identifies any individual or your Venue, it falls outside personal-data protections, and we act as controller of that anonymised dataset rather than as your processor.</p>
+      <h3>Your rights</h3>
+      <p>You may access, correct, export or delete your account data, and you may disconnect integrations or close your account at any time. Requests can be made via the contact details in clause 19.</p>
+      <div class="plain"><strong>In plain English:</strong> the camera work happens on your hardware, faces are blurred, and no video or identities ever leave the room. Only anonymous counts and signals are used to run the product.</div>
+    </section>
+
+    <section id="ip">
+      <h2><span class="n">12</span> Intellectual property</h2>
+      <p>The Service, including all software, models, designs and content, is owned by us or our licensors and is protected by intellectual-property laws. We grant you a limited, non-exclusive, non-transferable, revocable licence to use the Service for your business during your subscription, subject to these Terms.</p>
+      <p>You retain ownership of your own data. You grant us a licence to process it solely to provide, secure and improve the Service as described in clause 11. Feedback you provide may be used by us without restriction or obligation.</p>
+    </section>
+
+    <section id="warranties">
+      <h2><span class="n">13</span> Warranties &amp; disclaimers</h2>
+      <p>We provide the Service with reasonable skill and care. However, to the fullest extent permitted by law, the Service is provided <strong>“as is” and “as available”</strong>, without further warranties of any kind, whether express or implied, including fitness for a particular purpose, accuracy, or uninterrupted or error-free operation.</p>
+      <p>The Service uses estimates and probabilistic models. Outputs such as occupancy, queue length, forecasts and recovered-revenue figures are <strong>indicative, not guaranteed</strong>, and should not be relied upon as the sole basis for safety, staffing, financial or legal decisions. You are responsible for verifying anything material before acting on it.</p>
+    </section>
+
+    <section id="liability">
+      <h2><span class="n">14</span> Limitation of liability</h2>
+      <p>Nothing in these Terms limits liability that cannot be limited by law, including for death or personal injury caused by negligence, or for fraud.</p>
+      <p>Subject to that, to the fullest extent permitted by law: we are not liable for indirect, incidental, special or consequential losses, or for loss of profits, revenue, goodwill, data or anticipated savings, however arising; and our total aggregate liability arising out of or in connection with the Service in any twelve-month period is limited to <strong>the fees you paid to us for the Service in that period</strong>.</p>
+    </section>
+
+    <section id="indemnity">
+      <h2><span class="n">15</span> Indemnity</h2>
+      <p>You agree to indemnify and hold us harmless from claims, losses and reasonable costs arising from your breach of these Terms, your unlawful or improper use of the Service, your operation of cameras or devices on your premises, or your failure to hold required licences or to meet your obligations as a data controller.</p>
+    </section>
+
+    <section id="termination">
+      <h2><span class="n">16</span> Termination</h2>
+      <p>You may stop using the Service and cancel at any time as described in clause 7. We may suspend or terminate your access if you materially breach these Terms (including non-payment), if required by law, or to protect the Service or other users — giving notice and an opportunity to remedy where practicable.</p>
+      <p>On termination, your right to use the Service ends. We will make your account data available for export for a reasonable period and then delete it in line with our retention practices, unless we are required to retain it by law.</p>
+    </section>
+
+    <section id="law">
+      <h2><span class="n">17</span> Governing law</h2>
+      <p>These Terms and any dispute arising from them are governed by the laws of <strong>England and Wales</strong>, and the courts of England and Wales have exclusive jurisdiction, save that we may seek injunctive relief in any appropriate jurisdiction. Nothing in this clause affects your statutory rights.</p>
+    </section>
+
+    <section id="changes">
+      <h2><span class="n">18</span> Changes to these terms</h2>
+      <p>We may update these Terms from time to time. If we make material changes, we will notify you by email or in-product before they take effect. Your continued use of the Service after changes take effect constitutes acceptance. The “last updated” date at the top reflects the current version.</p>
+    </section>
+
+    <section id="contact">
+      <h2><span class="n">19</span> Contact</h2>
+      <p>Questions about these Terms, your data, or your account? Reach us at <a href="mailto:hello@goldencoffee.app">hello@goldencoffee.app</a>. For privacy-specific requests, write to <a href="mailto:privacy@goldencoffee.app">privacy@goldencoffee.app</a>.</p>
+      <div class="callout"><p>These Terms are provided as a clear, good-faith template for the Golden Coffee product and are not legal advice. Before relying on them commercially, have them reviewed by a qualified solicitor for your jurisdiction and circumstances.</p></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <a class="brand" href="./index.html" style="margin-bottom:14px;">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+        <span>Golden Coffee</span>
+      </a>
+      <p style="font-size:13.5px;color:var(--muted);line-height:1.6;max-width:240px;">Calmer rooms. Faster service. Happier guests — kit included, one flat membership.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <a href="./index.html#how">How it works</a>
+      <a href="./pricing.html">Pricing</a>
+      <a href="./onboarding.html">Start free pilot</a>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <a href="./index.html#cta">Book a demo</a>
+      <a href="mailto:hello@goldencoffee.app">Contact</a>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <a href="./terms.html">Terms &amp; Conditions</a>
+      <a href="./terms.html#privacy">Privacy &amp; data</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© <span data-year>2026</span> Golden Coffee · Privacy-first · No faces stored</span>
+    <span>Made for independent cafés</span>
+  </div>
+</footer>
+
+<script src="./gc.js"></script>
+<script>
+(function(){
+  'use strict';
+  // active-section highlighting in the TOC
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.legal-body section'));
+  if('IntersectionObserver' in window){
+    var visible = new Set();
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting) visible.add(e.target); else visible.delete(e.target); });
+      // highlight the topmost section currently in the active band (document order),
+      // not whichever entry happened to fire last.
+      if(visible.size){
+        var top = Array.from(visible).sort(function(a,b){
+          return a.getBoundingClientRect().top - b.getBoundingClientRect().top; })[0];
+        links.forEach(function(l){ l.classList.remove('active'); });
+        var a = map[top.id]; if(a) a.classList.add('active');
+      }
+    }, { rootMargin:'-15% 0px -60% 0px', threshold:0 });
+    sections.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

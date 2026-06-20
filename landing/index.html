@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23E8862A%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%278%27 cy=%2721%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%2715%27 cy=%2716%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3C/svg%3E">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -34,8 +35,9 @@
     </div>
     <div style="display:flex;align-items:center;gap:22px;">
       <a href="#how" style="font-size:14px;color:#5b4a38;text-decoration:none;">How it works</a>
-      <a href="#cta" style="font-size:14px;color:#5b4a38;text-decoration:none;">Sign in</a>
-      <a href="#cta" style="display:inline-flex;align-items:center;white-space:nowrap;padding:9px 17px;border-radius:999px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font-weight:600;font-size:13.5px;text-decoration:none;box-shadow:0 6px 16px rgba(232,134,42,.3);">Book a demo</a>
+      <a href="pricing.html" style="font-size:14px;color:#5b4a38;text-decoration:none;">Pricing</a>
+      <a href="signin.html" style="font-size:14px;color:#5b4a38;text-decoration:none;">Sign in</a>
+      <a href="onboarding.html" style="display:inline-flex;align-items:center;white-space:nowrap;padding:9px 17px;border-radius:999px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font-weight:600;font-size:13.5px;text-decoration:none;box-shadow:0 6px 16px rgba(232,134,42,.3);">Start free pilot</a>
     </div>
   </nav>
 
@@ -314,10 +316,11 @@
         <span style="font-size:14px;font-weight:600;color:#1f140a;">Golden Coffee</span>
       </div>
       <div style="font-size:12.5px;color:#8a7458;">© 2026 Golden Coffee · Privacy-first · No faces stored</div>
-      <div style="display:flex;gap:9px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#ddd0bb;"></div>
-        <div style="width:30px;height:30px;border-radius:50%;background:#ddd0bb;"></div>
-        <div style="width:30px;height:30px;border-radius:50%;background:#ddd0bb;"></div>
+      <div style="display:flex;gap:20px;align-items:center;">
+        <a href="pricing.html" style="font-size:13px;color:#5b4a38;text-decoration:none;">Pricing</a>
+        <a href="onboarding.html" style="font-size:13px;color:#5b4a38;text-decoration:none;">Get started</a>
+        <a href="terms.html" style="font-size:13px;color:#5b4a38;text-decoration:none;">Terms</a>
+        <a href="terms.html#privacy" style="font-size:13px;color:#5b4a38;text-decoration:none;">Privacy</a>
       </div>
     </div>
   </footer>
@@ -452,8 +455,15 @@ class Component extends DCLogic {
       cards,
       prev: () => this.setState(s => ({ testi: (s.testi + N - 1) % N })),
       next: () => this.setState(s => ({ testi: (s.testi + 1) % N })),
-      onSubmit: (e) => { e.preventDefault(); this.setState({ sent: true }); },
-      formNote: this.state.sent ? "Thanks — we'll be in touch within a day." : "Free pilot · no card · cancel anytime.",
+      onSubmit: (e) => {
+        e.preventDefault();
+        // Route the email straight into the real sign-up flow, prefilled.
+        const input = e.target.querySelector('input[type=email]');
+        const email = input ? input.value.trim() : '';
+        const q = email ? ('?email=' + encodeURIComponent(email)) : '';
+        window.location.href = 'onboarding.html' + q;
+      },
+      formNote: "Free pilot · no card · cancel anytime.",
       faqItems: this.faqs.map((f, i) => ({
         q: f.q, a: f.a,
         onClick: () => this.setState(s => ({ openFaq: s.openFaq === i ? -1 : i })),

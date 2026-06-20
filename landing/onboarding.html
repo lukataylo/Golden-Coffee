@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started — Golden Coffee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23E8862A%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%278%27 cy=%2721%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%2715%27 cy=%2716%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3C/svg%3E">
+<meta name="description" content="Set up Golden Coffee in a few minutes. Your kit ships free and your room starts running itself.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@6..72,0,300;6..72,0,400;6..72,0,500;6..72,1,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./gc.css">
+<style>
+  body{background:linear-gradient(180deg,#ece4d5 0%,#f3ede0 100%);min-height:100vh;}
+  .ob-shell{max-width:1080px;margin:0 auto;padding:28px 28px 80px;}
+  .ob-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px;}
+  .ob-help{font-size:13.5px;color:var(--muted);text-decoration:none;}
+  .ob-help:hover{color:var(--amber);}
+
+  /* progress */
+  .steps{display:flex;align-items:center;gap:0;max-width:640px;margin:0 auto 36px;}
+  .step-dot{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none;}
+  .step-dot .num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+    font:600 14px/1 var(--sans);background:#e2d7c0;color:#9c8a6e;transition:all .35s ease;}
+  .step-dot .lbl{font-size:11.5px;color:#9c8a6e;font-weight:600;white-space:nowrap;transition:color .35s ease;}
+  .step-dot.active .num{background:var(--amber-grad);color:#2a1607;box-shadow:0 6px 16px rgba(232,134,42,.4);}
+  .step-dot.active .lbl{color:var(--ink);}
+  .step-dot.done .num{background:#2a1607;color:#FFE9C6;}
+  .step-bar{flex:1;height:2px;background:#e2d7c0;margin:0 6px;position:relative;top:-12px;border-radius:2px;overflow:hidden;}
+  .step-bar .fill{position:absolute;inset:0;width:0;background:var(--amber);transition:width .4s ease;}
+
+  /* card */
+  .ob-card{background:var(--paper);border-radius:26px;box-shadow:var(--shadow-md);padding:42px 44px;
+    position:relative;overflow:hidden;min-height:430px;}
+  .pane{display:none;}
+  .pane.active{display:block;}
+  .pane h2{font-size:28px;line-height:1.14;margin-bottom:8px;}
+  .pane .lead{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:26px;max-width:520px;}
+
+  label.fl{display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin:0 0 8px;}
+  .inp{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--line-2);background:#fff;
+    font-size:15px;font-family:var(--sans);color:var(--ink);outline:none;transition:border-color .2s ease,box-shadow .2s ease;}
+  .inp:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(232,134,42,.14);}
+  .inp.err{border-color:#d9534f;box-shadow:0 0 0 3px rgba(217,83,79,.12);}
+  .err-msg{color:#c0392b;font-size:12.5px;margin-top:6px;display:none;}
+  .err-msg.show{display:block;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .fg{margin-bottom:18px;}
+
+  /* choice chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{padding:11px 18px;border-radius:999px;border:1.4px solid var(--line-2);background:#fff;
+    font-size:14px;font-weight:600;color:#5b4a38;cursor:pointer;transition:all .2s ease;font-family:var(--sans);}
+  .chip:hover{border-color:var(--amber);}
+  .chip.sel{background:var(--amber-grad);border-color:transparent;color:#2a1607;box-shadow:0 6px 14px rgba(232,134,42,.3);}
+
+  /* device toggles */
+  .dev{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;
+    border:1px solid var(--line);border-radius:14px;margin-bottom:12px;background:#fff;transition:border-color .2s;}
+  .dev.on{border-color:var(--amber);background:#fffaf0;}
+  .dev .meta{display:flex;align-items:center;gap:14px;}
+  .dev .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;}
+  .dev .t{font-size:14.5px;font-weight:600;color:var(--ink);}
+  .dev .d{font-size:12.5px;color:var(--muted);}
+  .sw{position:relative;width:50px;height:28px;border-radius:999px;background:#d9cdb6;border:none;cursor:pointer;flex:none;transition:background .3s;}
+  .sw[aria-checked="true"]{background:var(--amber);}
+  .sw .k{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .3s;}
+  .sw[aria-checked="true"] .k{transform:translateX(22px);}
+
+  /* plan picker */
+  .plan-opt{display:flex;align-items:flex-start;gap:14px;padding:18px;border:1.5px solid var(--line);border-radius:16px;
+    margin-bottom:12px;cursor:pointer;background:#fff;transition:all .2s ease;}
+  .plan-opt.sel{border-color:var(--amber);background:#fffaf0;box-shadow:0 8px 20px rgba(232,134,42,.14);}
+  .plan-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-2);flex:none;margin-top:2px;display:grid;place-items:center;transition:border-color .2s;}
+  .plan-opt.sel .plan-radio{border-color:var(--amber);}
+  .plan-opt.sel .plan-radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--amber);}
+  .plan-opt .pname{font-size:16px;font-weight:600;color:var(--ink);}
+  .plan-opt .pdesc{font-size:13px;color:var(--muted);margin-top:2px;}
+  .plan-opt .pprice{margin-left:auto;text-align:right;font-family:var(--serif);font-size:24px;color:var(--ink);white-space:nowrap;}
+  .plan-opt .pprice small{font-size:12px;color:var(--muted-2);font-family:var(--sans);}
+
+  .privacy-note{display:flex;gap:12px;align-items:flex-start;background:rgba(232,134,42,.08);border-radius:14px;
+    padding:14px 16px;margin-top:8px;font-size:13px;line-height:1.5;color:#6b5326;}
+  .privacy-note svg{flex:none;margin-top:1px;}
+
+  /* nav buttons */
+  .ob-actions{display:flex;align-items:center;justify-content:space-between;margin-top:30px;}
+  .btn-back{background:none;border:none;color:var(--muted);font-size:14.5px;font-weight:600;cursor:pointer;
+    font-family:var(--sans);padding:12px 4px;visibility:hidden;}
+  .btn-back:hover{color:var(--ink);}
+  .btn-next{padding:14px 30px;border-radius:14px;border:none;background:var(--amber-grad);color:#2a1607;
+    font-weight:700;font-size:15px;font-family:var(--sans);cursor:pointer;box-shadow:0 8px 20px rgba(232,134,42,.34);
+    transition:transform .2s ease;}
+  .btn-next:hover{transform:translateY(-1px);}
+
+  /* review */
+  .review-row{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
+  .review-row:last-child{border-bottom:none;}
+  .review-row .k{color:var(--muted);}
+  .review-row .v{color:var(--ink);font-weight:600;text-align:right;}
+
+  /* success */
+  .done-wrap{text-align:center;padding:30px 10px;}
+  .done-ring{width:84px;height:84px;border-radius:50%;background:var(--amber-grad);display:grid;place-items:center;margin:0 auto 24px;box-shadow:0 14px 34px rgba(232,134,42,.4);}
+  .done-wrap h2{font-size:32px;margin-bottom:12px;}
+  .done-wrap p{font-size:15.5px;color:var(--muted);line-height:1.6;max-width:440px;margin:0 auto 26px;}
+  .next-list{max-width:420px;margin:0 auto 28px;text-align:left;}
+  .next-list .ni{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;color:#4f3f2c;line-height:1.45;}
+  .next-list .ni:last-child{border-bottom:none;}
+  .next-list .nn{width:24px;height:24px;border-radius:50%;background:rgba(232,134,42,.16);color:#a85b16;font:700 12px/1 var(--sans);display:grid;place-items:center;flex:none;}
+
+  @media(max-width:680px){
+    .ob-card{padding:30px 24px;}
+    .grid2{grid-template-columns:1fr;}
+    .step-dot .lbl{display:none;}
+    .plan-opt{flex-wrap:wrap;}
+    .plan-opt .pprice{margin-left:0;width:100%;text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<div class="ob-shell">
+  <!-- top bar -->
+  <div class="ob-top">
+    <a class="brand" href="./index.html">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+      <span>Golden Coffee</span>
+    </a>
+    <a class="ob-help" href="./pricing.html">View pricing →</a>
+  </div>
+
+  <!-- progress -->
+  <div class="steps" id="steps">
+    <div class="step-dot active"><div class="num">1</div><div class="lbl">Your café</div></div>
+    <div class="step-bar"><div class="fill"></div></div>
+    <div class="step-dot"><div class="num">2</div><div class="lbl">Camera</div></div>
+    <div class="step-bar"><div class="fill"></div></div>
+    <div class="step-dot"><div class="num">3</div><div class="lbl">Devices</div></div>
+    <div class="step-bar"><div class="fill"></div></div>
+    <div class="step-dot"><div class="num">4</div><div class="lbl">Plan</div></div>
+    <div class="step-bar"><div class="fill"></div></div>
+    <div class="step-dot"><div class="num">5</div><div class="lbl">Account</div></div>
+    <div class="step-bar"><div class="fill"></div></div>
+    <div class="step-dot"><div class="num">6</div><div class="lbl">Review</div></div>
+  </div>
+
+  <!-- card -->
+  <div class="ob-card">
+
+    <!-- STEP 1 — café + 5-question data capture -->
+    <div class="pane active" data-step="0">
+      <h2>Tell us about your room</h2>
+      <p class="lead">Five quick questions so Golden Coffee knows the shape and feel of your space — they tune how the room runs from day one. You can change any of this later.</p>
+      <div class="fg">
+        <label class="fl" for="venueName">Café / venue name</label>
+        <input class="inp" id="venueName" type="text" placeholder="e.g. Hearth &amp; Co" autocomplete="organization">
+        <div class="err-msg" data-err="venueName">Please enter your venue name.</div>
+      </div>
+
+      <!-- Q1 business type -->
+      <div class="fg">
+        <label class="fl">1. What kind of place is it?</label>
+        <div class="chips" data-chips="business_type">
+          <button type="button" class="chip" data-val="Café">Café</button>
+          <button type="button" class="chip" data-val="Coffee shop">Coffee shop</button>
+          <button type="button" class="chip" data-val="Restaurant">Restaurant</button>
+          <button type="button" class="chip" data-val="Bar">Bar</button>
+          <button type="button" class="chip" data-val="Kiosk">Kiosk</button>
+        </div>
+        <div class="err-msg" data-err="business_type">Pick the closest match.</div>
+      </div>
+
+      <!-- Q2 ambiance -->
+      <div class="fg">
+        <label class="fl">2. What's the ambiance you want?</label>
+        <div class="chips" data-chips="ambiance">
+          <button type="button" class="chip" data-val="Cosy &amp; calm">Cosy &amp; calm</button>
+          <button type="button" class="chip" data-val="Buzzy &amp; social">Buzzy &amp; social</button>
+          <button type="button" class="chip" data-val="Focused &amp; quiet">Focused &amp; quiet</button>
+          <button type="button" class="chip" data-val="Upscale &amp; refined">Upscale &amp; refined</button>
+        </div>
+        <div class="err-msg" data-err="ambiance">Pick the vibe you're going for.</div>
+      </div>
+
+      <!-- Q3 busiest period -->
+      <div class="fg">
+        <label class="fl">3. When are you busiest?</label>
+        <div class="chips" data-chips="busiest_period">
+          <button type="button" class="chip" data-val="Morning rush">Morning rush</button>
+          <button type="button" class="chip" data-val="Lunch">Lunch</button>
+          <button type="button" class="chip" data-val="Afternoon">Afternoon</button>
+          <button type="button" class="chip" data-val="Evening">Evening</button>
+          <button type="button" class="chip" data-val="All day">All day</button>
+        </div>
+        <div class="err-msg" data-err="busiest_period">Pick your peak.</div>
+      </div>
+
+      <!-- Q4 primary goal -->
+      <div class="fg">
+        <label class="fl">4. What matters most right now?</label>
+        <div class="chips" data-chips="primary_goal">
+          <button type="button" class="chip" data-val="Faster service">Faster service</button>
+          <button type="button" class="chip" data-val="More comfort">More comfort</button>
+          <button type="button" class="chip" data-val="Higher spend">Higher spend</button>
+          <button type="button" class="chip" data-val="Quieter room">Quieter room</button>
+        </div>
+        <div class="err-msg" data-err="primary_goal">Choose your main goal.</div>
+      </div>
+
+      <!-- Q5 size + postcode -->
+      <div class="grid2">
+        <div class="fg">
+          <label class="fl" for="covers">5. Seats / covers</label>
+          <input class="inp" id="covers" type="number" min="1" max="500" placeholder="e.g. 24" inputmode="numeric">
+          <div class="err-msg" data-err="covers">Enter an approximate number.</div>
+        </div>
+        <div class="fg">
+          <label class="fl" for="postcode">Postcode</label>
+          <input class="inp" id="postcode" type="text" placeholder="e.g. EC1A 1BB" autocomplete="postal-code">
+          <div class="err-msg" data-err="postcode">Please enter your postcode.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 — camera -->
+    <div class="pane" data-step="1">
+      <h2>Your camera</h2>
+      <p class="lead">Your membership kit camera ships pre-paired — or point Golden Coffee at one you already own. Tell us where it'll sit.</p>
+      <div class="fg">
+        <label class="fl">Where will it look?</label>
+        <div class="chips" data-chips="cameraPos">
+          <button type="button" class="chip" data-val="Ceiling / overview">Ceiling / overview</button>
+          <button type="button" class="chip" data-val="Till-facing">Till-facing</button>
+          <button type="button" class="chip" data-val="Entrance">Entrance</button>
+        </div>
+        <div class="err-msg" data-err="cameraPos">Pick where the camera points.</div>
+      </div>
+      <div class="fg">
+        <label class="fl">Which camera?</label>
+        <div class="chips" data-chips="cameraType">
+          <button type="button" class="chip" data-val="Included kit camera">Send me the kit camera</button>
+          <button type="button" class="chip" data-val="RTSP / IP camera">Use my IP / CCTV camera</button>
+          <button type="button" class="chip" data-val="USB / webcam">Use my USB / webcam</button>
+        </div>
+        <div class="err-msg" data-err="cameraType">Pick one — the kit camera is included.</div>
+      </div>
+      <div class="fg" id="rtspWrap" style="display:none;">
+        <label class="fl" for="rtsp">Camera stream address <span style="font-weight:400;color:var(--muted-2);">(optional — add it now or later)</span></label>
+        <input class="inp" id="rtsp" type="text" placeholder="rtsp://192.168.1.50:554/stream1">
+        <p style="font-size:12px;color:var(--muted-2);margin-top:6px;">This is the network address of an IP / CCTV camera (an “RTSP” link). Don't have it to hand? Leave it blank — we'll help you find it during setup.</p>
+      </div>
+      <div class="privacy-note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a85b16" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="2.5"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>
+        <div>Faces are blurred on your own on-site computer before anything is analysed. No video and no faces ever reach Golden Coffee — anonymous counts only.</div>
+      </div>
+    </div>
+
+    <!-- STEP 3 — devices -->
+    <div class="pane" data-step="2">
+      <h2>Already have smart gear? <span style="font-size:15px;font-weight:400;color:var(--muted-2);font-family:var(--sans);">(optional)</span></h2>
+      <p class="lead">Your membership kit covers the essentials. If you'd rather use devices you already own — Spotify, Hue and the like — connect them here instead. Skip any you don't.</p>
+      <div data-devices>
+        <div class="dev" data-dev="spotify">
+          <div class="meta">
+            <div class="ic" style="background:#1DB954;"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1DB954"/><path d="M7 10c3-1 7-.6 9.5.9M7.6 13c2.4-.7 5.4-.4 7.4.8M8 15.6c1.8-.5 4-.3 5.6.6" stroke="#0a0a0a" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg></div>
+            <div><div class="t">Spotify</div><div class="d">Music mood &amp; volume (Premium required)</div></div>
+          </div>
+          <button class="sw" role="switch" aria-checked="false" aria-label="Connect Spotify"><span class="k"></span></button>
+        </div>
+        <div class="dev" data-dev="hue">
+          <div class="meta">
+            <div class="ic" style="background:#fff;border:1px solid var(--line);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8862A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg></div>
+            <div><div class="t">Philips Hue</div><div class="d">Lighting brightness &amp; warmth</div></div>
+          </div>
+          <button class="sw" role="switch" aria-checked="false" aria-label="Connect Philips Hue"><span class="k"></span></button>
+        </div>
+        <div class="dev" data-dev="climate">
+          <div class="meta">
+            <div class="ic" style="background:#1f140a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FD8FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><circle cx="12" cy="18" r="3"/><path d="M9 9h6M9 12h6"/></svg></div>
+            <div><div class="t">AC / heating (IR)</div><div class="d">Temperature via Mijia smart IR remote</div></div>
+          </div>
+          <button class="sw" role="switch" aria-checked="false" aria-label="Connect climate control"><span class="k"></span></button>
+        </div>
+        <div class="dev" data-dev="scent">
+          <div class="meta">
+            <div class="ic" style="background:#fff;border:1px solid var(--line);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8862A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4c0 2 2 3 2 5M14 3c0 2.5 2 3 2 5.5"/><rect x="6" y="11" width="12" height="9" rx="3"/></svg></div>
+            <div><div class="t">Scent diffuser</div><div class="d">Mijia / smart diffuser control</div></div>
+          </div>
+          <button class="sw" role="switch" aria-checked="false" aria-label="Connect scent diffuser"><span class="k"></span></button>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted-2);margin-top:6px;">No devices yet? That's fine — Golden Coffee still reads the room and nudges your staff on every plan.</p>
+    </div>
+
+    <!-- STEP 4 — membership -->
+    <div class="pane" data-step="3">
+      <h2>Your membership</h2>
+      <p class="lead">One flat price, kit included. Try the whole thing free for 14 days — then it's a
+        <strong>12-month membership</strong> at £99/mo, rolling after the first year. Cancel any time
+        during the pilot (and send the kit back), or any time once your first year is up.</p>
+      <div data-plans>
+        <div class="plan-opt sel" data-plan="membership">
+          <div class="plan-radio"></div>
+          <div><div class="pname">Golden Coffee Membership <span class="pill-tag" style="background:rgba(232,134,42,.16);color:#a85b16;">Kit included</span></div><div class="pdesc">Camera, IR controller, smart plug &amp; scent dispenser + the full software, all in.</div></div>
+          <div class="pprice">£99<small> /mo</small></div>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:18px;">
+        <label class="fl">Billing</label>
+        <div class="chips" data-chips="billing">
+          <button type="button" class="chip sel" data-val="Monthly">Monthly · 12-month membership</button>
+          <button type="button" class="chip" data-val="Annual">Annual · 2 months free</button>
+        </div>
+      </div>
+      <div class="privacy-note" style="margin-top:16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a85b16" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <div>Your kit ships free and arrives pre-paired — nothing to buy, no engineer to install it.</div>
+      </div>
+    </div>
+
+    <!-- STEP 5 — account -->
+    <div class="pane" data-step="4">
+      <h2>Create your account</h2>
+      <p class="lead">Where should we send your setup link and pilot updates?</p>
+      <div class="grid2">
+        <div class="fg">
+          <label class="fl" for="ownerName">Your name</label>
+          <input class="inp" id="ownerName" type="text" placeholder="e.g. Sam Mara" autocomplete="name">
+          <div class="err-msg" data-err="ownerName">Please enter your name.</div>
+        </div>
+        <div class="fg">
+          <label class="fl" for="email">Work email</label>
+          <input class="inp" id="email" type="email" placeholder="you@yourcafe.com" autocomplete="email">
+          <div class="err-msg" data-err="email">Enter a valid email address.</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl" for="password">Choose a password</label>
+        <input class="inp" id="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8">
+        <div class="err-msg" data-err="password">Use at least 8 characters.</div>
+      </div>
+      <div class="fg">
+        <label class="fl">How should it start?</label>
+        <div class="chips" data-chips="mode">
+          <button type="button" class="chip sel" data-val="Suggest-only">Suggest-only — it asks first</button>
+          <button type="button" class="chip" data-val="Full autopilot">Full autopilot — it acts</button>
+        </div>
+        <p style="font-size:12.5px;color:var(--muted-2);margin-top:8px;">Most owners start in suggest-only and flip to autopilot once they trust it. You can switch any time.</p>
+      </div>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.5;cursor:pointer;margin-top:6px;">
+        <input type="checkbox" id="agree" style="margin-top:2px;width:16px;height:16px;accent-color:#E8862A;">
+        <span>I agree to the <a href="./terms.html" target="_blank" style="color:var(--amber);font-weight:600;">Terms &amp; Conditions</a> and <a href="./terms.html#privacy" target="_blank" style="color:var(--amber);font-weight:600;">privacy terms</a>.</span>
+      </label>
+      <div class="err-msg" data-err="agree" style="margin-top:6px;">Please accept the terms to continue.</div>
+    </div>
+
+    <!-- STEP 6 — review -->
+    <div class="pane" data-step="5">
+      <h2>Review &amp; start your pilot</h2>
+      <p class="lead">Quick check — then we'll send your setup link. No card charged during the 14-day pilot.</p>
+      <div id="reviewBox"></div>
+      <div id="obError" role="alert" style="display:none;margin-top:16px;padding:13px 16px;border-radius:12px;background:rgba(217,83,79,.1);border:1px solid rgba(217,83,79,.35);color:#a5302c;font-size:13.5px;line-height:1.5;"></div>
+      <div class="privacy-note" style="margin-top:18px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a85b16" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <div><strong>Free for 14 days.</strong> We'll only ask for payment if you choose to continue. Cancel any time before then and you're charged nothing.</div>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="pane" data-step="6">
+      <div class="done-wrap">
+        <div class="done-ring">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2a1607" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>You're all set, <span id="doneName">friend</span> ☕</h2>
+        <p>We've sent a setup link to <strong id="doneEmail">your inbox</strong>. Your free 14-day pilot for <strong id="donePlan">your membership</strong> is ready to go, and your kit is on its way.</p>
+        <div class="next-list">
+          <div class="ni"><span class="nn">1</span><div>Open the setup link on a laptop near your camera.</div></div>
+          <div class="ni"><span class="nn">2</span><div>Point Golden Coffee at your existing feed — about 12 minutes.</div></div>
+          <div class="ni"><span class="nn">3</span><div>Watch your first live read of the room, in suggest-only mode.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <a href="./account.html" class="btn-next" style="text-decoration:none;display:inline-block;">Open my dashboard →</a>
+          <a href="./index.html" class="btn-pill" style="padding:14px 28px;">Back to home</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- actions -->
+    <div class="ob-actions" id="obActions">
+      <button class="btn-back" id="btnBack">← Back</button>
+      <button class="btn-next" id="btnNext">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- gc.js (session + backend helpers) loads FIRST and synchronously so the sign-up
+     logic never depends on a third-party CDN. GSAP is deferred — purely cosmetic
+     animation that the wizard degrades gracefully without (every use is guarded). -->
+<script src="./gc.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script>
+(function(){
+  'use strict';
+
+  var TOTAL = 6; // steps 0..5 are input; step 6 is success
+  var current = 0;
+  var data = {
+    business_type:'', ambiance:'', busiest_period:'', primary_goal:'',
+    covers:'', cameraPos:'', cameraType:'',
+    billing:'Monthly', plan:'membership', mode:'Suggest-only', devices:[]
+  };
+
+  var panes = Array.prototype.slice.call(document.querySelectorAll('.pane'));
+  var stepDots = Array.prototype.slice.call(document.querySelectorAll('#steps .step-dot'));
+  var stepBars = Array.prototype.slice.call(document.querySelectorAll('#steps .step-bar .fill'));
+  var btnBack = document.getElementById('btnBack');
+  var btnNext = document.getElementById('btnNext');
+  var actions = document.getElementById('obActions');
+
+  // ---- preselect plan from ?plan= (allowlisted — never interpolate raw input
+  //      into a selector, or a malformed ?plan= throws and bricks the wizard) ----
+  // ---- prefill email from the landing-page hero form (?email=) ----
+  var qEmail = GC.qs('email');
+  if(qEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(qEmail)){
+    var emailInput = document.getElementById('email');
+    if(emailInput) emailInput.value = qEmail;
+  }
+
+  var VALID_PLANS = ['membership'];
+  var qp = GC.qs('plan');
+  if(qp && VALID_PLANS.indexOf(qp) > -1){
+    data.plan = qp;
+    document.querySelectorAll('[data-plan]').forEach(function(p){ p.classList.toggle('sel', p.dataset.plan===qp); });
+  }
+
+  // ---- generic chip groups (single-select) ----
+  document.querySelectorAll('[data-chips]').forEach(function(group){
+    var key = group.dataset.chips;
+    // seed default selection into data
+    var pre = group.querySelector('.chip.sel');
+    if(pre) data[key] = pre.dataset.val;
+    group.querySelectorAll('.chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('sel'); });
+        chip.classList.add('sel');
+        data[key] = chip.dataset.val;
+        clearErr(key);
+        if(key==='cameraType'){
+          document.getElementById('rtspWrap').style.display = (chip.dataset.val==='RTSP / IP camera') ? 'block':'none';
+        }
+      });
+    });
+  });
+
+  // ---- device toggles (multi) ----
+  document.querySelectorAll('[data-dev] .sw').forEach(function(sw){
+    sw.addEventListener('click', function(){
+      var row = sw.closest('[data-dev]');
+      var on = sw.getAttribute('aria-checked')==='true';
+      sw.setAttribute('aria-checked', on?'false':'true');
+      row.classList.toggle('on', !on);
+      var name = row.dataset.dev;
+      if(!on){ if(data.devices.indexOf(name)<0) data.devices.push(name); }
+      else { data.devices = data.devices.filter(function(d){return d!==name;}); }
+    });
+  });
+
+  // ---- plan picker (single membership; kept keyboard-operable as a radio) ----
+  function selectPlan(opt){
+    document.querySelectorAll('[data-plan]').forEach(function(o){ o.classList.remove('sel'); o.setAttribute('aria-checked','false'); o.tabIndex = -1; });
+    opt.classList.add('sel'); opt.setAttribute('aria-checked','true'); opt.tabIndex = 0;
+    data.plan = opt.dataset.plan;
+  }
+  document.querySelectorAll('[data-plan]').forEach(function(opt){
+    opt.setAttribute('role','radio');
+    opt.setAttribute('aria-checked', opt.classList.contains('sel') ? 'true':'false');
+    opt.tabIndex = opt.classList.contains('sel') ? 0 : -1;
+    opt.addEventListener('click', function(){ selectPlan(opt); });
+    opt.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectPlan(opt); }
+    });
+  });
+  var plansWrap = document.querySelector('[data-plans]');
+  if(plansWrap) plansWrap.setAttribute('role','radiogroup');
+
+  // ---- validation ----
+  function showErr(key){
+    var el = document.querySelector('[data-err="'+key+'"]'); if(el) el.classList.add('show');
+    var inp = document.getElementById(key); if(inp) inp.classList.add('err');
+  }
+  function clearErr(key){
+    var el = document.querySelector('[data-err="'+key+'"]'); if(el) el.classList.remove('show');
+    var inp = document.getElementById(key); if(inp) inp.classList.remove('err');
+  }
+  function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+
+  function validateStep(step){
+    var ok = true;
+    if(step===0){
+      if(!val('venueName')){ showErr('venueName'); ok=false; }
+      if(!data.business_type){ showErr('business_type'); ok=false; }
+      if(!data.ambiance){ showErr('ambiance'); ok=false; }
+      if(!data.busiest_period){ showErr('busiest_period'); ok=false; }
+      if(!data.primary_goal){ showErr('primary_goal'); ok=false; }
+      var c = parseInt(val('covers'),10);
+      if(!val('covers') || isNaN(c) || c < 1 || c > 500){ showErr('covers'); ok=false; }
+      if(!val('postcode')){ showErr('postcode'); ok=false; }
+    } else if(step===1){
+      if(!data.cameraPos){ showErr('cameraPos'); ok=false; }
+      if(!data.cameraType){ showErr('cameraType'); ok=false; }
+    } else if(step===4){
+      if(!val('ownerName')){ showErr('ownerName'); ok=false; }
+      var em = val('email');
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ showErr('email'); ok=false; }
+      if(val('password').length < 8){ showErr('password'); ok=false; }
+      if(!document.getElementById('agree').checked){ showErr('agree'); ok=false; }
+    }
+    return ok;
+  }
+  // clear errors as user types
+  ['venueName','covers','postcode','ownerName','email','password'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.addEventListener('input', function(){ clearErr(id); });
+  });
+  document.getElementById('agree').addEventListener('change', function(){ clearErr('agree'); });
+
+  // ---- render progress ----
+  function renderProgress(){
+    stepDots.forEach(function(dot,i){
+      dot.classList.toggle('active', i===current);
+      dot.classList.toggle('done', i<current);
+      var num = dot.querySelector('.num');
+      if(i<current){ num.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'; }
+      else { num.textContent = (i+1); }
+    });
+    stepBars.forEach(function(fill,i){ fill.style.width = (i<current)?'100%':'0%'; });
+  }
+
+  // ---- review ----
+  var PLAN_LABEL = { membership:'Golden Coffee Membership — £99/mo (kit included)' };
+  function renderReview(){
+    var rows = [
+      ['Venue', val('venueName')+' ('+data.business_type+')'],
+      ['Ambiance', data.ambiance],
+      ['Busiest', data.busiest_period],
+      ['Main goal', data.primary_goal],
+      ['Size', (val('covers')||'—')+' covers · '+val('postcode')],
+      ['Camera', data.cameraPos+' · '+data.cameraType],
+      ['Connected devices', data.devices.length ? data.devices.join(', ') : 'None yet'],
+      ['Plan', PLAN_LABEL[data.plan] + ' · ' + data.billing],
+      ['Starts in', data.mode + ' mode'],
+      ['Account', val('ownerName')+' · '+val('email')]
+    ];
+    var esc = function(s){ return String(s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
+    document.getElementById('reviewBox').innerHTML = rows.map(function(r){
+      return '<div class="review-row"><span class="k">'+esc(r[0])+'</span><span class="v">'+esc(r[1]||'—')+'</span></div>';
+    }).join('');
+  }
+
+  // ---- go to step (with GSAP transition) ----
+  var transitioning = false;
+  function goto(step){
+    var prev = current;
+    current = step;
+    var outPane = panes[prev];
+    var inPane = panes[step];
+
+    function swap(){
+      outPane.classList.remove('active');
+      inPane.classList.add('active');
+      // the desync risk window is the out-phase (current already advanced while the
+      // old pane is still shown); once panes are swapped it's over. The in-animation
+      // below is purely visual, so don't keep the button locked for it.
+      transitioning = false;
+      if(window.gsap){
+        gsap.fromTo(inPane, {opacity:0, x: step>prev?40:-40}, {opacity:1, x:0, duration:.4, ease:'power2.out'});
+      }
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    if(window.gsap){
+      transitioning = true;
+      gsap.to(outPane, {opacity:0, x: step>prev?-30:30, duration:.22, ease:'power1.in', onComplete:swap});
+    } else { swap(); }
+
+    // button + progress state
+    if(step>=TOTAL){ // success screen
+      actions.style.display='none';
+      renderProgress();
+      // mark all done
+      stepDots.forEach(function(d){ d.classList.add('done'); d.classList.remove('active'); });
+      stepBars.forEach(function(f){ f.style.width='100%'; });
+      return;
+    }
+    actions.style.display='flex';
+    btnBack.style.visibility = step>0 ? 'visible':'hidden';
+    btnNext.textContent = step===5 ? 'Confirm & start pilot' : 'Continue';
+    if(step===5) renderReview();
+    renderProgress();
+  }
+
+  // ---- next / back ----
+  var submitting = false;
+  btnNext.addEventListener('click', function(){
+    if(transitioning || submitting) return;
+    if(current<6 && !validateStep(current)){
+      // shake the card a touch
+      if(window.gsap) gsap.fromTo('.ob-card',{x:-6},{x:0,duration:.4,ease:'elastic.out(1,0.4)'});
+      return;
+    }
+    if(current===5){
+      submit(); // async — advances to success on its own when the account is created
+      return;
+    }
+    goto(current+1);
+  });
+  btnBack.addEventListener('click', function(){ if(!transitioning && current>0) goto(current-1); });
+
+  var errEl = document.getElementById('obError');
+  function showSubmitError(msg, isDup){
+    errEl.style.display = 'block';
+    errEl.innerHTML = msg + (isDup
+      ? ' <a href="./signin.html" style="color:#a5302c;font-weight:700;text-decoration:underline;">Sign in instead →</a>'
+      : '');
+    if(window.gsap) gsap.fromTo('.ob-card',{x:-6},{x:0,duration:.4,ease:'elastic.out(1,0.4)'});
+  }
+
+  function buildPayload(){
+    return {
+      email: val('email'),
+      password: val('password'),
+      name: val('ownerName'),
+      venue: val('venueName'),
+      plan: data.plan,
+      profile: {
+        business_type: data.business_type,
+        ambiance: data.ambiance,
+        busiest_period: data.busiest_period,
+        primary_goal: data.primary_goal,
+        room_size: val('covers'),
+        postcode: val('postcode'),
+        camera_position: data.cameraPos,
+        camera_type: data.cameraType,
+        camera_stream: val('rtsp'),
+        devices: data.devices,
+        billing: data.billing,
+        start_mode: data.mode
+      }
+    };
+  }
+
+  function submit(){
+    submitting = true;
+    errEl.style.display = 'none';
+    var origLabel = btnNext.textContent;
+    btnNext.disabled = true; btnNext.style.opacity = '.7'; btnNext.style.cursor = 'progress';
+    btnNext.textContent = 'Creating your account…';
+
+    GC.api('/auth/signup', { method:'POST', body: buildPayload() })
+      .then(function(res){
+        if(res && res.token) GC.setSession(res.token, res.user);
+        document.getElementById('doneName').textContent = (val('ownerName').split(' ')[0]) || 'friend';
+        document.getElementById('doneEmail').textContent = val('email') || 'your inbox';
+        document.getElementById('donePlan').textContent = PLAN_LABEL[data.plan].split(' —')[0];
+        submitting = false;
+        goto(6);
+      })
+      .catch(function(err){
+        submitting = false;
+        btnNext.disabled = false; btnNext.style.opacity = ''; btnNext.style.cursor = '';
+        btnNext.textContent = origLabel;
+        if(err && err.status === 409){
+          showSubmitError('That email already has an account.', true);
+        } else if(err && err.status === 422){
+          showSubmitError(err.detail || 'Please check your details and try again.', false);
+        } else {
+          showSubmitError((err && err.detail) || 'Something went wrong creating your account. Please try again.', false);
+        }
+      });
+  }
+
+  // init
+  renderProgress();
+})();
+</script>
+</body>
+</html>
