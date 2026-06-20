@@ -41,6 +41,8 @@ dashboard/scan/shots/
 
 # Xiaomi cloud QR session (contains a service token)
 .xiaomi_session.json
+# Xiaomi BLE mible auth token from a register handshake (secret)
+.xiaomi_mible_token.bin
 
 # Codeplain generated app build artifacts
 codeplain/dist/node_modules/

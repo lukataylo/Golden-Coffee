@@ -52,6 +52,11 @@ SESSION_FILE = Path(os.environ.get(
 
 WARMTH_KELVIN = {"warm": 2700, "neutral": 4000, "cool": 6000}
 
+# Cloud HTTP reliability: the cn server is slow from far away (e.g. a venue abroad
+# driving home gear in China), so give each call more time and a couple of retries.
+CLOUD_TIMEOUT = float(os.environ.get("XIAOMI_CLOUD_TIMEOUT", "15"))
+CLOUD_RETRIES = int(os.environ.get("XIAOMI_CLOUD_RETRIES", "3"))
+
 LAMP_DID = os.environ.get("XIAOMI_LAMP_DID", "")
 LAMP_SIID = int(os.environ.get("XIAOMI_LAMP_SIID", "2"))
 LAMP_PIID_ON = int(os.environ.get("XIAOMI_LAMP_PIID_ON", "1"))
@@ -142,11 +147,24 @@ class _Cloud:
         nonce = _gen_nonce(round(time.time() * 1000))
         signed = _signed_nonce(self.ssecurity, nonce)
         fields = _enc_params(url, "POST", signed, nonce, dict(params), self.ssecurity)
-        resp = self.session.post(url, headers=headers, cookies=cookies, params=fields, timeout=10)
-        if resp.status_code != 200:
-            raise RuntimeError(f"cloud HTTP {resp.status_code}")
-        decoded = _rc4(_signed_nonce(self.ssecurity, fields["_nonce"]), base64.b64decode(resp.text))
-        return json.loads(decoded)
+        # Retry transient network errors — the Mi cloud (esp. the cn server reached
+        # from far away) intermittently times out; a single command shouldn't fail
+        # the actuator over one slow round-trip.
+        last_exc = None
+        for attempt in range(CLOUD_RETRIES):
+            try:
+                resp = self.session.post(url, headers=headers, cookies=cookies,
+                                         params=fields, timeout=CLOUD_TIMEOUT)
+                if resp.status_code != 200:
+                    raise RuntimeError(f"cloud HTTP {resp.status_code}")
+                decoded = _rc4(_signed_nonce(self.ssecurity, fields["_nonce"]),
+                               base64.b64decode(resp.text))
+                return json.loads(decoded)
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+                last_exc = exc
+                if attempt < CLOUD_RETRIES - 1:
+                    print(f"[xiaomi-cloud] {type(exc).__name__}, retry {attempt + 1}/{CLOUD_RETRIES - 1}…")
+        raise RuntimeError(f"cloud unreachable after {CLOUD_RETRIES} tries: {last_exc}")
 
     def miot_set(self, did: str, props: list[dict]):
         params = [{"did": str(did), **p} for p in props]
@@ -181,6 +199,14 @@ class _Cloud:
             res = self.get_devices(home["id"], self.user_id) or {}
             out.extend(res.get("result", {}).get("device_info") or [])
         return out
+
+    def get_beaconkey(self, did: str) -> str:
+        """The BLE bind-key ("beaconkey") for a Bluetooth device — the token the BLE
+        driver needs to log into the lamp. It's NOT in the device list (that carries
+        the Wi-Fi/miIO token); it comes from this dedicated endpoint. Returns the raw
+        hex string, or "" if the device has none (e.g. a pure Wi-Fi device)."""
+        resp = self.api("/v2/device/blt_get_beaconkey", {"did": str(did), "pdid": 1})
+        return ((resp or {}).get("result") or {}).get("beaconkey", "") or ""
 
 
 def _save_session(server, user_id, service_token, ssecurity) -> None:
