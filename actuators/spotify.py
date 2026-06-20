@@ -24,7 +24,7 @@ except ImportError:
     pass
 
 REDIRECT = os.environ.get("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
-SCOPE = "user-modify-playback-state user-read-playback-state"
+SCOPE = "user-modify-playback-state user-read-playback-state streaming"
 
 
 def _client():

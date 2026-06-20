@@ -178,10 +178,47 @@
 
           <!-- DEVICE TILES -->
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
-            <!-- Music -->
-            <div style="padding:16px;border-radius:18px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.12);">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;"><div style="display:flex;align-items:center;gap:11px;"><span style="color:#FF9A2D;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span><div><div style="font-size:14px;font-weight:600;">Music</div><div id="sub-music" style="font-size:11.5px;color:#9b8c7b;">Soft · Lo-fi café</div></div></div><div id="tg-music" role="switch" tabindex="0" aria-checked="true" style="width:40px;height:24px;border-radius:999px;background:#FF9A2D;position:relative;cursor:pointer;transition:background .2s;flex:none;border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 2px rgba(0,0,0,.3);"><span style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transform:translateX(16px);transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);"></span></div></div>
-              <div style="display:flex;align-items:center;gap:11px;margin-top:16px;"><input id="music-slider" type="range" min="0" max="100" value="40" style="flex:1;height:16px;" aria-label="Music volume"><span id="music-pct" style="font:600 14px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:42px;text-align:right;">40%</span></div>
+            <!-- Music — Auto/Custom mode tile -->
+            <div style="grid-column:span 2;padding:16px;border-radius:18px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.12);">
+              <!-- Header: icon + label + Auto/Custom toggle -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="color:#FF9A2D;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span>
+                  <span style="font-size:14px;font-weight:600;">Music</span>
+                </div>
+                <div style="display:flex;gap:2px;background:rgba(28,18,10,.6);border-radius:10px;padding:3px;border:1px solid rgba(255,236,214,.1);">
+                  <button id="btn-mode-auto" onclick="setMusicMode('auto')" style="appearance:none;border:none;border-radius:8px;padding:4px 12px;font-size:11.5px;font-weight:600;cursor:pointer;color:#F6EEE4;background:rgba(255,154,45,.25);transition:background .15s;">Auto</button>
+                  <button id="btn-mode-custom" onclick="setMusicMode('custom')" style="appearance:none;border:none;border-radius:8px;padding:4px 12px;font-size:11.5px;font-weight:600;cursor:pointer;color:#9b8c7b;background:transparent;transition:background .15s;">Custom</button>
+                </div>
+              </div>
+              <!-- AUTO PANEL -->
+              <div id="music-auto-panel">
+                <div id="sub-music" style="font-size:11.5px;color:#9b8c7b;margin-bottom:12px;">Soft · Lo-fi café</div>
+                <div style="display:flex;align-items:center;gap:11px;">
+                  <div id="tg-music" role="switch" tabindex="0" aria-checked="true" style="width:40px;height:24px;border-radius:999px;background:#FF9A2D;position:relative;cursor:pointer;transition:background .2s;flex:none;border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 2px rgba(0,0,0,.3);"><span style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transform:translateX(16px);transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);"></span></div>
+                  <input id="music-slider" type="range" min="0" max="100" value="40" style="flex:1;height:16px;" aria-label="Music volume">
+                  <span id="music-pct" style="font:600 14px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:42px;text-align:right;">40%</span>
+                </div>
+              </div>
+              <!-- CUSTOM PANEL: Spotify Web Playback SDK -->
+              <div id="music-custom-panel" style="display:none;">
+                <!-- Now playing -->
+                <div style="margin-bottom:12px;min-height:34px;">
+                  <div id="sp-track" style="font-size:13px;font-weight:500;color:#F6EEE4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Not connected</div>
+                  <div id="sp-artist" style="font-size:11px;color:#9b8c7b;margin-top:2px;"></div>
+                </div>
+                <!-- Transport + volume -->
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                  <button onclick="spPrev()" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏮</button>
+                  <button id="sp-play" onclick="spPlayPause()" style="appearance:none;width:40px;height:40px;border-radius:12px;cursor:pointer;background:#FF9A2D;border:none;color:#1a0f06;font-size:18px;display:grid;place-items:center;font-weight:700;">▶</button>
+                  <button onclick="spNext()" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏭</button>
+                  <input id="sp-vol" type="range" min="0" max="100" value="50" style="flex:1;height:14px;" aria-label="Spotify volume">
+                  <span id="sp-vol-pct" style="font:600 12px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:36px;text-align:right;">50%</span>
+                </div>
+                <!-- Playlist presets -->
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="sp-presets"></div>
+                <div id="sp-status" style="font-size:10px;color:#9b8c7b;">Connecting to Spotify…</div>
+              </div>
             </div>
             <!-- Climate -->
             <div style="padding:16px;border-radius:18px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.12);">
@@ -813,6 +850,8 @@
         if (m.auto === false) return;
         applyComfortAction(m);
         pushFeed(m.action, m.params, m.rationale, true, (m.ts ? m.ts * 1000 : Date.now()));
+      } else if (m.type === "music_mode") {
+        applyMusicModeUI(m.mode);
       } else if (m.type === "geometry") {
         if (mode === "floor") redrawFloor();
       }
@@ -969,7 +1008,122 @@
   var forceDemo = /[?&]demo=1\b/.test(location.search) || location.protocol === "file:";
   if (forceDemo) setDemo(true);
   else { connect(); setTimeout(maybeAutoDemo, 4000); }
+
+  // ── MUSIC MODE UI ────────────────────────────────────────────────────────
+  function applyMusicModeUI(m) {
+    var isCustom = (m === "custom");
+    var autoPanel = $("music-auto-panel"), customPanel = $("music-custom-panel");
+    var btnAuto = $("btn-mode-auto"), btnCustom = $("btn-mode-custom");
+    if (autoPanel)   autoPanel.style.display   = isCustom ? "none"  : "block";
+    if (customPanel) customPanel.style.display  = isCustom ? "block" : "none";
+    if (btnAuto)   { btnAuto.style.background   = isCustom ? "transparent"          : "rgba(255,154,45,.25)"; btnAuto.style.color   = isCustom ? "#9b8c7b" : "#F6EEE4"; }
+    if (btnCustom) { btnCustom.style.background = isCustom ? "rgba(255,154,45,.25)" : "transparent";          btnCustom.style.color = isCustom ? "#F6EEE4" : "#9b8c7b"; }
+  }
+
+  function setMusicMode(m) {
+    applyMusicModeUI(m);
+    fetch(EP.http + "/music/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "music_mode", ts: Date.now() / 1000, mode: m })
+    }).catch(function(e) { console.warn("[music-mode]", e); });
+  }
+
+  // Fetch current mode on load
+  fetch(EP.http + "/music/mode").then(function(r) { return r.json(); }).then(function(d) {
+    applyMusicModeUI(d.mode || "auto");
+  }).catch(function() {});
+
+  // ── SPOTIFY WEB PLAYBACK SDK ──────────────────────────────────────────────
+  var SP_MOODS = [
+    { key:"morning_rush",     label:"Morning Rush",      uri:"spotify:playlist:0l0z9lLKk9lLzbP3IXHPiw" },
+    { key:"midday_dwell",     label:"Midday Dwell",      uri:"spotify:playlist:2Al9G2jrWkwDlRFMZaw1GX" },
+    { key:"afternoon_lounge", label:"Afternoon Lounge",  uri:"spotify:playlist:2t8P74P2FbdqrS0PJKefbL" },
+    { key:"rush_flow",        label:"Rush Flow",         uri:"spotify:playlist:3jJoNehRX6KY8V0JnAWeGr" },
+    { key:"busy_calm",        label:"Busy & Calm",       uri:"spotify:playlist:0WDSPABTByYd8uFU8ADLvq" },
+    { key:"upbeat_lift",      label:"Upbeat Lift",       uri:"spotify:playlist:0gtptp3fU4x9oXSf6TAJEv" },
+  ];
+
+  // Build playlist preset buttons
+  (function() {
+    var wrap = $("sp-presets");
+    if (!wrap) return;
+    SP_MOODS.forEach(function(m) {
+      var btn = document.createElement("button");
+      btn.textContent = m.label;
+      btn.setAttribute("data-uri", m.uri);
+      btn.style.cssText = "appearance:none;border:1px solid rgba(255,236,214,.12);border-radius:9px;padding:6px 4px;font-size:10.5px;font-weight:600;cursor:pointer;background:rgba(28,18,10,.5);color:#cdbfae;transition:background .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+      btn.onclick = function() { spPlaylist(m.uri); };
+      wrap.appendChild(btn);
+    });
+  })();
+
+  var spToken = null, spPlayer = null, spDeviceId = null;
+
+  window.onSpotifyWebPlaybackSDKReady = function() {
+    fetch(EP.http + "/spotify/token")
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error || !data.access_token) {
+          var s = $("sp-status");
+          if (s) s.textContent = "Spotify not configured — run: python -m actuators.spotify";
+          return;
+        }
+        spToken = data.access_token;
+        spPlayer = new Spotify.Player({
+          name: "Golden Coffee",
+          getOAuthToken: function(cb) { cb(spToken); },
+          volume: 0.5,
+        });
+        spPlayer.addListener("ready", function(e) {
+          spDeviceId = e.device_id;
+          var s = $("sp-status"); if (s) s.textContent = "Connected · Golden Coffee";
+          console.log("[spotify] ready, device_id:", spDeviceId);
+        });
+        spPlayer.addListener("not_ready", function() {
+          var s = $("sp-status"); if (s) s.textContent = "Device offline";
+        });
+        spPlayer.addListener("player_state_changed", function(state) {
+          if (!state) return;
+          var track = state.track_window.current_track;
+          var t = $("sp-track"), a = $("sp-artist"), p = $("sp-play");
+          if (t) t.textContent = track.name;
+          if (a) a.textContent = track.artists.map(function(x) { return x.name; }).join(", ");
+          if (p) p.textContent = state.paused ? "▶" : "⏸";
+        });
+        spPlayer.connect();
+      })
+      .catch(function(e) { console.warn("[spotify-token]", e); });
+  };
+
+  function spPlayPause() { if (spPlayer) spPlayer.togglePlay(); }
+  function spPrev()      { if (spPlayer) spPlayer.previousTrack(); }
+  function spNext()      { if (spPlayer) spPlayer.nextTrack(); }
+
+  function spPlaylist(uri) {
+    if (!spToken) return;
+    var url = "https://api.spotify.com/v1/me/player/play" + (spDeviceId ? "?device_id=" + encodeURIComponent(spDeviceId) : "");
+    fetch(url, {
+      method: "PUT",
+      headers: { "Authorization": "Bearer " + spToken, "Content-Type": "application/json" },
+      body: JSON.stringify({ context_uri: uri }),
+    }).catch(function(e) { console.warn("[spotify-play]", e); });
+  }
+
+  // Volume slider in custom panel → Spotify
+  (function() {
+    var vol = $("sp-vol"), pct = $("sp-vol-pct");
+    if (!vol) return;
+    vol.addEventListener("input", function() {
+      if (pct) pct.textContent = this.value + "%";
+    });
+    vol.addEventListener("change", function() {
+      if (spPlayer) spPlayer.setVolume(parseInt(this.value) / 100);
+    });
+  })();
+
 })();
 </script>
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
 </html>

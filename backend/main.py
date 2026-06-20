@@ -404,6 +404,42 @@ async def action(act: AgentAction, x_token: Optional[str] = Header(None)) -> dic
     return {"ok": True}
 
 
+@app.get("/spotify/token")
+async def spotify_token() -> dict:
+    """Return a fresh Spotify access token for the Web Playback SDK.
+    Reads the spotipy cache and refreshes if expired. Returns {"error":...}
+    (not 4xx) so the dashboard can degrade gracefully when unconfigured."""
+    import json as _json
+    from pathlib import Path as _Path
+    cache = _Path(".spotipy-cache")
+    if not cache.exists():
+        return {"error": "not authenticated — run: python -m actuators.spotify"}
+    try:
+        data = _json.loads(cache.read_text())
+        if data.get("expires_at", 0) < time.time() + 60:
+            cid = os.environ.get("SPOTIPY_CLIENT_ID", "")
+            csec = os.environ.get("SPOTIPY_CLIENT_SECRET", "")
+            ruri = os.environ.get("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
+            if not (cid and csec):
+                return {"error": "SPOTIPY_CLIENT_ID / SECRET not set"}
+            try:
+                import spotipy
+                from spotipy.oauth2 import SpotifyOAuth
+                auth = SpotifyOAuth(client_id=cid, client_secret=csec,
+                                    redirect_uri=ruri,
+                                    scope="user-modify-playback-state user-read-playback-state streaming",
+                                    cache_path=".spotipy-cache")
+                refreshed = await asyncio.to_thread(
+                    auth.refresh_access_token, data["refresh_token"]
+                )
+                return {"access_token": refreshed["access_token"]}
+            except Exception as exc:
+                return {"error": f"refresh failed: {exc}"}
+        return {"access_token": data["access_token"]}
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
 @app.get("/music/mode")
 async def get_music_mode() -> dict:
     """Current music mode + source (for dashboard on load)."""
