@@ -250,6 +250,22 @@ class Agent:
         actions += self._forecast_actions(scene, now)
         return actions
 
+    def _music_context(self, scene: dict) -> str:
+        """A compact read from the local music model, fed to Claude so its
+        set_music choice is an *informed* confirm/override — not a blind race
+        against the on-device model. Shows the model's top moods + confidence,
+        what's playing now, and any active controller bias."""
+        from agent.music_model import MOODS
+        probs = policy._MUSIC_MODEL.probabilities(scene, self.state.get("music_bias"))
+        top = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)[:3]
+        ranked = ", ".join(f"{MOODS[k].label} {p*100:.0f}%" for k, p in top)
+        now_playing = self.state.get("music_mood")
+        now_label = MOODS[now_playing].label if now_playing in MOODS else "—"
+        line = f"music_model(now={now_label}; suggests {ranked})"
+        if self.state.get("music_bias"):
+            line += f" bias={self.state['music_bias']}"
+        return line
+
     def _decide_claude(self, scene: dict) -> list[dict]:
         msg = self.client.messages.create(
             model=MODEL,
@@ -258,7 +274,12 @@ class Agent:
             tools=TOOLS,
             messages=[{
                 "role": "user",
-                "content": f"Current scene: {_scene_summary(scene)}\nAct if warranted.",
+                "content": (
+                    f"Current scene: {_scene_summary(scene)}\n"
+                    f"{self._music_context(scene)}\n"
+                    "Act if warranted. Only call set_music to move OFF the model's "
+                    "top suggestion when the room clearly calls for a different vibe."
+                ),
             }],
         )
         now = time.time()

@@ -191,7 +191,12 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     # a café "mood" (genre, BPM, playlist). It changes *what's playing* (the
     # volume rules below still tune loudness). Hysteresis avoids thrashing.
     current_mood = state.get("music_mood")
-    directive, changed = _MUSIC_MODEL.recommend(scene, current_mood)
+    # Controller influence: anything that writes state["music_bias"] (a
+    # {mood: logit_nudge} dict — build one with music_model.bias_for_hint) steers
+    # the model. The scene can still override a soft nudge, so it's a lean, not a lock.
+    directive, changed = _MUSIC_MODEL.recommend(
+        scene, current_mood, bias=state.get("music_bias"),
+    )
     if changed and _due(state, "music_mood", now):
         # Only advance the stored mood when we actually switch the track, so a
         # debounced switch is retried next tick rather than silently dropped.

@@ -85,6 +85,24 @@ def playlist_for(mood_key: str) -> str:
     return os.environ.get(f"MUSIC_PLAYLIST_{mood_key.upper()}", MOODS[mood_key].playlist)
 
 
+# How hard a controller "prefer this mood" hint leans the softmax. Tuned so a
+# single hint reliably wins a toss-up but a clear scene signal (queue building)
+# still overrides it — i.e. a *steer*, not a *lock*.
+HINT_STRENGTH = 1.5
+
+
+def bias_for_hint(prefer: str | None = None, strength: float = HINT_STRENGTH) -> dict[str, float]:
+    """Build a `bias` dict the controller agent can pass to `recommend()`.
+
+    `prefer` is a mood key the controller wants to lean toward (owner override,
+    event mode, or Claude's suggestion folded in as a soft nudge). Returns {} for
+    an unknown/empty hint, so callers can pass it through unconditionally.
+    """
+    if prefer in MOODS:
+        return {prefer: float(strength)}
+    return {}
+
+
 # ---------------------------------------------------------------------------
 # Features — a fixed-order vector the linear model scores. Kept tiny and
 # interpretable; all derived from aggregate, privacy-safe scene metrics.
@@ -173,16 +191,36 @@ class MusicModel:
             for k in MOOD_KEYS
         }
 
-    def probabilities(self, scene: dict) -> dict[str, float]:
+    def probabilities(self, scene: dict, bias: dict[str, float] | None = None) -> dict[str, float]:
+        """Softmax mood probabilities for a scene.
+
+        `bias` is an optional {mood_key: logit_nudge} from the *controller agent*
+        — a way to steer the model without overriding it. Nudges are added to the
+        raw logits before softmax, so a small push leans the room toward a vibe
+        while big scene signals (a building queue) can still win. Unknown keys are
+        ignored; missing moods get 0.
+        """
         feats = features(scene)
-        ordered = [self.scores(feats)[k] for k in MOOD_KEYS]
+        raw = self.scores(feats)
+        if bias:
+            raw = {k: raw[k] + float(bias.get(k, 0.0)) for k in MOOD_KEYS}
+        ordered = [raw[k] for k in MOOD_KEYS]
         probs = _softmax(ordered)
         return dict(zip(MOOD_KEYS, probs))
 
-    def recommend(self, scene: dict, current: str | None = None) -> tuple[MusicDirective, bool]:
+    def recommend(
+        self,
+        scene: dict,
+        current: str | None = None,
+        bias: dict[str, float] | None = None,
+    ) -> tuple[MusicDirective, bool]:
         """Return (directive, changed). `changed` is False when hysteresis keeps
-        the current mood (so the caller can avoid re-firing the same track)."""
-        probs = self.probabilities(scene)
+        the current mood (so the caller can avoid re-firing the same track).
+
+        `bias` (see `probabilities`) lets the controller agent steer the pick —
+        e.g. an event mode, an owner preference, or a Claude suggestion folded in
+        as a soft nudge rather than a hard override."""
+        probs = self.probabilities(scene, bias)
         best = max(MOOD_KEYS, key=lambda k: probs[k])
         chosen = best
         changed = True
