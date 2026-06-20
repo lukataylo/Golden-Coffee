@@ -7,6 +7,9 @@ agent that acts on comfort). The field splits into two halves nobody has joined 
 perception (counts/dwell/queue/occupancy) and action (occupancy-reactive automation,
 vision-LLM agents that alert). **Our wedge is the seam.**
 
+> Dynamic floor-map generation + the Home-Assistant-style digital-twin render are covered
+> separately in **[FLOORMAP_RESEARCH.md](FLOORMAP_RESEARCH.md)**.
+
 ## Build on these (permissive licenses)
 - **roboflow/supervision** (MIT, ~44.7k★) — our perception spine: `Detections`, `ByteTrack`,
   `PolygonZone` (table/area occupancy), `LineZone` (door footfall), heatmaps. Already in use.
