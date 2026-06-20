@@ -33,6 +33,27 @@ Notes: the Mac and the camera must be on the **same network**; the token can
 expire/rotate (re-copy from the app if the stream stops opening). Sanity-check the
 URL first with `ffplay "<rtsp_url>"` or VLC before running the pipeline.
 
+## Phone as camera over USB (DroidCam / IP Webcam) — best for locked-down Wi-Fi
+On guest/captive-portal networks (hackathons, hotels) the AP isolates clients, so
+a phone IP camera is unreachable over Wi-Fi. Route it over the **USB cable** with
+adb port-forwarding instead — zero network dependency:
+
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb        # Android SDK platform-tools
+$ADB devices                                         # confirm the phone shows up
+$ADB -s <SERIAL> forward tcp:4747 tcp:4747           # DroidCam (IP Webcam: 8080)
+python -m perception.run --source "http://127.0.0.1:4747/video"
+```
+
+- **DroidCam** MJPEG endpoint is `:4747/video`; **IP Webcam** is `:8080/video`.
+- Keep the phone app in the **foreground** — DroidCam tears down its `:4747` web
+  server when backgrounded/locked. (`adb shell input keyevent KEYCODE_WAKEUP`
+  wakes the screen.) With two phones connected, target the right one via `-s <SERIAL>`.
+- OpenCV's FFMPEG backend can't open these multipart-MJPEG streams, so `run.py`
+  auto-falls back to its built-in `MJPEGCapture` reader (persistent connection,
+  auto-reconnect). Raw-IP URLs also skip the yt-dlp resolve step.
+- Verified working: DroidCam over USB → `1280x720@25fps`, ~9 fps through YOLO.
+
 ## Reality check on "live coffee shop" feeds
 Genuine 24/7 livestreams of a **real café interior with a counter** are scarce —
 most YouTube "coffee shop" streams are 3D-rendered or looped ambience with **no

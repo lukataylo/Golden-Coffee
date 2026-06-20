@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import time
 
 try:
@@ -630,7 +631,11 @@ def _resolve_source(source: str):
     s = str(source)
     is_url = s.startswith(("http://", "https://"))
     is_direct = s.endswith((".m3u8", ".mp4", ".mov", ".mkv", ".webm"))
-    if is_url and not is_direct:
+    # Raw-IP hosts are local IP cameras / phone apps (DroidCam, IP Webcam), never
+    # yt-dlp pages — skip the resolve detour and open them straight away.
+    host = s.split("//", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+    is_ip_host = bool(re.match(r"^\d{1,3}(\.\d{1,3}){3}$", host))
+    if is_url and not is_direct and not is_ip_host:
         try:
             import yt_dlp
 
@@ -644,6 +649,108 @@ def _resolve_source(source: str):
         except Exception as exc:
             print(f"[perception] yt-dlp resolve failed ({exc}); passing source as-is")
     return s
+
+
+class MJPEGCapture:
+    """cv2.VideoCapture-compatible reader for multipart MJPEG streams.
+
+    OpenCV's FFMPEG backend can't open phone-camera MJPEG endpoints like DroidCam
+    (`/video`, multipart/x-mixed-replace) or IP Webcam. This holds one persistent
+    HTTP connection in a background thread, keeps the latest decoded frame, and
+    auto-reconnects if the phone drops the connection — so a flaky phone server
+    doesn't kill the pipeline. Exposes the isOpened/read/get/release subset run.py
+    actually uses.
+    """
+
+    def __init__(self, url: str, open_timeout: float = 8.0):
+        import threading
+
+        self.url = url
+        self._lock = threading.Lock()
+        self._frame = None
+        self._seq = 0
+        self._last_read_seq = -1
+        self._w = 0
+        self._h = 0
+        self._stop = False
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+        # Block until the first frame arrives so isOpened() is meaningful.
+        import time as _t
+
+        deadline = open_timeout
+        waited = 0.0
+        while waited < deadline:
+            with self._lock:
+                if self._frame is not None:
+                    break
+            _t.sleep(0.1)
+            waited += 0.1
+
+    def _run(self):
+        import urllib.request
+        import time as _t
+
+        import cv2
+        import numpy as np
+
+        while not self._stop:
+            try:
+                resp = urllib.request.urlopen(self.url, timeout=8)
+                buf = b""
+                while not self._stop:
+                    chunk = resp.read(8192)
+                    if not chunk:
+                        break
+                    buf += chunk
+                    start = buf.find(b"\xff\xd8")  # JPEG SOI
+                    end = buf.find(b"\xff\xd9", start + 2)  # JPEG EOI
+                    if start != -1 and end != -1:
+                        jpg = buf[start : end + 2]
+                        buf = buf[end + 2 :]
+                        img = cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_COLOR)
+                        if img is not None:
+                            with self._lock:
+                                self._frame = img
+                                self._h, self._w = img.shape[:2]
+                                self._seq += 1
+                    if len(buf) > 4_000_000:  # guard against a runaway buffer
+                        buf = buf[-1_000_000:]
+            except Exception:
+                pass
+            if not self._stop:
+                _t.sleep(1.0)  # reconnect backoff
+
+    def isOpened(self):
+        with self._lock:
+            return self._frame is not None
+
+    def read(self):
+        import time as _t
+
+        # Briefly wait for a fresh frame to avoid re-processing duplicates / busy-spin.
+        for _ in range(100):  # up to ~1s
+            with self._lock:
+                if self._frame is not None and self._seq != self._last_read_seq:
+                    self._last_read_seq = self._seq
+                    return True, self._frame.copy()
+            if self._stop:
+                break
+            _t.sleep(0.01)
+        with self._lock:  # no new frame; hand back the last good one so we keep running
+            return (self._frame is not None, None if self._frame is None else self._frame.copy())
+
+    def get(self, prop):
+        import cv2
+
+        if prop == cv2.CAP_PROP_FRAME_WIDTH:
+            return float(self._w)
+        if prop == cv2.CAP_PROP_FRAME_HEIGHT:
+            return float(self._h)
+        return 0.0
+
+    def release(self):
+        self._stop = True
 
 
 def main() -> None:
@@ -731,6 +838,12 @@ def main() -> None:
         if is_network
         else cv2.VideoCapture(source)
     )
+    # Phone MJPEG endpoints (DroidCam/IP Webcam) can't be opened by OpenCV's FFMPEG
+    # backend — fall back to our own multipart-MJPEG reader for http(s) sources.
+    if not cap.isOpened() and is_network and source.startswith("http"):
+        print("[perception] FFMPEG could not open stream; trying MJPEG reader")
+        cap.release()
+        cap = MJPEGCapture(source)
     if not cap.isOpened():
         raise SystemExit(f"[perception] could not open source: {source!r}")
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280
