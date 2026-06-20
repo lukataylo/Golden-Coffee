@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-ink-950 text-cream min-h-screen antialiased;
+    background-image: theme("backgroundImage.warm-radial");
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(217, 164, 65, 0.3);
+    color: #fff;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-gold-500/70 ring-offset-2 ring-offset-ink-950;
+  }
+}
+
+@layer components {
+  .gc-container {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  /* On-brand restyling for Clerk's mounted components. */
+  .cl-rootBox,
+  .cl-card {
+    @apply w-full;
+  }
+}

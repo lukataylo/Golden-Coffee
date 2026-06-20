@@ -318,6 +318,79 @@ async def get_geometry() -> dict:
     return {}
 
 
+_ASK_SYSTEM = (
+    "You are the comfort copilot for a coffee shop. Map the staff's natural-language "
+    "request to ONE action. Reply with ONLY a JSON object: "
+    '{"action": one of set_music_volume|set_temperature|set_lighting|set_scent|push_discount|notify_staff, '
+    '"params": {...}, "rationale": "one short sentence"}. '
+    "Params: set_music_volume{volume:0-100}, set_temperature{target_c:16-26}, "
+    "set_lighting{brightness:0-100,warmth:warm|neutral|cool}, set_scent{intensity:0-100,scent}, "
+    "push_discount{text}, notify_staff{text}. No prose, JSON only."
+)
+
+
+def _ask_keyword(q: str) -> Optional[dict]:
+    """Deterministic fallback when no LLM is configured."""
+    t = q.lower()
+    if any(w in t for w in ("warmer", "warm up", "warm it", "cold", "chilly", "freezing", "heat")):
+        return {"action": "set_temperature", "params": {"target_c": 22.5}, "rationale": "Warming the room."}
+    if any(w in t for w in ("cooler", "cool down", "cool it", "too warm", "too hot", "hot", "stuffy")):
+        return {"action": "set_temperature", "params": {"target_c": 19.5}, "rationale": "Cooling the room."}
+    if any(w in t for w in ("louder", "turn up", "more music")):
+        return {"action": "set_music_volume", "params": {"volume": 65}, "rationale": "Lifting the music."}
+    if any(w in t for w in ("quieter", "softer", "turn down")):
+        return {"action": "set_music_volume", "params": {"volume": 35}, "rationale": "Softening the music."}
+    if any(w in t for w in ("dim", "cosy", "cozy", "warm glow")):
+        return {"action": "set_lighting", "params": {"brightness": 35, "warmth": "warm"}, "rationale": "Dimming to a warm glow."}
+    if "bright" in t:
+        return {"action": "set_lighting", "params": {"brightness": 85, "warmth": "neutral"}, "rationale": "Brightening the room."}
+    if any(w in t for w in ("fresh", "scent", "air")):
+        return {"action": "set_scent", "params": {"intensity": 60, "scent": "fresh citrus"}, "rationale": "Freshening the air."}
+    if any(w in t for w in ("treat", "discount", "offer")):
+        return {"action": "push_discount", "params": {"text": "20% off pastries"}, "rationale": "Sharing a treat."}
+    if any(w in t for w in ("till", "queue", "staff", "help")):
+        return {"action": "notify_staff", "params": {"text": "Open a second till — queue building."}, "rationale": "Calling for a hand."}
+    return None
+
+
+@app.post("/ask")
+async def ask(request: Request) -> dict:
+    """Natural-language command -> one comfort action. Uses the LLM (Claude → Gemini
+    backup, see shared.llm) and falls back to a keyword parser. Broadcasts the action
+    like /override so the dashboard + actuators react. Powers the dashboard command bar."""
+    from shared import llm
+
+    try:
+        q = str((await request.json()).get("q", "")).strip()
+    except Exception:
+        q = ""
+    if not q:
+        raise HTTPException(status_code=400, detail="missing q")
+
+    parsed: Optional[dict] = None
+    text = await asyncio.to_thread(llm.complete, _ASK_SYSTEM, q, 200)
+    if text:
+        try:
+            s = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+            cand = json.loads(s)
+            if isinstance(cand, dict) and "action" in cand:
+                parsed = cand
+        except Exception:
+            pass
+    if parsed is None:
+        parsed = _ask_keyword(q)
+    if parsed is None:
+        return {"ok": False, "reason": "could not interpret", "provider": llm.provider()}
+
+    act = AgentAction(
+        ts=time.time(), action=parsed["action"], params=parsed.get("params", {}),
+        rationale=parsed.get("rationale", q), auto=False,
+    ).model_dump()
+    hub.action_log.append(act)
+    await hub.broadcast(act)
+    return {"ok": True, "action": act, "provider": llm.provider() or "keyword"}
+
+
 @app.post("/action")
 async def action(act: AgentAction, x_token: Optional[str] = Header(None)) -> dict:
     """The agent pushes decisions here. The actuator executor (actuators/run.py)

@@ -1,97 +1,254 @@
-# ☕ Golden Coffee — your café, but it runs itself
+# ☕ Golden Coffee
 
-An **ambient autopilot + rush copilot** for cafés. Using the camera you already own, it
-reads the room (occupancy, queue, dwell, conversion, flow) and **acts to help customers
-and staff** — tuning the atmosphere (music, comfort) and protecting speed-of-service:
-soften the music when it's busy, lift the vibe in a lull, cool a full room for comfort,
-fire an off-peak offer to fill dead time, and alert staff to open a second till before a
-queue costs you the sale. **Privacy-first: no faces stored, anonymous tracking only.**
-Built for the Encode Vibe Coding Hackathon.
+### *Your café, but it runs itself.*
 
-Not a surveillance tool: no employee scoring, no demographics, no surge pricing, no using
-discomfort to move people along. Every action helps the customer or the staff.
+**One camera you already own → privacy-first computer vision → an AI agent that actually
+acts** — tuning the atmosphere (music, lighting, scent, temperature) and protecting
+speed-of-service (queue alerts, table service), with a live **Comfort Index**. No faces
+stored. No surge pricing. Every action helps a guest or a staff member.
 
-## What we pivoted to
+<p>
+<a href="https://golden-coffee-production.up.railway.app"><img alt="Live dashboard" src="https://img.shields.io/badge/Live_Demo-Comfort_Dashboard-d9a441?style=for-the-badge"></a>
+<a href="https://golden-coffee-production.up.railway.app/scan/"><img alt="Scanner PWA" src="https://img.shields.io/badge/Try_it-Floorplan_Scanner-7ed87e?style=for-the-badge"></a>
+</p>
 
-Golden Coffee began as the viral *"dystopian café"* idea — grading employee productivity
-and nudging customers out with discomfort. **We pivoted away from that.** It is now an
-**ambient + ops copilot for cafés *and* restaurants** that only ever acts to help people:
+<p>
+<img alt="Built for Encode" src="https://img.shields.io/badge/Encode-Vibe_Coding_Hackathon-6fb6e0">
+<img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white">
+<img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-WebSocket_hub-009688?logo=fastapi&logoColor=white">
+<img alt="YOLO11" src="https://img.shields.io/badge/Perception-YOLO11_+_supervision-111">
+<img alt="Privacy-first" src="https://img.shields.io/badge/Privacy-no_faces_stored-success">
+</p>
 
-- **Comfort autopilot** — music, lights, scent, and AC tuned to the room (cosy in a lull, fresh & comfortable when busy). A **local music model** even picks the *playlist/mood* (genre + tempo) from the data — see [MUSIC.md](MUSIC.md).
-- **Rush copilot** — queue / walk-off detection → "open a second till" before you lose the sale.
-- **Table service** — per-table wait-times (seated → waiting → overdue).
-- **Cleaning** — table bussing + restroom cleaning cadence, by usage *and* time.
-- **Revenue at risk** — the £ that walked away from the queue, surfaced live.
+> **What it is:** an *ambient autopilot + rush copilot* for cafés and restaurants. It reads
+> the room from a single existing camera and takes real, gentle actions to make guests
+> comfortable and keep service fast.
+>
+> **Why it matters:** café owners already have cameras nobody watches, queues that quietly
+> lose sales, and a vibe that drives (or kills) dwell time. Golden Coffee turns that one
+> camera into a teammate that handles the room so the owner can run the shop.
 
-Privacy-first throughout (no faces stored, anonymous track IDs). The wedge: a **single
-existing camera** + **business-aware perception** + **an agent that takes real comfort/ops
-actions** — a combination no existing product (commercial or OSS) actually does. See
-[RESEARCH.md](RESEARCH.md) for the competitive landscape.
+---
 
-Full plan & team split: see [TRACKS.md](TRACKS.md).
+## ⏱️ The 60-second story
 
-## Architecture
+**The problem.** Cameras nobody watches. A queue of five costs you the sale of the sixth
+person who walks out. The "feel" of the room — music too loud, air too stuffy, lights too
+harsh — decides whether people stay for a second coffee. Nobody is watching all of it, all
+the time.
 
-```
-producers --POST /ingest (SceneEvent)--> [FastAPI hub] --WS /ws--> dashboard
-agent     --POST /action (AgentAction)-> [FastAPI hub] --WS /ws--> dashboard
-dashboard --POST /override-------------> [FastAPI hub]  (human-in-the-loop)
-```
+**What Golden Coffee does.** It plugs into the camera you already own and understands the
+room — occupancy, queue length, the conversion funnel, per-table wait times, cleaning
+cadence. Then an agent *acts*:
 
-Everyone talks in two shapes only — `SceneEvent` and `AgentAction` in
-[`shared/schemas.py`](shared/schemas.py). That contract is what lets all four
-workstreams build in parallel against the **mock generator** before real perception exists.
+- 🎶 **Softens the music** when the room is full so it stays talkable; **lifts the vibe**
+  in a lull.
+- ❄️ **Cools a busy, warming room** for comfort; warms and dims it for a cosy evening.
+- 🌿 Freshens the air with **scent** when it gets stuffy.
+- 🚨 **Alerts staff** — "queue at 6, open a second till" — *before* you lose the sale.
+- 🍽️ Flags **tables waiting too long** to order, be cleared, or get the bill.
+- 🏷️ Marks down **perishables** in a sustained lull (prices only ever go *down* — never a surge).
 
-> ⚠️ The WebSocket backend must run on Render/Railway/Fly — **Vercel serverless can't
-> hold a socket**. The dashboard (Next.js/v0) stays on Vercel and connects over `wss://`.
+**The privacy stance.** Faces are blurred on-device before anything is processed. Tracking
+uses ephemeral ByteTrack IDs — never a person's identity. No demographics, no employee
+scoring, no using discomfort to move people along. A hardened `--privacy-mode` strips
+bounding boxes entirely and adds differential-privacy noise to the heatmap.
 
-## Quick start (clone-and-run skeleton, ~5 min)
+---
+
+## 🔗 Live demo
+
+| | Link |
+|---|---|
+| **Comfort dashboard** (live tiles, action feed, Comfort Index, 3D floor twin) | <https://golden-coffee-production.up.railway.app> |
+| **Floorplan scanner PWA** (pick a layout or scan your own → 3D twin) | <https://golden-coffee-production.up.railway.app/scan/> |
+
+No backend handy? The dashboard has a self-contained **▶ Demo** mode
+(`?demo=1`) that drives every tile from a synthetic café with zero setup.
+
+### 🔑 Demo accounts (sample coffee shops)
+
+The live **dashboard above is open — no login required**. For the customer-facing
+web app (`web/`, sign-up + onboarding), these demo logins each load one of our 5
+sample coffee-shop layouts. Password for all: **`GoldenDemo!24`**. Seed data lives
+in [`web/seed/demo-accounts.json`](web/seed/demo-accounts.json).
+
+| Login | Coffee shop | Sample room |
+|---|---|---|
+| `corner@goldencoffee.demo` | **Corner Café** | cosy · 4 tables · comfort 92 · 12 covers |
+| `roastery@goldencoffee.demo` | **Open Roastery** | open-plan + patio · 6 tables · buzzy · 38 covers |
+| `kiosk@goldencoffee.demo` | **Grab & Go Kiosk** | counter-led · queue focus · 6 covers |
+| `bistro@goldencoffee.demo` | **Bistro + Patio** | 5 tables + patio · calm · 24 covers |
+| `espresso@goldencoffee.demo` | **Long Bar Espresso** | bar + stools · cosy · 9 covers |
+
+> The web app uses **Clerk** auth — seed these users in the Clerk dashboard (or
+> enable demo mode) to sign in. Each maps to a layout in `dashboard/scan/presets.js`.
+
+---
+
+## 🚀 Run it locally in 2 minutes
+
+No camera, no model, no API key needed — the mock generator proves the whole pipe end to end.
 
 ```bash
+# 0) setup
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env            # fill in keys when ready
+cp .env.example .env                  # all keys optional; blanks degrade gracefully
 
-# 1) backend hub
+# 1) the realtime hub (serves the dashboard at / too)
 uvicorn backend.main:app --reload --port 8000
 
-# 2) mock data (separate terminal) — proves the pipe end-to-end with no model/camera
+# 2) mock scenes — a synthetic café, no camera/model required (separate terminal)
 python -m shared.mock_events
 
-# 3) dashboard — open dashboard/index.html in a browser (live tiles + action feed)
-open dashboard/index.html
-# no backend handy? click "▶ Demo" (or open dashboard/index.html?demo=1) for a
-# self-contained synthetic café — drives the live tiles, action feed, comfort
-# panel, and the 3D floor map with zero setup.
+# 3) the agent — deterministic policy, no API key needed (separate terminal)
+python -m agent.agent
+
+# 4) open the dashboard
+open http://127.0.0.1:8000        # live tiles, action feed, Comfort Index, 3D twin
 ```
 
-The **Floorplan** tab renders an isometric **3D digital twin** (Three.js, vendored locally —
-works offline) bound to live scene state: zone occupancy heat, anonymous track dots, table
-status, a staff-alert beacon, and the agent's comfort actions made visible (lights warm/dim,
-music ring pulses). Toggle **3D/2D** in the view; it falls back to the 2D heatmap if WebGL is
-unavailable. Design notes & the wider OSS landscape: [FLOORMAP_RESEARCH.md](FLOORMAP_RESEARCH.md).
-
-You should see occupancy/funnel/heatmap tiles updating live. That's the skeleton —
-each of the four tracks now builds independently:
+Want the real thing? Each piece runs independently against the same two contracts:
 
 ```bash
-cp .env.example .env                          # then fill in keys (all optional; blanks degrade gracefully)
-python -m perception.run --source 0          # P1: real YOLO11+supervision events (+ MJPEG /stream)
-python -m agent.agent                         # P2: rule-based (or Claude) policy -> /action
-python -m actuators.run                       # P3: subscribe to /ws and drive real devices
+python -m perception.run --source 0      # real YOLO11 + supervision events (+ MJPEG /stream)
+python -m actuators.run                  # drive real devices (Spotify / Hue / IR AC / scent / Telegram)
 ```
 
-## Workstreams (4 tracks)
-Full breakdown with current tasks per track: **[TRACKS.md](TRACKS.md)** (and the
-matching GitHub issues, one per track).
-- **Track A · Perception** — `perception/`, `clips/`, `eval/`. Detection/tracking, zones, funnel, heatmap, **table wait-times + cleaning**, MJPEG stream.
-- **Track B · Agent & Intelligence** — `agent/`, `federated/`. Comfort + rush + table/cleaning policy; Claude path; walkaway £ metric; forecast; FLock.
-- **Track C · Backend & Actuators** — `backend/`, `actuators/`. WS hub + executor: Spotify, **IR AC**, **Hue lights**, **scent**, **Telegram**.
-- **Track D · Frontend & Product** — `dashboard/`. Live / Floorplan / Tables views, Comfort panel; pitch deck + demo.
+📚 Full setup, devices, and the Telegram bot: **[docs/local-setup.md](docs/local-setup.md)**.
 
-## Pre-hackathon prep
-- Spotify **Premium** + app credentials + run the OAuth consent once (`python -m actuators.spotify 40`).
-- **Broadlink RM4** IR blaster pointed at the AC/heater; discover + learn codes (`python -m actuators.infrared --discover`, then `--learn cool|warm`).
-- **Telegram** bot via @BotFather; capture the chat id (`python -m actuators.notify --chat-id`).
-- `ANTHROPIC_API_KEY`; pre-download `yolo11n.pt`; test FPS on the demo laptop.
-- 2–3 staged café clips in `clips/` as the live-demo fallback.
+---
+
+## 🧠 How it works
+
+Everything talks in exactly **two shapes** — a `SceneEvent` (what the camera understands)
+and an `AgentAction` (what the system does) — defined in
+[`shared/schemas.py`](shared/schemas.py). That single contract is what lets perception, the
+agent, the backend, and the dashboard all run independently against a mock before any real
+camera exists.
+
+```mermaid
+flowchart LR
+    cam[📷 Single café camera] --> perc["Perception<br/>YOLO11 + supervision<br/>(faces blurred on-device)"]
+    perc -->|"POST /ingest<br/>SceneEvent"| hub[("FastAPI Hub<br/>backend.main")]
+    agent["🤖 Agent<br/>rules + optional Claude"] -->|"POST /action<br/>AgentAction"| hub
+    hub -->|"WS /ws"| dash["Comfort Dashboard<br/>+ 3D floor twin"]
+    hub -->|"WS /ws"| act[Actuators]
+    hub -->|"WS /ws"| agent
+    act --> dev["🎶 Music · 💡 Lights · 🌿 Scent · ❄️ AC · 📲 Telegram"]
+    dash -->|"POST /override (human-in-the-loop)"| hub
+    scan["📱 Scan PWA"] -->|"POST /geometry"| hub
+    hub -->|"POST /onchain/snapshot"| walrus[("Walrus / Sui<br/>tamper-proof audit")]
+```
+
+### Component map
+
+| Component | Path | Role |
+|---|---|---|
+| **Perception** | `perception/` | YOLO11 + supervision (ByteTrack, polygon zones, dwell, funnel, heatmap, tables, cleaning). On-device face blur. Emits `SceneEvent`s. |
+| **Agent** | `agent/` | Deterministic comfort + rush + table/cleaning policy; on-device music model; footfall forecast; optional Claude tool-use. Emits `AgentAction`s. |
+| **Backend hub** | `backend/` | FastAPI WebSocket fan-out + REST. Decouples producers from consumers; replays state to new clients; MJPEG stream. |
+| **Actuators** | `actuators/` | Subscribes to `/ws` and drives real devices: Spotify, Philips Hue, Broadlink IR (AC/heater), scent diffuser, Telegram. |
+| **Dashboard** | `dashboard/` | Single-file comfort dashboard — Live / Floorplan / Tables, action feed, Comfort Index, Three.js 3D twin. No build step. |
+| **Scan PWA** | `dashboard/scan/` | Installable PWA: pick a coffee-shop preset or trace your own floorplan → 3D twin → push geometry to live. |
+| **Federated** | `federated/` | Cross-café learning (occupancy thresholds + music model) that shares only ratios/weights, never video. FLock port. |
+| **On-chain** | `onchain/` | Anchors the anonymized metrics + agent action audit trail to Walrus (Sui ecosystem). |
+| **Web** | `web/` | Separate Next.js + Clerk marketing/auth/onboarding app, deploys independently to Vercel. |
+
+📐 Deeper architecture, the contract fields, and the endpoint list: **[docs/architecture.md](docs/architecture.md)**.
+
+---
+
+## ✨ Feature highlights
+
+| Feature | What it does |
+|---|---|
+| 🌡️ **Comfort Index** | A live 0–100 read of how the room *feels* — blends music level, lighting, air/temperature and scent into one number ("Feels great"). |
+| 🎛️ **Ambient autopilot** | Tunes music **volume + mood**, **lighting** (brightness + warmth), **scent**, and **temperature** to the room and time of day. The thermal model layers seasonal baseline → occupancy load → humidity → a warm-ambiance psychological offset, with hysteresis so it never thrashes the AC. |
+| 🎵 **On-device music model** | A small softmax classifier picks the *mood/genre + BPM + playlist* from anonymized scene features — no API key, runs offline. Auto mode (model picks) or Custom mode (staff picks). See [MUSIC.md](MUSIC.md). |
+| 🚨 **Rush copilot** | Queue over threshold → "open a second till." Escalates to **urgent** when walk-offs are rising, and surfaces the **£ walked away** today (avg ticket × abandons). |
+| 🍽️ **Table service SLAs** | Per-table waits: dirty-table hygiene (≥3 min), order-taking (≥6 min), bill request (≥4 min), plus a generic overdue catch-all. |
+| 🧽 **Cleaning cadence** | Tracks bussing + zone cleaning (e.g. restroom) by **usage *and* elapsed time**, alerting when overdue. |
+| 🏷️ **Quiet-period markdown** | After a sustained lull, marks down perishables on the menu board — `never_surge` enforced per item; resets when the room fills. |
+| 📈 **Footfall forecast** | Simple time-series over occupancy → a next-hour staffing heads-up. |
+| 📱 **Scan-to-3D** | PWA: pick one of five café layouts (Corner Café, Open Roastery, Grab & Go Kiosk, Bistro + Patio, Long Bar Espresso) or trace your own floorplan photo → live 3D twin → push geometry to the cameras. |
+| 🌐 **Federated learning** | Cafés tune each other's thresholds *and* music model without sharing a single frame — only capacity-normalized ratios and model weights leave a venue. |
+| 📲 **Telegram alerts** | Staff get the urgent stuff (queue, overdue tables) pushed to their phones. |
+| ⛓️ **Tamper-proof audit** | One call anchors the anonymized metrics + the agent's action log to Walrus — an independently verifiable record of what the AI did. |
+
+### 📊 Accuracy, honestly
+
+We benchmarked the perception pipeline against a vision-LLM judge on 24 frames across 4 clips
+([`eval/report.md`](eval/report.md)):
+
+- **On café-representative footage** (eye-level, sparse — the regime our single camera actually
+  operates in): **count MAE ≈ 0.17, 100% within ±1.** ✅
+- On deliberate stress cases (dense aerial plazas, crowds) `yolo11n` under-detects badly — which
+  is why the *overall* MAE is high. Those scenes are nothing like a café camera; the fix
+  (yolo11m/x, SAHI tiling, real zone geometry) is documented, not hidden.
+
+📋 Feature-by-feature detail: **[docs/features.md](docs/features.md)**.
+
+---
+
+## 🏆 Hackathon tracks & bounties
+
+| Bounty | Status | How it's integrated |
+|---|---|---|
+| **Sui / Walrus** | 🟢 **Live** | `onchain/walrus.py` + `POST /onchain/snapshot` anchor anonymized metrics + the agent's action audit trail to the Walrus testnet over pure HTTP — returns a public, verifiable blob URL. No wallet needed. |
+| **Vercel** | 🟢 **Live-ready** | A separate production Next.js 14 + Clerk app in `web/` (marketing, auth, multi-venue onboarding) deploys independently to Vercel; the static dashboard is also Vercel-deployable and `?ws=`-aware. See [VERCEL.md](VERCEL.md). |
+| **FLock** | 🟡 **Model ported; demo runs** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally. On-chain packaging (Docker/IPFS/FlockTask) is documented but not executed — see [federated/FLOCK.md](federated/FLOCK.md). |
+| **Codeplain** | 🟡 **Spec written; render blocked on key** | The daily ops-report module is specified spec-first in `codeplain/ops_report.plain`; rendering to code is blocked on a Codeplain API key. Plan in [codeplain/README.md](codeplain/README.md). |
+
+🔎 Full per-bounty write-up: **[docs/bounties.md](docs/bounties.md)**.
+
+---
+
+## 🛠️ Tech stack
+
+- **Perception** — Ultralytics **YOLO11** + roboflow **supervision** (ByteTrack, polygon zones,
+  heatmaps), OpenCV, MediaPipe face blur. *(Note: Ultralytics is AGPL-3.0 — fine for the
+  hackathon; a permissive detector is the production swap.)*
+- **Backend** — **FastAPI** + WebSockets + Uvicorn, Pydantic contracts. Dockerized, deployed on **Railway**.
+- **Agent** — deterministic Python policy (no key needed) + optional **Claude** tool-use; on-device softmax music model.
+- **Dashboard** — vanilla JS single file + **Three.js** (vendored, offline). PWA scanner with service worker + manifest.
+- **Web** — **Next.js 14** (App Router) + TypeScript + Tailwind + **Clerk**, on **Vercel**.
+- **Integrations** — Spotify, Philips Hue, Broadlink RM4 (IR), scent diffuser, Telegram, **Walrus** (Sui), **FLock**.
+
+### Repo map
+
+```
+backend/      FastAPI WebSocket hub + REST (deployed)
+perception/   YOLO11 + supervision → SceneEvents; zone/geometry tools
+agent/        policy + music model + forecast + Claude path
+actuators/    device executors (music/lights/IR/scent/telegram)
+dashboard/    comfort dashboard (+ 3D twin) and scan/ PWA
+federated/    cross-café learning + FLock port
+onchain/      Walrus anchoring
+shared/       schemas.py (the contract) + mock_events.py
+eval/         perception accuracy harness + report
+web/          Next.js + Clerk marketing/auth/onboarding (Vercel)
+docs/         📖 this project's wiki
+```
+
+---
+
+## 📖 Docs wiki
+
+| Page | What's inside |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | Data flow, the `SceneEvent` + `AgentAction` contracts, every endpoint. |
+| [docs/features.md](docs/features.md) | Every feature explained: comfort autopilot, rush copilot, tables/cleaning, scan PWA, federated. |
+| [docs/demo-guide.md](docs/demo-guide.md) | A tight 3-minute run-of-show for judges + the hero moment. |
+| [docs/privacy.md](docs/privacy.md) | The privacy-first stance — exactly what is and isn't stored. |
+| [docs/bounties.md](docs/bounties.md) | Each sponsor track and how we integrated it. |
+| [docs/local-setup.md](docs/local-setup.md) | Full local run, env vars, and devices. |
+
+Reference docs: [TRACKS.md](TRACKS.md) · [RESEARCH.md](RESEARCH.md) · [FLOORMAP_RESEARCH.md](FLOORMAP_RESEARCH.md) · [MUSIC.md](MUSIC.md) · [DEPLOY.md](DEPLOY.md)
+
+---
+
+<sub>Built at the **Encode Vibe Coding Hackathon**. Golden Coffee is an ambient + ops copilot,
+not a surveillance tool — no employee scoring, no demographics, no surge pricing, no using
+discomfort to move people along.</sub>
