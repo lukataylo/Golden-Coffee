@@ -351,19 +351,22 @@ class Component extends DCLogic {
   _scrollReveal(){
     const els = [...document.querySelectorAll('[data-rv]')];
     document.querySelectorAll('[data-rv-group]').forEach(grp =>
-      Array.from(grp.children).forEach((c, i) => { c.dataset.rvDelay = (i * 0.09).toFixed(2); els.push(c); }));
-    els.forEach(el => {
-      el.style.opacity = 1;
-      el.style.transform = 'translateY(28px)';
-      el.style.transition = `transform .85s cubic-bezier(.22,.61,.36,1) ${el.dataset.rvDelay || 0}s`;
-      el.style.willChange = 'transform';
-    });
-    if(!('IntersectionObserver' in window)){ els.forEach(el => { el.style.transform = 'none'; }); return; }
+      Array.from(grp.children).forEach((c, i) => { c.dataset.rvDelay = (i * 0.1).toFixed(2); els.push(c); }));
+    const hide = el => {
+      const d = el.dataset.rvDelay || 0;
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(34px)';
+      el.style.transition = `opacity .9s ease ${d}s, transform .9s cubic-bezier(.22,.61,.36,1) ${d}s`;
+      el.style.willChange = 'opacity, transform';
+    };
+    const show = el => { el.style.opacity = '1'; el.style.transform = 'none'; };
+    els.forEach(hide);
+    if(!('IntersectionObserver' in window)){ els.forEach(show); return; }
+    // Trigger when the element's top is ~12% up into the viewport, so it fades up
+    // as it crosses into view from just below the fold. Fires once, then unobserves.
     const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if(e.isIntersecting){ e.target.style.transform = 'none'; io.unobserve(e.target); }
-      });
-    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
+      entries.forEach(e => { if(e.isIntersecting){ show(e.target); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
     els.forEach(el => io.observe(el));
   }
 
