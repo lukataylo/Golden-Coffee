@@ -51,6 +51,7 @@ METRICS_PATH = REPO_ROOT / "data" / "metrics.jsonl"
 # Active floorplan geometry (zones.json shape) scanned by the PWA — perception
 # (--zones) and the dashboard read this to use real venue geometry.
 GEOMETRY_PATH = REPO_ROOT / "data" / "geometry.json"
+CONFIG_PATH   = REPO_ROOT / "data" / "config.json"
 
 
 def _require_token(x_token: Optional[str]) -> None:
@@ -319,6 +320,34 @@ async def get_geometry() -> dict:
         except Exception:
             pass
     return {}
+
+
+@app.get("/config")
+async def get_config() -> dict:
+    """Return persisted venue config (camera source, etc.)."""
+    if CONFIG_PATH.exists():
+        try:
+            return json.loads(CONFIG_PATH.read_text())
+        except Exception:
+            pass
+    return {}
+
+
+@app.post("/config")
+async def set_config(request: Request) -> dict:
+    """Persist venue config written by the setup wizard (camera source, etc.)."""
+    body = await request.json()
+    CONFIG_PATH.parent.mkdir(exist_ok=True)
+    # Merge with existing config so we don't overwrite unrelated keys
+    existing: dict = {}
+    if CONFIG_PATH.exists():
+        try:
+            existing = json.loads(CONFIG_PATH.read_text())
+        except Exception:
+            pass
+    existing.update(body)
+    CONFIG_PATH.write_text(json.dumps(existing, indent=2))
+    return {"ok": True, **existing}
 
 
 _ASK_SYSTEM = (

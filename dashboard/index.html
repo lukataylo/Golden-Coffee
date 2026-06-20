@@ -152,12 +152,22 @@
         <b>Drop a photo here or click to browse</b>
         <span style="font-size:11px">JPG · PNG · HEIC — any photo from your phone works</span>
       </label>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <label style="font-size:12px;color:#9b8c7b;white-space:nowrap;" for="wz-table-count">Number of tables:</label>
-        <input id="wz-table-count" type="number" min="0" max="30" value="3"
-          style="width:70px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,236,214,.18);
-          background:rgba(28,18,10,.7);color:#F6EEE4;font-size:13px;font-family:inherit;outline:none;">
-        <span style="font-size:11px;color:#9b8c7b;">Set to 0 if no individual tables needed</span>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <label style="font-size:12px;color:#9b8c7b;white-space:nowrap;" for="wz-camera-source">Camera source:</label>
+          <input id="wz-camera-source" type="text" value="0"
+            placeholder="0  or  rtsp://user:pass@192.168.1.x:554/stream"
+            style="flex:1;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,236,214,.18);
+            background:rgba(28,18,10,.7);color:#F6EEE4;font-size:13px;font-family:inherit;outline:none;">
+          <span style="font-size:11px;color:#9b8c7b;white-space:nowrap;">0 = built-in webcam</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <label style="font-size:12px;color:#9b8c7b;white-space:nowrap;" for="wz-table-count">Number of tables:</label>
+          <input id="wz-table-count" type="number" min="0" max="30" value="3"
+            style="width:70px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,236,214,.18);
+            background:rgba(28,18,10,.7);color:#F6EEE4;font-size:13px;font-family:inherit;outline:none;">
+          <span style="font-size:11px;color:#9b8c7b;">Set to 0 if no individual tables needed</span>
+        </div>
       </div>
       <div class="wz-stat" id="wz-s1-stat"></div>
     </div>
@@ -1585,18 +1595,25 @@
       stat.textContent = '✕ Required zones not drawn yet: ' + missing.join(', ');
       stat.className = 'wz-stat err'; return;
     }
+    var camSrc = (document.getElementById('wz-camera-source').value || '0').trim();
     stat.textContent = 'Saving…'; stat.className = 'wz-stat';
-    fetch(EP_HTTP + '/geometry', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(geo)
-    })
-    .then(function(r) { return r.json(); })
+    // Save geometry + camera source together
+    Promise.all([
+      fetch(EP_HTTP + '/geometry', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(geo)
+      }),
+      fetch(EP_HTTP + '/config', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({camera_source: camSrc})
+      })
+    ])
+    .then(function(rs) { return rs[0].json(); })
     .then(function(res) {
       var zc = Object.keys(geo.zones).length, tc = Object.keys(geo.tables).length;
       document.getElementById('wz-done-box').innerHTML =
-        '<b>' + zc + ' zones' + (tc ? ' + ' + tc + ' tables' : '') + ' saved.</b><br><br>' +
-        'Restart perception to load the new geometry:<br>' +
-        '<code>python -m perception.run --source 0 --zones data/geometry.json</code><br><br>' +
-        'The dashboard will reflect real zone boundaries immediately.';
+        '<b>' + zc + ' zones' + (tc ? ' + ' + tc + ' tables' : '') + ' saved.</b>' +
+        ' Camera: <code>' + camSrc + '</code><br><br>' +
+        'Run <code>python start.py</code> — everything starts automatically with your camera.';
       wzStep(3);
     })
     .catch(function(e) {
