@@ -106,7 +106,10 @@ class Hub:
         if self.last_scene:
             await ws.send_json(self.last_scene)
         for action in self.action_log:
-            await ws.send_json(action)
+            # Send a COPY tagged as replayed so consumers (e.g. the actuator
+            # executor) can skip re-firing real devices. Don't mutate the stored
+            # dict — the dashboard still wants the un-flagged history.
+            await ws.send_json({**action, "replayed": True})
 
     def disconnect(self, ws: WebSocket) -> None:
         self.clients.discard(ws)
@@ -217,18 +220,22 @@ async def metrics(limit: int = 200) -> dict:
                 rows.append(json.loads(ln))
             except Exception:
                 continue
+    latest_abandoned = next(
+        (r["abandoned"] for r in reversed(rows) if "abandoned" in r), 0
+    )
     summary = {
         "samples": len(rows),
         "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
-        "total_abandoned": rows[-1].get("abandoned", 0) if rows else 0,
+        "latest_abandoned": latest_abandoned,
     }
     return {"summary": summary, "recent": rows}
 
 
 @app.post("/action")
-async def action(act: AgentAction) -> dict:
+async def action(act: AgentAction, x_token: Optional[str] = Header(None)) -> dict:
     """The agent pushes decisions here. The actuator executor (actuators/run.py)
     subscribes over /ws and drives the real devices (Spotify / IR / Telegram)."""
+    _require_token(x_token)
     payload = act.model_dump()
     hub.action_log.append(payload)
     await hub.broadcast(payload)

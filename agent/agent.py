@@ -39,6 +39,7 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 BACKEND_WS  = os.environ.get("BACKEND_WS",  "ws://127.0.0.1:8000/ws")
 MODEL       = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
 USE_CLAUDE  = bool(os.environ.get("ANTHROPIC_API_KEY"))
+_TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
 
 SYSTEM = (
     "You are the ambient + service copilot for a coffee shop. You receive anonymized "
@@ -324,7 +325,7 @@ class Agent:
             print(f"[agent] {action['action']} {action['params']} — {action['rationale']}")
             if http is not None:
                 try:
-                    await http.post(f"{BACKEND_URL}/action", json=action)
+                    await http.post(f"{BACKEND_URL}/action", json=action, headers=_TOKEN_HEADERS)
                 except Exception as exc:
                     print(f"[agent] post failed: {exc}")
         return actions
@@ -369,14 +370,14 @@ def run_once(post: bool = False) -> None:
     for t in range(0, 75, 3):
         scene = _synthetic_scene(t).model_dump()
         scene["ts"] = base + t * 20  # advancing clock so debouncing is realistic
-        actions = [a.model_dump() for a in policy.decide(scene, agent.state)]
+        actions = agent.decide_actions(scene)
         for a in actions:
             total += 1
             print(f"t={t:>2} occ={scene['occupancy']:>2} q={scene['queue_len']} "
                   f"-> {a['action']} {a['params']} | {a['rationale']}")
             if post:
                 try:
-                    httpx.post(f"{BACKEND_URL}/action", json=a, timeout=2.0)
+                    httpx.post(f"{BACKEND_URL}/action", json=a, headers=_TOKEN_HEADERS, timeout=2.0)
                 except Exception as exc:
                     print(f"      (post failed: {exc})")
     print(f"\n[agent] replay complete — {total} action(s) produced")

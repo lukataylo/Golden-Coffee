@@ -28,6 +28,10 @@ from actuators import discount, infrared, lights, notify, scent, spotify
 
 BACKEND_WS = os.environ.get("BACKEND_WS", "ws://127.0.0.1:8000/ws")
 
+# Strong refs to in-flight dispatch tasks so they aren't garbage-collected
+# before completion (which would silently drop an action under load).
+_pending: set[asyncio.Task] = set()
+
 
 def dispatch(action: dict) -> None:
     """Route one AgentAction to the right device."""
@@ -74,11 +78,22 @@ async def main() -> None:
                 except Exception:
                     continue
                 if msg.get("type") == "action":
+                    # Skip actions replayed by the backend on (re)connect so a
+                    # reconnect can't re-fire devices; only dispatch live ones.
+                    if msg.get("replayed"):
+                        print("[actuators] skipping replayed action")
+                        continue
                     # Actuators are blocking I/O (spotipy, broadlink, requests);
                     # run off the event loop so a slow device can't stall reception.
-                    asyncio.create_task(asyncio.to_thread(dispatch, msg))
+                    task = asyncio.create_task(asyncio.to_thread(dispatch, msg))
+                    _pending.add(task)
+                    task.add_done_callback(_pending.discard)
         except websockets.ConnectionClosed:
             print("[actuators] disconnected; reconnecting…")
+        except Exception as e:
+            # Any other error during reception must NOT kill the executor;
+            # log and fall through to reconnect with the usual backoff.
+            print(f"[actuators] receive loop error ({e!r}); reconnecting…")
 
 
 async def _reconnect(url):

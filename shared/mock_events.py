@@ -24,6 +24,10 @@ AVG_TICKET_GBP = float(os.environ.get("AVG_TICKET_GBP", "4.80"))
 
 ZONES = [Zone.QUEUE, Zone.COUNTER, Zone.SEATING, Zone.SEATING, Zone.ENTRY]
 
+# Mirror what perception sends: if INGEST_TOKEN is set, the backend requires it
+# as X-Token on /ingest, so include it on every POST (empty when unset in dev).
+_TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
+
 
 def _synthetic_scene(t: int) -> SceneEvent:
     """Build one believable scene. Occupancy/activity ebb and flow on a sine wave
@@ -111,7 +115,7 @@ def main() -> None:
         while True:
             event = _synthetic_scene(t)
             try:
-                client.post(url, json=event.model_dump())
+                client.post(url, json=event.model_dump(), headers=_TOKEN_HEADERS)
             except Exception as exc:  # backend not up yet — keep trying
                 print(f"[mock] backend not reachable ({exc}); retrying…")
             t += 1
