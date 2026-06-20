@@ -1,12 +1,14 @@
 /* Golden Coffee Floorplan Scanner — service worker.
    Caches the app shell for offline use. Cache-first for the shell, with a
    network fallback so the app still works with no connectivity. */
-const CACHE = 'gc-scan-v1';
+const CACHE = 'gc-scan-v2';
 const SHELL = [
   './',
   './index.html',
   './app.js',
   './scan3d.js',
+  './presets.js',
+  './home.js',
   './manifest.webmanifest',
   './icon.svg',
   '../vendor/three.min.js',

@@ -182,7 +182,9 @@
     });
     return out;
   }
-  // Expose for verification / debugging.
+  // Expose for verification / debugging and for the preset "Pick a shop" flow.
+  // (pushGeometry / downloadGeometry / apiBase / toast / refit are assigned once
+  // their definitions are reached below.)
   window.GCScan = { buildGeometry, SLOTS, state };
 
   // ---- Interaction ---------------------------------------------------------
@@ -313,21 +315,20 @@
     return { g, errs };
   }
 
-  function downloadJSON() {
-    const { g, errs } = validateForExport();
-    if (errs.length) flash('Heads up: ' + errs.join('; '), true);
+  // Trigger a zones.json download for any geometry object (editor or preset).
+  function downloadGeometry(g, name) {
     const blob = new Blob([JSON.stringify(g, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'zones.json';
+    a.href = url; a.download = name || 'zones.json';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    flash('zones.json downloaded.');
+    flash((name || 'zones.json') + ' downloaded.');
   }
 
-  async function pushLive() {
-    const { g, errs } = validateForExport();
-    if (errs.length && !confirm('Geometry incomplete:\n' + errs.join('\n') + '\n\nPush anyway?')) return;
+  // POST any geometry object to ${API}/geometry. Shared by the editor and the
+  // preset "Push to live" flow so they speak the exact same contract + endpoint.
+  async function pushGeometry(g) {
     const url = apiBase() + '/geometry';
     flash('Pushing to ' + url + ' …');
     try {
@@ -338,9 +339,23 @@
       });
       if (res.ok) flash('Pushed to live ☁ — ' + res.status);
       else flash('Push failed: ' + res.status + ' ' + res.statusText, true);
+      return res;
     } catch (e) {
       flash('Push error: ' + (e && e.message ? e.message : e), true);
+      throw e;
     }
+  }
+
+  function downloadJSON() {
+    const { g, errs } = validateForExport();
+    if (errs.length) flash('Heads up: ' + errs.join('; '), true);
+    downloadGeometry(g, 'zones.json');
+  }
+
+  async function pushLive() {
+    const { g, errs } = validateForExport();
+    if (errs.length && !confirm('Geometry incomplete:\n' + errs.join('\n') + '\n\nPush anyway?')) return;
+    return pushGeometry(g);
   }
 
   // ---- 3D bridge -----------------------------------------------------------
@@ -389,6 +404,11 @@
   $('#togglePreview').addEventListener('click', togglePreview);
 
   window.addEventListener('resize', fitCanvas);
+
+  // Extend the public surface for the preset gallery / home flow (home.js).
+  Object.assign(window.GCScan, {
+    pushGeometry, downloadGeometry, apiBase, refit: fitCanvas, toast: flash,
+  });
 
   buildSlotBar();
   fitCanvas();

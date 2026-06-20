@@ -19,7 +19,12 @@
   const COLORS = {
     entry: 0x9aa0a6, queue: 0x6fb6e0, counter: 0xd9a441, seating: 0x7ed87e,
     restroom: 0xe0876f, table: 0xb58fe0, room: 0xe7c074, floor: 0x1d1813,
+    off: 0x86c79a,        // outdoor / patio ("off" zone) — leafy green
+    counterTop: 0x3a2c1c, // dark wood bar top
+    chair: 0x6b4f33,      // café chair / stool
   };
+
+  const COUNTER_H = 1.0;     // raised bar/counter height
 
   let THREE, renderer, scene, camera, controls;
   let group;                 // holds all generated geometry
@@ -183,13 +188,49 @@
     }
   }
 
+  // Raised counter / bar: a solid block along the zone polygon with a darker
+  // wood top cap, so the till reads as furniture rather than a floor patch.
+  function buildCounter(poly) {
+    group.add(slab(poly, COLORS.counter, COUNTER_H, 0));
+    const cap = slab(poly, COLORS.counterTop, 0.07, COUNTER_H);
+    cap.material.roughness = 0.55; cap.material.metalness = 0.15; cap.material.opacity = 1;
+    group.add(cap);
+  }
+
+  // A simple doorway frame (two posts + lintel) centred on the entry zone, so
+  // the way in is legible in the twin.
+  function buildDoor(poly) {
+    let minx = 1, miny = 1, maxx = 0, maxy = 0;
+    poly.forEach((p) => { minx = Math.min(minx, p[0]); maxx = Math.max(maxx, p[0]); miny = Math.min(miny, p[1]); maxy = Math.max(maxy, p[1]); });
+    const c = toWorld(centroid(poly));
+    const wx = (maxx - minx) * SIZE, wz = (maxy - miny) * SIZE;
+    const along = wx >= wz ? 'x' : 'z';
+    const span = Math.min(2.0, Math.max(1.0, (along === 'x' ? wx : wz) * 0.7));
+    const H = 2.0, T = 0.14;
+    const mat = new THREE.MeshStandardMaterial({ color: COLORS.room, roughness: 0.6, metalness: 0.2 });
+    const post = (ox, oz) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(T, H, T), mat);
+      m.position.set(c[0] + ox, H / 2, c[1] + oz); group.add(m);
+    };
+    if (along === 'x') {
+      post(-span / 2, 0); post(span / 2, 0);
+      const lint = new THREE.Mesh(new THREE.BoxGeometry(span + T, T, T), mat);
+      lint.position.set(c[0], H, c[1]); group.add(lint);
+    } else {
+      post(0, -span / 2); post(0, span / 2);
+      const lint = new THREE.Mesh(new THREE.BoxGeometry(T, T, span + T), mat);
+      lint.position.set(c[0], H, c[1]); group.add(lint);
+    }
+  }
+
   function buildTable(poly) {
     const c = toWorld(centroid(poly));
     const mat = new THREE.MeshStandardMaterial({ color: COLORS.table, roughness: 0.5, metalness: 0.1 });
     // Approximate footprint radius from the polygon extent.
     let minx = 1, miny = 1, maxx = 0, maxy = 0;
     poly.forEach((p) => { minx = Math.min(minx, p[0]); maxx = Math.max(maxx, p[0]); miny = Math.min(miny, p[1]); maxy = Math.max(maxy, p[1]); });
-    const r = Math.max(0.25, Math.min((maxx - minx), (maxy - miny)) * SIZE * 0.5);
+    const footprint = Math.min((maxx - minx), (maxy - miny));
+    const r = Math.max(0.25, footprint * SIZE * 0.5);
     const geo = new THREE.CylinderGeometry(r, r, 0.75, 20);
     const m = new THREE.Mesh(geo, mat);
     m.position.set(c[0], 0.45, c[1]);
@@ -197,6 +238,24 @@
     // Leg/pedestal.
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.18, r * 0.22, 0.45, 12), mat);
     leg.position.set(c[0], 0.22, c[1]); group.add(leg);
+    // Chairs / stools around the table — fewer for tiny stool footprints.
+    const chairMat = new THREE.MeshStandardMaterial({ color: COLORS.chair, roughness: 0.8, metalness: 0.04 });
+    const big = footprint > 0.05;
+    const d = r + (big ? 0.42 : 0.3);
+    const offsets = big ? [[d, 0], [-d, 0], [0, d], [0, -d]] : [[d, 0], [-d, 0]];
+    offsets.forEach(([ox, oz]) => {
+      const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 12), chairMat);
+      seat.position.set(c[0] + ox, 0.42, c[1] + oz); group.add(seat);
+      const slegMat = chairMat;
+      const sleg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.42, 8), slegMat);
+      sleg.position.set(c[0] + ox, 0.21, c[1] + oz); group.add(sleg);
+      if (big) { // backrest for full chairs
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.4, 0.06), chairMat);
+        const ang = Math.atan2(oz, ox);
+        back.position.set(c[0] + ox + Math.cos(ang) * 0.16, 0.66, c[1] + oz + Math.sin(ang) * 0.16);
+        back.rotation.y = -ang + Math.PI / 2; group.add(back);
+      }
+    });
   }
 
   function update(geom) {
@@ -206,13 +265,14 @@
 
     if (geom.room && geom.room.length >= 3) buildWalls(geom.room);
 
-    const zorder = { entry: 0, queue: 1, counter: 2, seating: 3 };
+    const zorder = { entry: 0, off: 1, queue: 2, seating: 3 };
     Object.keys(geom.zones || {}).forEach((k) => {
       const poly = geom.zones[k];
-      if (poly && poly.length >= 3) {
-        const col = COLORS[k] || 0x888888;
-        group.add(slab(poly, col, ZONE_H, (zorder[k] || 0) * 0.002));
-      }
+      if (!poly || poly.length < 3) return;
+      if (k === 'counter') { buildCounter(poly); return; }
+      const col = COLORS[k] || 0x888888;
+      group.add(slab(poly, col, ZONE_H, (zorder[k] || 0) * 0.002));
+      if (k === 'entry') buildDoor(poly);
     });
     Object.keys(geom.cleaning || {}).forEach((k) => {
       const poly = geom.cleaning[k];

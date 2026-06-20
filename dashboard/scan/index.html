@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-  <title>Golden Coffee Floorplan Scanner</title>
+  <title>Golden Coffee — Pick your coffee shop</title>
   <meta name="theme-color" content="#14110e" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -29,14 +29,13 @@
       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
       display:flex; flex-direction:column;
       min-height:100vh; min-height:100dvh;
-      /* Never allow horizontal scroll; allow vertical scroll so short phones
-         (and the open 3D panel) can reach every control instead of clipping. */
       overflow-x:hidden; overflow-y:auto;
       overscroll-behavior-y:none;
     }
-    /* ---- Top toolbar / step flow ---- */
+
+    /* ---- Header ---- */
     header {
-      padding:max(8px,env(safe-area-inset-top)) 12px 8px;
+      padding:max(8px,env(safe-area-inset-top)) 14px 10px;
       background:linear-gradient(180deg, rgba(29,24,19,.97), rgba(29,24,19,.82));
       border-bottom:1px solid var(--line);
       backdrop-filter:blur(8px);
@@ -45,24 +44,18 @@
     .brand img { width:26px; height:26px; }
     .brand h1 { font-size:15px; margin:0; font-weight:650; letter-spacing:.2px; }
     .brand .sub { font-size:11px; color:var(--muted); margin-top:1px; }
-    .steps { display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
-    .steps::-webkit-scrollbar { display:none; }
-    .step {
-      flex:0 0 auto; font-size:11.5px; color:var(--muted2);
-      background:var(--bg3); border:1px solid var(--line); border-radius:999px;
-      padding:5px 11px; display:flex; align-items:center; gap:6px; white-space:nowrap;
-    }
-    .step b { color:var(--gold); font-weight:700; }
 
     main { flex:1; display:flex; flex-direction:column; min-height:0; }
+    .view { display:none; flex:1; flex-direction:column; min-height:0; }
+    .view.active { display:flex; }
 
-    /* ---- Capture row ---- */
-    .row { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px; }
+    /* ---- Buttons ---- */
     .btn {
       appearance:none; border:1px solid var(--line); color:var(--ink);
       background:var(--bg2); border-radius:12px; padding:11px 14px;
       font-size:13.5px; font-weight:600; cursor:pointer; min-height:44px;
-      display:inline-flex; align-items:center; gap:7px; transition:background .15s,border-color .15s;
+      display:inline-flex; align-items:center; justify-content:center; gap:7px;
+      transition:background .15s,border-color .15s;
     }
     .btn:hover { background:var(--bg3); }
     .btn:active { transform:translateY(1px); }
@@ -73,9 +66,90 @@
     label.btn { position:relative; overflow:hidden; }
     label.btn input { position:absolute; inset:0; opacity:0; cursor:pointer; }
 
-    /* ---- Stage / canvas ---- */
-    /* flex:1 lets the stage grow on tall screens; the min-height floor stops the
-       canvas from collapsing to nothing when space is tight (e.g. 3D panel open). */
+    /* ---- HOME: preset gallery ---- */
+    .home-head { padding:16px 16px 4px; }
+    .home-head h2 { margin:0; font-size:21px; font-weight:720; letter-spacing:.2px; }
+    .home-head p { margin:6px 0 0; font-size:13px; color:var(--muted2); line-height:1.45; }
+    .grid {
+      display:grid; grid-template-columns:1fr; gap:12px;
+      padding:14px 16px 6px; width:100%;
+    }
+    .card {
+      display:flex; gap:13px; align-items:stretch; text-align:left;
+      background:linear-gradient(180deg,var(--bg2),#170f0b);
+      border:1px solid var(--line); border-radius:16px; padding:12px;
+      cursor:pointer; width:100%; color:var(--ink);
+      transition:border-color .15s, transform .12s, box-shadow .15s;
+      box-shadow:var(--shadow);
+    }
+    .card:hover { border-color:var(--gold); }
+    .card:active { transform:translateY(1px); }
+    .card .thumb {
+      flex:0 0 96px; width:96px; height:84px; border-radius:11px;
+      background:#0b0907; border:1px solid var(--line2); overflow:hidden;
+    }
+    .card .thumb canvas { display:block; width:100%; height:100%; }
+    .card .meta { min-width:0; display:flex; flex-direction:column; gap:4px; }
+    .card .meta .nm { font-size:15.5px; font-weight:700; letter-spacing:.2px; }
+    .card .meta .bl { font-size:12px; color:var(--muted2); line-height:1.4; }
+    .card .meta .go { margin-top:auto; font-size:11.5px; color:var(--gold); font-weight:700; }
+
+    .home-foot { padding:8px 16px calc(20px + env(safe-area-inset-bottom)); }
+    .home-foot .advanced { width:100%; }
+    .home-foot .hint { font-size:11px; color:var(--muted); margin:8px 2px 0; text-align:center; }
+
+    /* ---- PRESET preview view ---- */
+    .pv-top {
+      display:flex; align-items:center; gap:10px; padding:12px 16px 4px;
+    }
+    .pv-top .back {
+      background:var(--bg2); border:1px solid var(--line); color:var(--ink);
+      border-radius:10px; min-height:38px; padding:7px 12px; font-size:13px;
+      font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    }
+    .pv-title { min-width:0; }
+    .pv-title .nm { font-size:17px; font-weight:720; }
+    .pv-title .bl { display:none; }
+    .pv-blurb { padding:2px 16px 0; font-size:12.5px; color:var(--muted2); line-height:1.45; }
+    .twin-wrap { flex:1 1 auto; min-height:clamp(260px,42vh,520px); padding:10px 16px 4px; display:flex; }
+    .twin {
+      flex:1; position:relative; border:1px solid var(--line); border-radius:16px;
+      background:#0b0907; overflow:hidden; box-shadow:var(--shadow);
+    }
+    .twin .hint {
+      position:absolute; left:10px; bottom:10px; font-size:11px; color:var(--muted2);
+      background:rgba(11,9,7,.6); padding:5px 9px; border-radius:8px;
+      border:1px solid var(--line2); pointer-events:none; backdrop-filter:blur(4px);
+    }
+    .pv-actions { display:flex; gap:10px; padding:12px 16px calc(20px + env(safe-area-inset-bottom)); flex-wrap:wrap; }
+    .pv-actions .btn { flex:1 1 auto; }
+    .pv-actions .btn.gold { flex:2 1 200px; }
+
+    /* Shared WebGL host (moved between the preset twin and the advanced preview). */
+    #canvas3d { position:relative; width:100%; height:100%; }
+    #canvas3d canvas { display:block; width:100%; height:100%; }
+    #preview-msg {
+      position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+      text-align:center; padding:20px; color:var(--muted2); font-size:13px; line-height:1.5;
+    }
+
+    /* ---- ADVANCED: original photo→trace editor ---- */
+    .steps { display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+    .steps::-webkit-scrollbar { display:none; }
+    .step {
+      flex:0 0 auto; font-size:11.5px; color:var(--muted2);
+      background:var(--bg3); border:1px solid var(--line); border-radius:999px;
+      padding:5px 11px; display:flex; align-items:center; gap:6px; white-space:nowrap;
+    }
+    .step b { color:var(--gold); font-weight:700; }
+    .adv-top { display:flex; align-items:center; gap:10px; padding:12px 14px 0; }
+    .adv-top .back {
+      background:var(--bg2); border:1px solid var(--line); color:var(--ink);
+      border-radius:10px; min-height:38px; padding:7px 12px; font-size:13px;
+      font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    }
+    .adv-top .t { font-size:14px; font-weight:650; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px; }
     .stage-wrap { flex:1 1 auto; position:relative; min-height:clamp(200px,34vh,460px); padding:0 12px 8px; display:flex; }
     #stage {
       flex:1; position:relative; border:1px solid var(--line); border-radius:16px;
@@ -90,8 +164,6 @@
       padding:6px 10px; border-radius:8px; border:1px solid var(--line2);
       pointer-events:none; backdrop-filter:blur(4px);
     }
-
-    /* ---- Slot bar ---- */
     .slot-section { padding:0 12px; }
     .slot-section .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:4px 2px; }
     #slotbar { display:flex; gap:7px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none; }
@@ -106,12 +178,8 @@
     .slot .slot-check { color:var(--green); font-weight:800; opacity:0; transition:opacity .15s; }
     .slot.done .slot-check { opacity:1; }
     .slot[aria-selected="true"] { border-color:var(--gold); background:var(--bg3); box-shadow:0 0 0 1px rgba(217,164,65,.4); }
-
-    /* ---- Action rows ---- */
     .actions { display:flex; gap:8px; overflow-x:auto; padding:2px 12px 8px; scrollbar-width:none; }
     .actions::-webkit-scrollbar { display:none; }
-
-    /* ---- 3D preview panel ---- */
     #preview {
       border-top:1px solid var(--line);
       background:linear-gradient(180deg, var(--bg2), #140f0b);
@@ -125,12 +193,7 @@
     #preview.open .preview-head .chev { transform:rotate(180deg); }
     .preview-body { height:0; overflow:hidden; transition:height .25s ease; }
     #preview.open .preview-body { height:46vh; height:46dvh; }
-    #canvas3d { position:relative; width:100%; height:100%; }
-    #canvas3d canvas { display:block; width:100%; height:100%; }
-    #preview-msg {
-      position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-      text-align:center; padding:20px; color:var(--muted2); font-size:13px; line-height:1.5;
-    }
+    #advPreviewHost { position:relative; width:100%; height:100%; }
 
     /* ---- Toast ---- */
     .toast {
@@ -144,6 +207,10 @@
 
     @media (min-width:760px) {
       .brand h1 { font-size:17px; }
+      .grid { grid-template-columns:1fr 1fr; max-width:880px; margin:0 auto; }
+      .home-head { max-width:880px; margin:0 auto; }
+      .home-foot { max-width:880px; margin:0 auto; }
+      .twin-wrap { min-height:clamp(320px,52vh,560px); }
       #preview.open .preview-body { height:52vh; }
     }
   </style>
@@ -153,82 +220,125 @@
     <div class="brand">
       <img src="icon.svg" alt="" />
       <div>
-        <h1>Floorplan Scanner</h1>
-        <div class="sub">Golden Coffee — photo + trace &rarr; 3D twin</div>
+        <h1>Golden Coffee</h1>
+        <div class="sub">3D coffee-shop layouts &rarr; live twin</div>
       </div>
-    </div>
-    <div class="steps" aria-label="Step flow">
-      <span class="step"><b>1</b> Capture</span>
-      <span class="step"><b>2</b> Trace room</span>
-      <span class="step"><b>3</b> Place zones</span>
-      <span class="step"><b>4</b> 3D preview</span>
-      <span class="step"><b>5</b> Export</span>
     </div>
   </header>
 
   <main>
-    <!-- 1. Capture -->
-    <div class="row">
-      <label class="btn gold">
-        <span class="ic">&#128247;</span> Photo
-        <input id="fileInput" type="file" accept="image/*" capture="environment" />
-      </label>
-      <label class="btn">
-        <span class="ic">&#128193;</span> Choose image
-        <input id="galleryInput" type="file" accept="image/*" />
-      </label>
-      <button class="btn ghost" id="useBlank"><span class="ic">&#9633;</span> Blank / no photo</button>
-    </div>
-
-    <!-- 2 & 3. Stage -->
-    <div class="stage-wrap">
-      <div id="stage">
-        <canvas id="editor" width="320" height="240"></canvas>
-        <div id="status">Load a photo or pick Blank, then tap to trace.</div>
+    <!-- ============ HOME: pick a coffee shop ============ -->
+    <section id="view-home" class="view active" aria-label="Pick your coffee shop">
+      <div class="home-head">
+        <h2>Pick your coffee shop</h2>
+        <p>Choose a ready-made layout to load it into the live 3D twin, then push it straight to the cameras.</p>
       </div>
-    </div>
-
-    <!-- 3. Slot picker -->
-    <div class="slot-section">
-      <div class="lbl">Active slot &mdash; tap a chip, then tap the canvas</div>
-      <div id="slotbar"></div>
-    </div>
-
-    <!-- per-slot + global actions -->
-    <div class="actions">
-      <button class="btn sm" id="undo">&#8630; Undo point</button>
-      <button class="btn sm" id="close">&#10003; Close polygon</button>
-      <button class="btn sm" id="clearSlot">&#10005; Clear slot</button>
-      <button class="btn sm" id="addTable">&#43; Add table</button>
-      <button class="btn sm ghost" id="clearAll">Clear all</button>
-    </div>
-
-    <div class="actions">
-      <button class="btn sm gold" id="download">&#11015; Download zones.json</button>
-      <button class="btn sm" id="push">&#9729; Push to live</button>
-    </div>
-
-    <!-- 4. 3D preview -->
-    <section id="preview">
-      <div class="preview-head" id="togglePreview" role="button" aria-expanded="false" tabindex="0">
-        <span class="t"><span>&#127956;</span> Live 3D twin</span>
-        <span class="chev">&#9650;</span>
-      </div>
-      <div class="preview-body">
-        <div id="canvas3d">
-          <div id="preview-msg">Tap to open the 3D preview.</div>
-        </div>
+      <div id="presetGrid" class="grid" role="list"></div>
+      <div class="home-foot">
+        <button class="btn ghost advanced" id="openAdvanced">
+          <span class="ic">&#128247;</span> Scan my own (advanced)
+        </button>
+        <div class="hint">Trace a floorplan photo by hand &mdash; for custom venues.</div>
       </div>
     </section>
+
+    <!-- ============ PRESET: 3D twin preview + push ============ -->
+    <section id="view-preset" class="view" aria-label="Layout preview">
+      <div class="pv-top">
+        <button class="back" id="presetBack"><span>&#8249;</span> Choose another</button>
+        <div class="pv-title"><div class="nm" id="presetName">&nbsp;</div></div>
+      </div>
+      <div class="pv-blurb" id="presetBlurb">&nbsp;</div>
+      <div class="twin-wrap">
+        <div class="twin" id="presetStage">
+          <!-- shared #canvas3d gets moved in here -->
+          <div class="hint">Drag to orbit &middot; scroll to zoom</div>
+        </div>
+      </div>
+      <div class="pv-actions">
+        <button class="btn gold" id="presetPush"><span class="ic">&#9729;</span> Use this layout &rarr; Push to live</button>
+        <button class="btn" id="presetDownload"><span class="ic">&#11015;</span> Download zones.json</button>
+      </div>
+    </section>
+
+    <!-- ============ ADVANCED: original photo→trace editor ============ -->
+    <section id="view-advanced" class="view" aria-label="Scan my own (advanced)">
+      <div class="adv-top">
+        <button class="back" id="advBack"><span>&#8249;</span> Back</button>
+        <div class="t">Scan my own &mdash; photo + trace</div>
+      </div>
+      <div class="steps" aria-label="Step flow">
+        <span class="step"><b>1</b> Capture</span>
+        <span class="step"><b>2</b> Trace room</span>
+        <span class="step"><b>3</b> Place zones</span>
+        <span class="step"><b>4</b> 3D preview</span>
+        <span class="step"><b>5</b> Export</span>
+      </div>
+
+      <div class="row">
+        <label class="btn gold">
+          <span class="ic">&#128247;</span> Photo
+          <input id="fileInput" type="file" accept="image/*" capture="environment" />
+        </label>
+        <label class="btn">
+          <span class="ic">&#128193;</span> Choose image
+          <input id="galleryInput" type="file" accept="image/*" />
+        </label>
+        <button class="btn ghost" id="useBlank"><span class="ic">&#9633;</span> Blank / no photo</button>
+      </div>
+
+      <div class="stage-wrap">
+        <div id="stage">
+          <canvas id="editor" width="320" height="240"></canvas>
+          <div id="status">Load a photo or pick Blank, then tap to trace.</div>
+        </div>
+      </div>
+
+      <div class="slot-section">
+        <div class="lbl">Active slot &mdash; tap a chip, then tap the canvas</div>
+        <div id="slotbar"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn sm" id="undo">&#8630; Undo point</button>
+        <button class="btn sm" id="close">&#10003; Close polygon</button>
+        <button class="btn sm" id="clearSlot">&#10005; Clear slot</button>
+        <button class="btn sm" id="addTable">&#43; Add table</button>
+        <button class="btn sm ghost" id="clearAll">Clear all</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn sm gold" id="download">&#11015; Download zones.json</button>
+        <button class="btn sm" id="push">&#9729; Push to live</button>
+      </div>
+
+      <section id="preview">
+        <div class="preview-head" id="togglePreview" role="button" aria-expanded="false" tabindex="0">
+          <span class="t"><span>&#127956;</span> Live 3D twin</span>
+          <span class="chev">&#9650;</span>
+        </div>
+        <div class="preview-body">
+          <div id="advPreviewHost"><!-- shared #canvas3d gets moved in here when open --></div>
+        </div>
+      </section>
+    </section>
   </main>
+
+  <!-- Shared WebGL host: a single renderer that the preset view and the advanced
+       preview both reuse (re-parented on demand). -->
+  <div id="canvas3d" hidden>
+    <div id="preview-msg">Loading the 3D twin&hellip;</div>
+  </div>
 
   <div class="toast" id="toast"></div>
 
   <script src="../vendor/three.min.js"></script>
   <script src="scan3d.js"></script>
+  <script src="presets.js"></script>
   <script src="app.js"></script>
+  <script src="home.js"></script>
   <script>
-    // Allow keyboard toggle of the preview header.
+    // Keyboard toggle for the advanced 3D preview header.
     document.getElementById('togglePreview').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
     });
