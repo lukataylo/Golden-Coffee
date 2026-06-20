@@ -1,4 +1,4 @@
-# Pricing & Positioning Golden Coffee — Research Findings + Recommendation
+# Pricing & Positioning Coffee Steve — Research Findings + Recommendation
 
 *Prepared 2026-06-20. Synthesis of four deep-research streams: indie/bootstrapped SaaS pricing,
 AI/LLM token economics, café & hospitality software competitor pricing, and positioning strategy.*
@@ -25,7 +25,7 @@ AI/LLM token economics, café & hospitality software competitor pricing, and pos
 
 The "AI products have structurally broken 50–60% margins" narrative comes from products where
 **COGS = tokens that scale linearly with usage** (Cursor, ChatGPT Pro, thin AI wrappers losing
-money on power users). Golden Coffee is structurally different:
+money on power users). Coffee Steve is structurally different:
 
 - **Perception (YOLO11) runs on-device** — no cloud inference bill.
 - **The agent's core is a deterministic Python policy that runs free/offline** — Claude is
@@ -58,7 +58,7 @@ Two research streams disagreed, and the disagreement is the answer:
 
 - **From pure conservative ROI** (recover 2 coffees/day → ~£300/mo value): **£39–49/mo**.
 - **From competitive anchoring**: **~£129/mo** — because **Dor charges $150/mo for footfall data
-  *alone*** and **Soundtrack charges $54/mo for music *alone***, and Golden Coffee does both off a
+  *alone*** and **Soundtrack charges $54/mo for music *alone***, and Coffee Steve does both off a
   camera the venue already owns.
 
 The indie-pricing research breaks the tie decisively:
@@ -111,7 +111,7 @@ charts that wait: *"It taps you on the shoulder; it doesn't ask you to log in."*
 
 ### Three positioning angles
 
-- **A — "The £ Recovery Machine" (RECOMMENDED HERO):** *"Golden Coffee tells you the second you're
+- **A — "The £ Recovery Machine" (RECOMMENDED HERO):** *"Coffee Steve tells you the second you're
   about to lose a sale — and counts the ones you already lost."* Value metric: £ recovered/day.
   Objection: "Are the camera's numbers real?"
 - **B — "The Café That Runs Itself" (labor multiplier):** *"One extra pair of eyes on the floor,
@@ -126,7 +126,7 @@ charts that wait: *"It taps you on the shoulder; it doesn't ask you to log in."*
 - Recover just **2 walked-off drinks/day** (conservative vs 15–30% peak abandonment).
 - £3.50 × 2 × 30 = **£210/mo**, + a £4 pastry on half of them ≈ **+£120/mo** → **~£300/mo recovered**.
 - At £129/mo that's a **>2× return**; recover 4 drinks/day at a busier site → ~£600/mo, a **>4× return**.
-- Deck line: *"If Golden Coffee saves you one coffee a day, it's already paid for itself. Everything
+- Deck line: *"If Coffee Steve saves you one coffee a day, it's already paid for itself. Everything
   past that is profit you were pouring down the drain."*
 - **Always frame value in cups, never percentages** — the owner thinks in drinks.
 
@@ -153,7 +153,7 @@ charts that wait: *"It taps you on the shoulder; it doesn't ask you to log in."*
   **$500–$800+/mo**.
 - Single-purpose tools already command triple digits (Dor $150, Toast loyalty $185) — proving WTP.
 - **No competitor combines vision-based ambient control + service-speed ops. That whitespace is
-  Golden Coffee's thesis.**
+  Coffee Steve's thesis.**
 - Credible price band: **£99–149/mo**. Below ~£79 looks like a toy beside Dor/Toast; above ~£200
   starts competing with the POS line and triggers scrutiny.
 

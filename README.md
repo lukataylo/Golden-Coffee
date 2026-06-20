@@ -1,4 +1,4 @@
-# ☕ Golden Coffee
+# ☕ Coffee Steve
 
 ### *Your café, but it runs itself.*
 
@@ -25,7 +25,7 @@ stored. No surge pricing. Every action helps a guest or a staff member.
 > comfortable and keep service fast.
 >
 > **Why it matters:** café owners already have cameras nobody watches, queues that quietly
-> lose sales, and a vibe that drives (or kills) dwell time. Golden Coffee turns that one
+> lose sales, and a vibe that drives (or kills) dwell time. Coffee Steve turns that one
 > camera into a teammate that handles the room so the owner can run the shop.
 
 ---
@@ -37,7 +37,7 @@ person who walks out. The "feel" of the room — music too loud, air too stuffy,
 harsh — decides whether people stay for a second coffee. Nobody is watching all of it, all
 the time.
 
-**What Golden Coffee does.** It plugs into the camera you already own and understands the
+**What Coffee Steve does.** It plugs into the camera you already own and understands the
 room — occupancy, queue length, the conversion funnel, per-table wait times, cleaning
 cadence. Then an agent *acts*:
 
@@ -86,7 +86,8 @@ python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
 
 | | Link |
 |---|---|
-| **Comfort dashboard** (live tiles, action feed, Comfort Index, 3D floor twin) | <https://golden-coffee-production.up.railway.app> |
+| **Marketing site + self-serve sign-up** (5-question onboarding → account) | <https://landing-gamma-eight-53.vercel.app> |
+| **Comfort dashboard** (live tiles, action feed, Comfort Index, 3D floor twin, music library, integrations) | <https://golden-coffee-production.up.railway.app> |
 | **Floorplan scanner PWA** (pick a layout or scan your own → 3D twin) | <https://golden-coffee-production.up.railway.app/scan/> |
 
 No backend handy? The dashboard has a self-contained **▶ Demo** mode
@@ -193,6 +194,9 @@ flowchart LR
 | 🌡️ **Comfort Index** | A live 0–100 read of how the room *feels* — blends music level, lighting, air/temperature and scent into one number ("Feels great"). |
 | 🎛️ **Ambient autopilot** | Tunes music **volume + mood**, **lighting** (brightness + warmth), **scent**, and **temperature** to the room and time of day. The thermal model layers seasonal baseline → occupancy load → humidity → a warm-ambiance psychological offset, with hysteresis so it never thrashes the AC. |
 | 🎵 **On-device music model** | A small softmax classifier picks the *mood/genre + BPM + playlist* from anonymized scene features — no API key, runs offline. Auto mode (model picks) or Custom mode (staff picks). See [MUSIC.md](MUSIC.md). |
+| 🔊 **Hosted sound library** | A self-hosted, royalty-free café library (CC-BY, 6 moods) is the **default in-browser player** — zero setup, no account. Spotify is an optional fallback toggled from a Source dropdown. `GET /music/library`. |
+| 🔌 **Integrations control surface** | Dashboard → **Integrations**: live status for Xiaomi/Mijia, Philips Hue, Climate (IR), Spotify, Telegram, **Alexa** & **Google Home**; direct Xiaomi lamp + diffuser control; voice-assistant routine webhooks with a test button. `GET /integrations`. |
+| 🪪 **Self-serve sign-up + data capture** | Marketing site → a 6-step onboarding with a **5-question business profile** (type, ambiance, busiest period, goal, size) → real account (SQLite + PBKDF2 + bearer tokens) on the hub. `POST /auth/signup`. |
 | 🚨 **Rush copilot** | Queue over threshold → "open a second till." Escalates to **urgent** when walk-offs are rising, and surfaces the **£ walked away** today (avg ticket × abandons). |
 | 🍽️ **Table service SLAs** | Per-table waits: dirty-table hygiene (≥3 min), order-taking (≥6 min), bill request (≥4 min), plus a generic overdue catch-all. |
 | 🧽 **Cleaning cadence** | Tracks bussing + zone cleaning (e.g. restroom) by **usage *and* elapsed time**, alerting when overdue. |
@@ -275,6 +279,6 @@ Reference docs: [TRACKS.md](TRACKS.md) · [RESEARCH.md](RESEARCH.md) · [FLOORMA
 
 ---
 
-<sub>Built at the **Encode Vibe Coding Hackathon**. Golden Coffee is an ambient + ops copilot,
+<sub>Built at the **Encode Vibe Coding Hackathon**. Coffee Steve is an ambient + ops copilot,
 not a surveillance tool — no employee scoring, no demographics, no surge pricing, no using
 discomfort to move people along.</sub>

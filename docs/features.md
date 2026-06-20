@@ -1,6 +1,6 @@
 # ✨ Features
 
-Every Golden Coffee action follows one rule: **it must help the customer or the staff.** No
+Every Coffee Steve action follows one rule: **it must help the customer or the staff.** No
 employee scoring, no demographics, no surge pricing, no using discomfort to move people along.
 Below is what's actually built, grounded in the code.
 
@@ -110,7 +110,7 @@ unavailable. Background research: [FLOORMAP_RESEARCH.md](../FLOORMAP_RESEARCH.md
 
 ## 🌐 Federated learning
 
-Golden Coffee treats each venue as a node in a café federation (`agent/agent.py` + `federated/`),
+Coffee Steve treats each venue as a node in a café federation (`agent/agent.py` + `federated/`),
 in two layers — **without any footage ever leaving a shop**:
 
 - **Layer 1 — thresholds.** Each round, a venue estimates its own capacity-normalized

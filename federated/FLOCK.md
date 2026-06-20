@@ -1,4 +1,4 @@
-# Golden Coffee × FLock
+# Coffee Steve × FLock
 
 Port of our homegrown federated-learning sim (`federated/`) onto FLock's
 `FlockModel` interface so the work can be submitted to a FlockTask and claim the

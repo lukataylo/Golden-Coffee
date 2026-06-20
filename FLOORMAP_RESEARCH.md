@@ -1,6 +1,6 @@
 # Dynamic floor-map generation — OSS landscape & integration plan
 
-Research into **dynamically generating and rendering a café floor map** for Golden Coffee —
+Research into **dynamically generating and rendering a café floor map** for Coffee Steve —
 the richer, live, Home-Assistant-style digital-twin look (the reference screenshots) layered
 on top of the data we already produce. "Dynamic" splits into **two independent problems** the
 field never solves together, so treat them as two layers:
@@ -43,7 +43,7 @@ onboarding friction for every retail-CV tool).
 
 The reference screenshots are **`floor3d-card`** (Three.js) — the dominant HA digital twin.
 
-| Project | License | Stack | Fit for Golden Coffee |
+| Project | License | Stack | Fit for Coffee Steve |
 |---|---|---|---|
 | [adizanni/floor3d-card](https://github.com/adizanni/floor3d-card) | **MIT** | Three.js + TS | The exact look in the screenshots. But it's a **Home Assistant Lovelace card** — model authored in SweetHome3D → exported `.obj`/`.glb`, entities bound by object-id. Great if we pivot the dashboard *into* HA; heavy to lift into our standalone dashboard. **Borrow the pattern, not the card.** |
 | [floor3dpro-card](https://github.com/levonisyas/floor3dpro-card) | MIT (fork) | game-engine backbone | "PRO" fork of the above; same HA-coupling caveat. |

@@ -1,6 +1,6 @@
 # 🛠️ Local setup
 
-Golden Coffee is built to **run anywhere with zero keys** — the mock generator and the rule-based
+Coffee Steve is built to **run anywhere with zero keys** — the mock generator and the rule-based
 agent prove the whole pipeline without a camera, a model, or an API key. Real perception and real
 devices are opt-in on top.
 

@@ -16,7 +16,7 @@ moment in the middle.
 **0:00 — The hook (20s).**
 > "Every café already has a camera nobody watches. A queue of five loses you the sale of the
 > sixth person who walks out, and the *feel* of the room decides whether anyone stays for a
-> second coffee. Golden Coffee turns that one camera into a teammate that runs the room — and it
+> second coffee. Coffee Steve turns that one camera into a teammate that runs the room — and it
 > never stores a face."
 
 **0:20 — The room, understood (30s).** On the dashboard's **Live** view, point at the tiles:

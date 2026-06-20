@@ -1,6 +1,6 @@
 # 🏆 Bounties & sponsor tracks
 
-How Golden Coffee integrates each sponsor track, grounded in what's actually in the repo. We've
+How Coffee Steve integrates each sponsor track, grounded in what's actually in the repo. We've
 been deliberately honest about status: 🟢 live, 🟡 partial (with exactly what remains).
 
 ## 🟢 Sui / Walrus — tamper-proof ops evidence
@@ -41,7 +41,7 @@ Vercel-hosted page can point at the Railway WebSocket backend:
 
 **Status: model ported and runnable locally; on-chain packaging documented, not executed.**
 
-Golden Coffee's federation is genuine federated learning with FLock's exact privacy guarantee — raw
+Coffee Steve's federation is genuine federated learning with FLock's exact privacy guarantee — raw
 venue video never leaves the shop; nodes share only capacity-normalized policy ratios
 `{lull, high, queue}` (and music-model weights), aggregated as a scene-weighted mean. We ported this
 onto FLock's `FlockModel` interface in **`federated/flock_model.py`**:

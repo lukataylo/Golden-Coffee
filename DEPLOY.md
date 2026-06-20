@@ -1,4 +1,4 @@
-# Deploying the Golden Coffee hub to Railway
+# Deploying the Coffee Steve hub to Railway
 
 The hub is a FastAPI WebSocket server that also serves the dashboard UI at `/`.
 It must run on a long-lived server (Railway/Render/Fly) — **not** Vercel
