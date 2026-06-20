@@ -21,11 +21,19 @@ Then paste each device's ip + token into .env (see keys below).
     fan/level) by siid/piid. Older ones expose a plain `set_power`, which we fall
     back to when no siid/piid is configured.
 
-Env:
+Transport (XIAOMI_TRANSPORT): "local" speaks miIO on the LAN; "cloud" routes
+commands through the Mi cloud (use this when the gear is in China and this machine
+is elsewhere — see actuators/xiaomi_cloud.py); "auto" (default) uses local when
+it's configured, else cloud.
+
+Env (local):
   XIAOMI_LAMP_IP / XIAOMI_LAMP_TOKEN
   XIAOMI_DIFFUSER_IP / XIAOMI_DIFFUSER_TOKEN
   (optional, MIoT diffusers) XIAOMI_DIFFUSER_SIID, XIAOMI_DIFFUSER_PIID_ON,
   XIAOMI_DIFFUSER_PIID_LEVEL, XIAOMI_DIFFUSER_LEVEL_MAX (default 3)
+Env (cloud): XIAOMI_REGION, XIAOMI_LAMP_DID / XIAOMI_DIFFUSER_DID and their MIoT
+  piids — full list in .env.example. Auth is a cached QR-login session, set up once
+  with `python -m actuators.xiaomi --login` (see actuators/xiaomi_cloud.py).
 
 Degrades gracefully (prints intent) when nothing is configured / reachable.
 """
@@ -181,42 +189,82 @@ def _local_diffuser_set(intensity: int, scent: str = "fresh") -> bool:
         return False
 
 
-def _cloud(user: str = "", password: str = "") -> None:
-    """List every Mi-Home device with its ip + token, straight from the China
-    cloud (XIAOMI_REGION). This is the reliable way to get tokens — a LAN handshake
-    can find IPs but never the token, and CN devices aren't on the default servers.
+def _dev_field(d: dict, *keys: str) -> str:
+    for k in keys:
+        if d.get(k):
+            return str(d[k])
+    return ""
 
-    Creds come from args or XIAOMI_MI_USER / XIAOMI_MI_PASS. Read-only; nothing is
-    changed on your account."""
-    user = user or os.environ.get("XIAOMI_MI_USER", "")
-    password = password or os.environ.get("XIAOMI_MI_PASS", "")
-    if not (user and password):
-        print("[xiaomi] need Mi account creds: set XIAOMI_MI_USER / XIAOMI_MI_PASS "
-              "or pass them: python -m actuators.xiaomi --cloud <user> <pass>")
+
+def _set_env(updates: dict[str, str]) -> None:
+    """Update/insert KEY=value lines in the project .env (creating it if absent)."""
+    import re
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / ".env"
+    lines = path.read_text().splitlines() if path.exists() else []
+    seen, out = set(), []
+    for line in lines:
+        m = re.match(r"\s*([A-Za-z0-9_]+)=", line)
+        if m and m.group(1) in updates:
+            out.append(f"{m.group(1)}={updates[m.group(1)]}")
+            seen.add(m.group(1))
+        else:
+            out.append(line)
+    for k, v in updates.items():
+        if k not in seen:
+            out.append(f"{k}={v}")
+    path.write_text("\n".join(out) + "\n")
+    print(f"[xiaomi] wrote {', '.join(updates)} to {path}")
+
+
+def _login(map_devices: bool = True) -> None:
+    """QR-code Mi-Home login for the CLOUD transport. Scan the code in your Mi Home
+    app; the session is cached so the autopilot can drive devices without a password
+    (mainland-China accounts captcha-block scripted password logins). Optionally
+    maps a lamp + diffuser into .env."""
+    from actuators import xiaomi_cloud
+
+    print(f"[xiaomi] Mi-Home QR login — region '{XIAOMI_REGION}'.")
+    cloud = xiaomi_cloud.login_qr(server=XIAOMI_REGION)
+    if cloud is None:
+        return
+    if not map_devices:
         return
     try:
-        from miio import CloudInterface
-
-        ci = CloudInterface(user, password)
-        devices = ci.get_devices(locale=XIAOMI_REGION)
-        if not devices:
-            print(f"[xiaomi] no devices found on region '{XIAOMI_REGION}' "
-                  f"(set XIAOMI_REGION if your account is elsewhere)")
-            return
-        print(f"[xiaomi] devices on region '{XIAOMI_REGION}':")
-        for did, d in devices.items():
-            ip = getattr(d, "ip", "?") or "(cloud-only / offline)"
-            print(f"  {getattr(d, 'name', '?')!r:30}  model={getattr(d, 'model', '?')}")
-            print(f"      ip={ip}  token={getattr(d, 'token', '?')}  did={did}")
+        devices = cloud.list_devices()
     except Exception as exc:
-        print(f"[xiaomi] cloud lookup failed ({exc}); "
-              f"alt: `miiocli cloud --server {XIAOMI_REGION}`")
+        print(f"[xiaomi] logged in; device list unavailable ({exc}). "
+              f"Set XIAOMI_LAMP_DID / XIAOMI_DIFFUSER_DID in .env manually.")
+        return
+    if not devices:
+        print("[xiaomi] logged in, but no devices returned.")
+        return
+    print(f"\n[xiaomi] {len(devices)} device(s):")
+    for i, d in enumerate(devices):
+        print(f"  [{i}] {_dev_field(d, 'name')!r:28} model={_dev_field(d, 'model')}  did={_dev_field(d, 'did')}")
+
+    def _pick(label, lamp=False):
+        raw = input(f"  Which # is your {label}? (Enter = keep current .env): ").strip()
+        if not raw:
+            return
+        try:
+            d = devices[int(raw)]
+        except (ValueError, IndexError):
+            print(f"  skipped {label} (invalid choice)")
+            return
+        pfx = "XIAOMI_LAMP" if lamp else "XIAOMI_DIFFUSER"
+        _set_env({f"{pfx}_DID": _dev_field(d, "did")})
+
+    _pick("lamp", lamp=True)
+    _pick("scent diffuser")
+    print("\n[xiaomi] done. Test with:  python -m actuators.xiaomi lamp 70 warm")
 
 
 if __name__ == "__main__":
-    arg = sys.argv[1] if len(sys.argv) > 1 else "--cloud"
-    if arg == "--cloud":
-        _cloud(*(sys.argv[2:4]))
+    arg = sys.argv[1] if len(sys.argv) > 1 else "--login"
+    if arg == "--login":
+        _login(map_devices="--no-map" not in sys.argv)
     elif arg == "lamp":
         bri = int(sys.argv[2]) if len(sys.argv) > 2 else 70
         warm = sys.argv[3] if len(sys.argv) > 3 else "warm"
@@ -226,4 +274,4 @@ if __name__ == "__main__":
         name = sys.argv[3] if len(sys.argv) > 3 else "fresh"
         diffuser_set(inten, name)
     else:
-        print("usage: python -m actuators.xiaomi [--cloud [user pass] | lamp <bri> <warm> | diffuser <intensity> <scent>]")
+        print("usage: python -m actuators.xiaomi [--login [--no-map] | lamp <bri> <warm> | diffuser <intensity> <scent>]")
