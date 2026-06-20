@@ -1204,8 +1204,20 @@
       out.push({ action:"notify_staff", auto:true, ts:ts, params:{ zone:"queue", text:"Open a second till — queue building." },
         rationale: scene.queue_len + " waiting and climbing — a second till keeps it calm." });
     }
+    // Walk-off / £-at-risk: when abandonment rises, narrate the cost in the feed
+    // (the chip shows the running total; this gives it a moment in the log).
+    var ab = Number(scene.abandons) || 0;
+    if (ab > _demoLastAb && scene.queue_len >= 3) {
+      var lost = Math.round(ab * (scene.avg_ticket_gbp || 5.5));
+      out.push({ action:"notify_staff", auto:true, ts:ts, priority:"urgent",
+        params:{ zone:"queue", priority:"urgent", lost_gbp:lost,
+                 text:"Walk-offs rising — open a second till. (~£" + lost + " walked away today)" },
+        rationale: (ab - _demoLastAb) + " just left the queue without ordering; ~£" + lost + " walked away today — act before more leave." });
+    }
+    _demoLastAb = ab;
     return out;
   }
+  var _demoLastAb = 0;
   function demoTick() {
     var scene = demoScene(demoT); renderScene(scene);
     demoActions(scene, demoT).forEach(function (a) { applyComfortAction(a); pushFeed(a.action, a.params, a.rationale, true, (a.ts ? a.ts*1000 : Date.now())); });
