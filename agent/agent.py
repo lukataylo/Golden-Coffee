@@ -405,34 +405,36 @@ class Agent:
     def decide_actions(self, scene: dict) -> list[dict]:
         """Return a list of AgentAction dicts for this scene."""
         now = float(scene.get("ts") or time.time())
-        if self.use_claude and self.client is not None:
-            try:
-                actions = self._decide_claude(scene)
-            except Exception as exc:
-                # Claude primary → Gemini backup → rule-based, so a Claude outage
-                # or rate-limit degrades to the next-best reasoning, not silence.
-                print(f"[agent] Claude decide failed ({exc})")
-                if llm.provider() and (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
-                    try:
-                        print("[agent] backup: reasoning with Gemini")
-                        actions = self._decide_llm(scene)
-                    except Exception as exc2:
-                        print(f"[agent] Gemini backup failed ({exc2}); using rules")
-                        actions = [a.model_dump() for a in policy.decide(scene, self.state)]
-                else:
-                    actions = [a.model_dump() for a in policy.decide(scene, self.state)]
-        elif USE_LLM:
-            # Throttle LLM calls (free Gemini tier ~15 rpm); ambiance doesn't need
-            # per-second reasoning. Between calls the agent simply holds.
+        llm_mode = (self.use_claude and self.client is not None) or USE_LLM
+        if llm_mode:
+            # Throttle ALL LLM reasoning (Claude or Gemini): perception emits ~1/s,
+            # but ambiance doesn't need per-second LLM calls — and per-scene calls
+            # would blow through rate limits and cost. Between calls the agent holds.
             if now - getattr(self, "_last_llm_t", 0.0) < LLM_INTERVAL_S:
                 actions = []
             else:
                 self._last_llm_t = now
-                try:
-                    actions = self._decide_llm(scene)
-                except Exception as exc:
-                    print(f"[agent] Gemini decide failed ({exc}); falling back to rules")
-                    actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+                if self.use_claude and self.client is not None:
+                    try:
+                        actions = self._decide_claude(scene)
+                    except Exception as exc:
+                        # Claude primary → Gemini backup → rule-based.
+                        print(f"[agent] Claude decide failed ({exc})")
+                        if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+                            try:
+                                print("[agent] backup: reasoning with Gemini")
+                                actions = self._decide_llm(scene)
+                            except Exception as exc2:
+                                print(f"[agent] Gemini backup failed ({exc2}); using rules")
+                                actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+                        else:
+                            actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+                else:
+                    try:
+                        actions = self._decide_llm(scene)
+                    except Exception as exc:
+                        print(f"[agent] Gemini decide failed ({exc}); falling back to rules")
+                        actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         else:
             actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         actions += self._forecast_actions(scene, now)
