@@ -54,3 +54,4 @@ codeplain/*.log
 
 # local-only pitch / narrative notes (not for the public repo)
 pitch/
+codeplain/dist/dist/

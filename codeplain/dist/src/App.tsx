@@ -1,124 +1,177 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { SAMPLE_READING, SAMPLE_ALERTS, STORAGE_KEYS, DEFAULT_BACKEND_URL } from './constants';
-import { getComfortBand, fetchReading } from './utils';
-import { RoomView, AlertsView, SettingsView } from './components';
-import { Reading } from './types';
+import React, { useState, useEffect } from 'react';
+import { SAMPLE_ACTIVITY, SAMPLE_READING, STORAGE_KEYS, DEFAULT_BACKEND_URL } from './constants';
+import { getComfortBand } from './utils';
+import { RoomView, ActivityView, SettingsView, ControlsView } from './components';
 
-type Tab = "Room" | "Alerts" | "Settings";
+type Tab = "Room" | "Controls" | "Activity" | "Settings";
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>("Room");
-  const [backendUrl, setBackendUrl] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEYS.BACKEND_URL) || DEFAULT_BACKEND_URL;
-  });
-  const [showSavedFeedback, setShowSavedFeedback] = useState(false);
-  const [currentReading, setCurrentReading] = useState<Reading>(SAMPLE_READING);
-
-  const band = useMemo(() => getComfortBand(currentReading.comfort), [currentReading.comfort]);
+  const [backendUrl, setBackendUrl] = useState<string>("");
+  const [saveStatus, setSaveStatus] = useState<boolean>(false);
+  const [reading, setReading] = useState(SAMPLE_READING);
 
   useEffect(() => {
-    if (activeTab !== "Room") return;
+    const stored = localStorage.getItem(STORAGE_KEYS.BACKEND_URL);
+    setBackendUrl(stored || DEFAULT_BACKEND_URL);
+  }, []);
 
-    const updateReading = async () => {
-      const data = await fetchReading(backendUrl);
-      if (data) {
-        setCurrentReading(data);
-      }
-    };
-
-    updateReading();
-    const intervalId = setInterval(updateReading, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [activeTab, backendUrl]);
-
-  const handleSaveSettings = () => {
+  const handleSaveBackend = () => {
     try {
       localStorage.setItem(STORAGE_KEYS.BACKEND_URL, backendUrl);
-      setShowSavedFeedback(true);
-      setTimeout(() => setShowSavedFeedback(false), 2000);
+      setSaveStatus(true);
+      setTimeout(() => setSaveStatus(false), 3000);
     } catch (error) {
-      console.error(`Failed to save to localStorage: ${error}`);
-      alert("Error saving settings. Please check your browser permissions.");
+      console.error(`Failed to save to localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert("Failed to save settings. Please ensure cookies/local storage are enabled.");
     }
   };
 
-  const containerStyle: React.CSSProperties = {
-    maxWidth: '480px',
-    margin: '0 auto',
-    minHeight: '100vh',
-    backgroundColor: '#fdfaf6',
-    fontFamily: 'sans-serif',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column'
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    const fetchComfortData = async () => {
+      if (activeTab !== "Room") return;
+
+      try {
+        const response = await fetch(`${backendUrl}/comfort`);
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // Defensive update: merge existing reading with valid numeric fields from response
+        setReading(prev => ({
+          ...prev,
+          ...(typeof data.comfort === 'number' && { comfort: data.comfort }),
+          ...(typeof data.occupancy === 'number' && { occupancy: data.occupancy }),
+          ...(typeof data.queue === 'number' && { queue: data.queue }),
+          ...(typeof data.sound === 'number' && { sound: data.sound }),
+          ...(typeof data.crowd === 'number' && { crowd: data.crowd }),
+          ...(typeof data.flow === 'number' && { flow: data.flow }),
+        }));
+      } catch (error) {
+        // Requirements: Any error leaves previously displayed values unchanged.
+        console.error(`Failed to fetch comfort data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+
+    if (activeTab === "Room" && backendUrl) {
+      fetchComfortData();
+      interval = setInterval(fetchComfortData, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab, backendUrl]);
+
+  const comfortBand = getComfortBand(reading.comfort);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "Room":
+        return <RoomView reading={reading} comfortBand={comfortBand} />;
+      case "Activity":
+        return <ActivityView activities={SAMPLE_ACTIVITY} />;
+      case "Controls":
+        return <ControlsView backendUrl={backendUrl} />;
+      case "Settings":
+        return (
+          <SettingsView
+            backendUrl={backendUrl}
+            setBackendUrl={setBackendUrl}
+            onSave={handleSaveBackend}
+            saveStatus={saveStatus}
+          />
+        );
+      default:
+        throw new Error(`Unhandled tab state: ${activeTab}`);
+    }
   };
 
-  const headerStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    width: '100%',
-    maxWidth: '480px',
-    height: '60px',
-    backgroundColor: '#fff',
-    borderBottom: '1px solid #eee',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000
-  };
-
-  const footerStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: 0,
-    width: '100%',
-    maxWidth: '480px',
-    height: '60px',
-    backgroundColor: '#fff',
-    borderTop: '1px solid #eee',
-    display: 'flex',
-    zIndex: 1000
-  };
-
-  const contentStyle: React.CSSProperties = {
-    padding: '80px 20px 80px 20px',
-    flex: 1
-  };
-
-  const tabButtonStyle = (tab: Tab): React.CSSProperties => ({
-    flex: 1,
-    border: 'none',
-    background: 'none',
-    fontSize: '14px',
-    fontWeight: activeTab === tab ? 'bold' : 'normal',
-    color: activeTab === tab ? '#d9534f' : '#666',
-    cursor: 'pointer'
-  });
+  const tabs: Tab[] = ["Room", "Controls", "Activity", "Settings"];
 
   return (
-    <div style={containerStyle}>
-      <header style={headerStyle}>
-        <h1 style={{ fontSize: '1.2rem', margin: 0 }}>Golden Coffee</h1>
-      </header>
+    <div style={{ 
+      backgroundColor: '#fdfaf5', 
+      minHeight: '100vh', 
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+    }}>
+      <div style={{ 
+        maxWidth: '480px', 
+        margin: '0 auto', 
+        backgroundColor: '#fdfaf5',
+        position: 'relative',
+        minHeight: '100vh',
+        paddingBottom: '80px',
+        paddingTop: '60px'
+      }}>
+        {/* Fixed Header */}
+        <header style={{ 
+          position: 'fixed', 
+          top: 0, 
+          width: '100%', 
+          maxWidth: '480px', 
+          height: '60px', 
+          backgroundColor: '#5d4037', 
+          color: '#fff', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          zIndex: 1000
+        }}>
+          <h1 style={{ fontSize: '1.2rem', margin: 0 }}>Golden Coffee</h1>
+        </header>
 
-      <main style={contentStyle}>
-        {activeTab === "Room" && <RoomView reading={currentReading} band={band} />}
-        {activeTab === "Alerts" && <AlertsView alerts={SAMPLE_ALERTS} />}
-        {activeTab === "Settings" && (
-          <SettingsView 
-            backendUrl={backendUrl} 
-            setBackendUrl={setBackendUrl} 
-            onSave={handleSaveSettings} 
-            showSavedFeedback={showSavedFeedback} 
-          />
-        )}
-      </main>
+        {/* Main Content */}
+        <main style={{ padding: '20px' }}>
+          {renderContent()}
+        </main>
 
-      <nav style={footerStyle}>
-        <button style={tabButtonStyle("Room")} onClick={() => setActiveTab("Room")}>Room</button>
-        <button style={tabButtonStyle("Alerts")} onClick={() => setActiveTab("Alerts")}>Alerts</button>
-        <button style={tabButtonStyle("Settings")} onClick={() => setActiveTab("Settings")}>Settings</button>
-      </nav>
+        {/* Fixed Bottom Navigation */}
+        <nav style={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          width: '100%', 
+          maxWidth: '480px', 
+          height: '70px', 
+          backgroundColor: '#fff', 
+          borderTop: '1px solid #eee', 
+          display: 'flex', 
+          justifyContent: 'space-around', 
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          {tabs.map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: activeTab === tab ? '#5d4037' : '#a1887f',
+                fontWeight: activeTab === tab ? 'bold' : 'normal',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <div style={{ 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                backgroundColor: activeTab === tab ? '#5d4037' : 'transparent' 
+              }} />
+              {tab}
+            </button>
+          ))}
+        </nav>
+      </div>
     </div>
   );
 };

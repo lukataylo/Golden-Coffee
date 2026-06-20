@@ -5,11 +5,10 @@ import App from './App';
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
-  throw new Error("Failed to find the root element. Ensure index.html has an element with id 'root'.");
+  throw new Error("Failed to find the root element. Ensure index.html has a <div id='root'></div>");
 }
 
-const root = ReactDOM.createRoot(rootElement);
-root.render(
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
@@ -17,8 +16,8 @@ root.render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.error('Service Worker registration failed for Golden Coffee App:', error);
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.error(`[SW] Registration failed: ${err.message}`, err);
     });
   });
 }

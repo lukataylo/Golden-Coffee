@@ -3,18 +3,18 @@
   "name": "Golden Coffee",
   "icons": [
     {
-      "src": "logo192.png",
+      "src": "icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#fff9f0",
-  "background_color": "#fff9f0"
+  "theme_color": "#fdfaf0",
+  "background_color": "#fdfaf0"
 }
