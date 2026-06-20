@@ -103,5 +103,29 @@ def set_music(
         return False
 
 
+def verify_playlists() -> None:
+    """Check every mood playlist URI resolves on Spotify. Run after OAuth setup."""
+    from agent.music_model import MOODS
+    try:
+        sp = _client()
+    except Exception as exc:
+        print(f"[spotify] auth failed: {exc}")
+        return
+    ok = 0
+    for key, mood in MOODS.items():
+        uri = mood.playlist
+        try:
+            pid = uri.split(":")[-1]
+            info = sp.playlist(pid, fields="name,tracks.total")
+            print(f"  ✓ {key:20s}  '{info['name']}'  ({info['tracks']['total']} tracks)  {uri}")
+            ok += 1
+        except Exception as exc:
+            print(f"  ✗ {key:20s}  FAILED: {exc}  {uri}")
+    print(f"\n{ok}/{len(MOODS)} playlists verified.")
+
+
 if __name__ == "__main__":
-    set_volume(int(sys.argv[1]) if len(sys.argv) > 1 else 40)
+    if len(sys.argv) > 1 and sys.argv[1] == "--test":
+        verify_playlists()
+    else:
+        set_volume(int(sys.argv[1]) if len(sys.argv) > 1 else 40)
