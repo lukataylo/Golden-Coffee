@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your account — Golden Coffee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23E8862A%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%278%27 cy=%2721%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%2715%27 cy=%2716%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3C/svg%3E">
+<meta name="description" content="Your Golden Coffee account and room profile.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@6..72,0,300;6..72,0,400;6..72,0,500;6..72,1,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./gc.css">
+<style>
+  body{background:linear-gradient(180deg,#ece4d5 0%,#f3ede0 100%);min-height:100vh;}
+  .ac-shell{max-width:760px;margin:0 auto;padding:24px 24px 80px;}
+  .ac-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;}
+  .ac-signout{font-size:13.5px;color:var(--muted);text-decoration:none;cursor:pointer;background:none;border:none;font-family:var(--sans);}
+  .ac-signout:hover{color:var(--amber);}
+  .ac-card{background:var(--paper);border-radius:26px;box-shadow:var(--shadow-md);padding:40px 40px;margin-bottom:22px;}
+  .ac-hello{font-size:30px;line-height:1.1;margin-bottom:6px;}
+  .ac-sub{font-size:14.5px;color:var(--muted);margin-bottom:0;}
+  .ac-badge{display:inline-block;margin-top:14px;padding:7px 15px;border-radius:999px;background:var(--amber-tint);
+    color:#a85b16;font:600 12.5px/1 var(--sans);letter-spacing:.02em;}
+  .ac-h{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted-2);margin:0 0 14px;}
+  .prof-row{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
+  .prof-row:last-child{border-bottom:none;}
+  .prof-row .k{color:var(--muted);}
+  .prof-row .v{color:var(--ink);font-weight:600;text-align:right;}
+  .ac-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;}
+  .skel{color:var(--muted-2);font-size:15px;padding:20px 0;}
+  .ac-alert{display:none;padding:14px 16px;border-radius:14px;background:rgba(217,83,79,.1);
+    border:1px solid rgba(217,83,79,.35);color:#a5302c;font-size:14px;line-height:1.5;}
+  @media(max-width:560px){ .ac-card{padding:30px 24px;} }
+</style>
+</head>
+<body>
+
+<div class="ac-shell">
+  <div class="ac-top">
+    <a class="brand" href="./index.html">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+      <span>Golden Coffee</span>
+    </a>
+    <button class="ac-signout" id="signout">Sign out</button>
+  </div>
+
+  <div id="loading" class="ac-card"><div class="skel">Loading your account…</div></div>
+
+  <div id="errBox" class="ac-card" style="display:none;">
+    <div class="ac-alert" id="errAlert" style="display:block;"></div>
+    <div class="ac-actions" style="margin-top:18px;">
+      <a class="btn-pill" href="./signin.html">Sign in again</a>
+    </div>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="ac-card">
+      <h1 class="ac-hello">Hello, <span id="firstName">there</span> ☕</h1>
+      <p class="ac-sub" id="venueLine">Your room is ready.</p>
+      <div class="ac-badge" id="planBadge">Free 14-day pilot</div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-h">Your room profile</div>
+      <div id="profileBox"></div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-h">Get going</div>
+      <p class="ac-sub" style="margin-bottom:18px;">Open the live dashboard to watch your room read itself in real time.</p>
+      <div class="ac-actions">
+        <a class="btn-dark" id="launchApp" href="https://dist-gamma-gray-23.vercel.app" target="_blank" rel="noopener">Launch dashboard →</a>
+        <a class="btn-ghost" href="./pricing.html">View plans</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./gc.js"></script>
+<script>
+(function(){
+  'use strict';
+  var token = GC.token();
+  if(!token){ window.location.replace('./signin.html'); return; }
+
+  var loading = document.getElementById('loading');
+  var content = document.getElementById('content');
+  var errBox = document.getElementById('errBox');
+
+  document.getElementById('signout').addEventListener('click', function(){
+    GC.api('/auth/logout', { method:'POST', auth:true }).catch(function(){}).then(function(){
+      GC.clearSession();
+      window.location.assign('./signin.html');
+    });
+  });
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  var PROFILE_LABELS = [
+    ['business_type','Type'],
+    ['ambiance','Ambiance'],
+    ['busiest_period','Busiest period'],
+    ['primary_goal','Main goal'],
+    ['room_size','Seats / covers'],
+    ['postcode','Postcode'],
+    ['camera_position','Camera'],
+    ['start_mode','Starts in'],
+    ['billing','Billing']
+  ];
+  var PLAN_LABEL = { pulse:'Pulse', autopilot:'Autopilot', multi:'Multi-venue' };
+
+  function render(user){
+    var prof = user.profile || {};
+    document.getElementById('firstName').textContent = (user.name || '').split(' ')[0] || 'there';
+    document.getElementById('venueLine').textContent = user.venue
+      ? (user.venue + ' · ' + (user.email || '')) : (user.email || 'Your room is ready.');
+    document.getElementById('planBadge').textContent =
+      (PLAN_LABEL[user.plan] || 'Your plan') + ' · free 14-day pilot';
+
+    var rows = PROFILE_LABELS.filter(function(p){ return prof[p[0]]; }).map(function(p){
+      var v = prof[p[0]];
+      if(p[0]==='room_size') v = v + ' covers';
+      if(p[0]==='camera_position' && prof.camera_type) v = v + ' · ' + prof.camera_type;
+      return '<div class="prof-row"><span class="k">'+esc(p[1])+'</span><span class="v">'+esc(v)+'</span></div>';
+    });
+    var devs = Array.isArray(prof.devices) ? prof.devices : (prof.devices ? [prof.devices] : []);
+    if(devs.length){
+      rows.push('<div class="prof-row"><span class="k">Connected devices</span><span class="v">'+esc(devs.join(', '))+'</span></div>');
+    }
+    document.getElementById('profileBox').innerHTML = rows.join('') ||
+      '<div class="skel">No profile details captured yet.</div>';
+
+    loading.style.display = 'none';
+    content.style.display = 'block';
+  }
+
+  function fail(msg, expired){
+    loading.style.display = 'none';
+    if(expired){ GC.clearSession(); }
+    document.getElementById('errAlert').textContent = msg;
+    errBox.style.display = 'block';
+  }
+
+  GC.api('/auth/me', { auth:true })
+    .then(function(res){ render(res.user || {}); })
+    .catch(function(err){
+      if(err && err.status === 401){
+        fail('Your session has expired. Please sign in again.', true);
+      } else {
+        fail((err && err.detail) || 'Could not load your account right now. Please try again shortly.', false);
+      }
+    });
+})();
+</script>
+</body>
+</html>

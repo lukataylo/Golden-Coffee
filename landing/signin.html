@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Golden Coffee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23E8862A%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%278%27 cy=%2721%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%2715%27 cy=%2716%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3C/svg%3E">
+<meta name="description" content="Sign in to your Golden Coffee account.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@6..72,0,300;6..72,0,400;6..72,0,500;6..72,1,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./gc.css">
+<style>
+  body{background:linear-gradient(180deg,#ece4d5 0%,#f3ede0 100%);min-height:100vh;}
+  .auth-shell{max-width:440px;margin:0 auto;padding:28px 24px 80px;}
+  .auth-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px;}
+  .auth-card{background:var(--paper);border-radius:26px;box-shadow:var(--shadow-md);padding:40px 38px;}
+  .auth-card h1{font-size:30px;line-height:1.1;margin-bottom:8px;}
+  .auth-card .lead{font-size:14.5px;color:var(--muted);line-height:1.6;margin-bottom:28px;}
+  label.fl{display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin:0 0 8px;}
+  .inp{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--line-2);background:#fff;
+    font-size:15px;font-family:var(--sans);color:var(--ink);outline:none;transition:border-color .2s ease,box-shadow .2s ease;}
+  .inp:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(232,134,42,.14);}
+  .inp.err{border-color:#d9534f;box-shadow:0 0 0 3px rgba(217,83,79,.12);}
+  .err-msg{color:#c0392b;font-size:12.5px;margin-top:6px;display:none;}
+  .err-msg.show{display:block;}
+  .fg{margin-bottom:18px;}
+  .btn-submit{width:100%;padding:14px;border-radius:14px;border:none;background:var(--amber-grad);color:#2a1607;
+    font-weight:700;font-size:15px;font-family:var(--sans);cursor:pointer;box-shadow:0 8px 20px rgba(232,134,42,.34);
+    transition:transform .2s ease;margin-top:6px;}
+  .btn-submit:hover{transform:translateY(-1px);}
+  .btn-submit:disabled{opacity:.7;cursor:progress;transform:none;}
+  .auth-alert{display:none;margin-bottom:18px;padding:13px 16px;border-radius:12px;background:rgba(217,83,79,.1);
+    border:1px solid rgba(217,83,79,.35);color:#a5302c;font-size:13.5px;line-height:1.5;}
+  .auth-foot{text-align:center;font-size:13.5px;color:var(--muted);margin-top:22px;}
+  .auth-foot a{color:var(--amber);font-weight:600;text-decoration:none;}
+  .auth-foot a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-top">
+    <a class="brand" href="./index.html">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+      <span>Golden Coffee</span>
+    </a>
+    <a class="ob-help" href="./onboarding.html" style="font-size:13.5px;color:var(--muted);text-decoration:none;">Create account →</a>
+  </div>
+
+  <div class="auth-card">
+    <h1>Welcome back</h1>
+    <p class="lead">Sign in to check on your room.</p>
+
+    <div class="auth-alert" id="alert" role="alert"></div>
+
+    <form id="signinForm" novalidate>
+      <div class="fg">
+        <label class="fl" for="email">Work email</label>
+        <input class="inp" id="email" type="email" placeholder="you@yourcafe.com" autocomplete="email">
+        <div class="err-msg" data-err="email">Enter a valid email address.</div>
+      </div>
+      <div class="fg">
+        <label class="fl" for="password">Password</label>
+        <input class="inp" id="password" type="password" placeholder="Your password" autocomplete="current-password">
+        <div class="err-msg" data-err="password">Enter your password.</div>
+      </div>
+      <button class="btn-submit" id="submitBtn" type="submit">Sign in</button>
+    </form>
+
+    <div class="auth-foot">New to Golden Coffee? <a href="./onboarding.html">Start your free pilot →</a></div>
+  </div>
+</div>
+
+<script src="./gc.js"></script>
+<script>
+(function(){
+  'use strict';
+  var form = document.getElementById('signinForm');
+  var btn = document.getElementById('submitBtn');
+  var alertEl = document.getElementById('alert');
+
+  // already signed in? skip straight to the account.
+  if (GC.token()) { window.location.replace('./account.html'); return; }
+
+  function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+  function showErr(key){ var el=document.querySelector('[data-err="'+key+'"]'); if(el) el.classList.add('show');
+    var inp=document.getElementById(key); if(inp) inp.classList.add('err'); }
+  function clearErr(key){ var el=document.querySelector('[data-err="'+key+'"]'); if(el) el.classList.remove('show');
+    var inp=document.getElementById(key); if(inp) inp.classList.remove('err'); }
+  ['email','password'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){ clearErr(id); alertEl.style.display='none'; });
+  });
+
+  function validate(){
+    var ok = true;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))){ showErr('email'); ok=false; }
+    if(!val('password')){ showErr('password'); ok=false; }
+    return ok;
+  }
+
+  var busy = false;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(busy || !validate()) return;
+    busy = true;
+    alertEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Signing in…';
+
+    GC.api('/auth/login', { method:'POST', body:{ email: val('email'), password: val('password') } })
+      .then(function(res){
+        if(res && res.token) GC.setSession(res.token, res.user);
+        window.location.assign('./account.html');
+      })
+      .catch(function(err){
+        busy = false;
+        btn.disabled = false; btn.textContent = 'Sign in';
+        alertEl.style.display = 'block';
+        alertEl.textContent = (err && err.status === 401)
+          ? 'Incorrect email or password. Please try again.'
+          : ((err && err.detail) || 'Could not sign in right now. Please try again.');
+      });
+  });
+})();
+</script>
+</body>
+</html>

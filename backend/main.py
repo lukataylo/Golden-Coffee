@@ -36,6 +36,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from backend import auth
 from shared.schemas import AgentAction, MusicModeEvent, SceneEvent
 
 # Repo root is the parent of this file's directory (backend/). Resolve to an
@@ -46,6 +47,9 @@ DASHBOARD_DIR = REPO_ROOT / "dashboard"
 # Optional shared-secret: if INGEST_TOKEN is set, producers must send it as
 # X-Token on /ingest and /frame. Left empty in dev so the demo "just works".
 INGEST_TOKEN = os.environ.get("INGEST_TOKEN", "")
+# Optional shared-secret guarding the admin signup/data-capture views. If unset,
+# those endpoints are disabled (404) rather than open — never leak captured data.
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 # Append-only metrics history (for Track B's footfall/labour forecasting).
 METRICS_PATH = REPO_ROOT / "data" / "metrics.jsonl"
 # Active floorplan geometry (zones.json shape) scanned by the PWA — perception
@@ -603,6 +607,91 @@ async def override(act: AgentAction) -> dict:
     hub.action_log.append(payload)
     await hub.broadcast(payload)
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# User management & sign-up — see backend/auth.py.
+# The landing page (Vercel) posts here; CORS is already open above.
+# ---------------------------------------------------------------------------
+auth.init_db()
+
+
+@app.post("/auth/signup")
+async def auth_signup(request: Request) -> dict:
+    """Create an account + store the onboarding data-capture profile.
+
+    Body: {email, password, name, venue?, plan?, profile:{business_type,
+    ambiance, busiest_period, primary_goal, room_size, ...}}.
+    Returns {ok, token, user}. 409 if the email already exists.
+    """
+    # Reject oversized bodies before parsing — signup is unauthenticated, so this
+    # caps an easy disk/DB-exhaustion vector. The real onboarding payload is <2 KB.
+    clen = request.headers.get("content-length")
+    if clen and clen.isdigit() and int(clen) > 64 * 1024:
+        raise HTTPException(status_code=413, detail="request body too large")
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid JSON body")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="expected a JSON object")
+    try:
+        result = await asyncio.to_thread(auth.signup, payload)
+    except auth.AuthError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.detail)
+    return {"ok": True, **result}
+
+
+@app.post("/auth/login")
+async def auth_login(request: Request) -> dict:
+    """Verify credentials, return {ok, token, user}. 401 on bad credentials."""
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid JSON body")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="expected a JSON object")
+    try:
+        result = await asyncio.to_thread(auth.login, payload)
+    except auth.AuthError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.detail)
+    return {"ok": True, **result}
+
+
+@app.get("/auth/me")
+async def auth_me(authorization: Optional[str] = Header(None)) -> dict:
+    """Return the current user + their captured profile for a bearer token."""
+    try:
+        user = await asyncio.to_thread(auth.user_for_token, authorization)
+    except auth.AuthError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.detail)
+    return {"ok": True, "user": user}
+
+
+@app.post("/auth/logout")
+async def auth_logout(authorization: Optional[str] = Header(None)) -> dict:
+    """Revoke the caller's session token. Always 200 (idempotent)."""
+    await asyncio.to_thread(auth.logout, authorization)
+    return {"ok": True}
+
+
+def _require_admin(x_token: Optional[str]) -> None:
+    if not ADMIN_TOKEN:
+        # No admin secret configured -> pretend the route doesn't exist.
+        raise HTTPException(status_code=404, detail="Not Found")
+    if x_token != ADMIN_TOKEN:
+        raise HTTPException(status_code=401, detail="bad or missing X-Admin-Token")
+
+
+@app.get("/admin/signups")
+async def admin_signups(
+    limit: int = 500, x_admin_token: Optional[str] = Header(None)
+) -> dict:
+    """Captured signups (the data-capture review). Guarded by ADMIN_TOKEN."""
+    _require_admin(x_admin_token)
+    signups = await asyncio.to_thread(auth.list_signups, limit)
+    overview = await asyncio.to_thread(auth.stats)
+    return {"ok": True, "stats": overview, "signups": signups}
 
 
 @app.websocket("/ws")
