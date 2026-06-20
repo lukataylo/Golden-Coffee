@@ -422,7 +422,10 @@ import base64 as _b64
 import httpx as _httpx
 
 _SP_SCOPE = "user-modify-playback-state user-read-playback-state streaming"
-_sp_refresh_tok: Optional[str] = None
+# Seed the refresh token from env so Spotify auth SURVIVES restarts/redeploys
+# (in-memory alone is wiped every container restart). Authorize once, set
+# SPOTIPY_REFRESH_TOKEN on Railway, and it stays connected forever.
+_sp_refresh_tok: Optional[str] = os.environ.get("SPOTIPY_REFRESH_TOKEN") or None
 _sp_access_tok:  Optional[str] = None
 _sp_expires_at:  float = 0.0
 

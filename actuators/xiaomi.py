@@ -5,12 +5,14 @@ Mijia gear on the LAN. Local + token-based, exactly like the Hue and Broadlink
 drivers — no cloud round-trip at demo time.
 
 Each device needs its LAN IP and a 32-char hex token. The token is the only hard
-part; pull every device's ip + token once with python-miio's cloud helper (uses
-your Mi account, read-only):
+part; pull every device's ip + token once from the cloud (read-only). Set your
+Mi account region first — devices added in mainland China live on the "cn" server
+(XIAOMI_REGION, default "cn"):
 
-    miiocli cloud            # prints name / model / ip / token for each device
+    python -m actuators.xiaomi --cloud           # uses XIAOMI_MI_USER / _PASS
+    # or:  miiocli cloud --server cn
 
-Then paste them into .env (see keys below).
+Then paste each device's ip + token into .env (see keys below).
 
   * Lamp: most Mijia / Yeelight lamps speak the Yeelight miIO dialect, so we drive
     brightness + colour-temperature directly. White-only lamps just ignore the
@@ -44,20 +46,69 @@ XIAOMI_LAMP_TOKEN = os.environ.get("XIAOMI_LAMP_TOKEN", "")
 XIAOMI_DIFFUSER_IP = os.environ.get("XIAOMI_DIFFUSER_IP", "")
 XIAOMI_DIFFUSER_TOKEN = os.environ.get("XIAOMI_DIFFUSER_TOKEN", "")
 
+# Mi-Home account region. Devices registered in mainland China live on the "cn"
+# server, so token extraction must target it (the lib defaults to non-CN regions).
+XIAOMI_REGION = os.environ.get("XIAOMI_REGION", "cn")
+
 # Yeelight colour-temperature spans ~1700K (warm) .. 6500K (cool).
 WARMTH_KELVIN = {"warm": 2700, "neutral": 4000, "cool": 6000}
 
+# How to reach the devices:
+#   local — miIO on the LAN (fast, same network required)
+#   cloud — via the Mi cloud (works across networks, e.g. gear in China)
+#   auto  — local when it's configured, otherwise cloud
+XIAOMI_TRANSPORT = os.environ.get("XIAOMI_TRANSPORT", "auto").lower()
 
-def lamp_configured() -> bool:
+
+def _local_lamp_configured() -> bool:
     return bool(XIAOMI_LAMP_IP and XIAOMI_LAMP_TOKEN)
 
 
-def diffuser_configured() -> bool:
+def _local_diffuser_configured() -> bool:
     return bool(XIAOMI_DIFFUSER_IP and XIAOMI_DIFFUSER_TOKEN)
 
 
+def _use_cloud(local_ok: bool) -> bool:
+    """Decide whether this call should go via the cloud transport."""
+    if XIAOMI_TRANSPORT == "cloud":
+        return True
+    if XIAOMI_TRANSPORT == "local":
+        return False
+    return not local_ok  # auto: cloud only when local isn't set up
+
+
+def lamp_configured() -> bool:
+    from actuators import xiaomi_cloud
+
+    if XIAOMI_TRANSPORT == "local":
+        return _local_lamp_configured()
+    if XIAOMI_TRANSPORT == "cloud":
+        return xiaomi_cloud.lamp_configured()
+    return _local_lamp_configured() or xiaomi_cloud.lamp_configured()
+
+
+def diffuser_configured() -> bool:
+    from actuators import xiaomi_cloud
+
+    if XIAOMI_TRANSPORT == "local":
+        return _local_diffuser_configured()
+    if XIAOMI_TRANSPORT == "cloud":
+        return xiaomi_cloud.diffuser_configured()
+    return _local_diffuser_configured() or xiaomi_cloud.diffuser_configured()
+
+
 def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
-    """Set a Mijia/Yeelight lamp's brightness (0-100) and warmth. >0 turns it on."""
+    """Set a Mijia/Yeelight lamp's brightness (0-100) and warmth. >0 turns it on.
+    Routes to the cloud transport when configured for it (see XIAOMI_TRANSPORT)."""
+    if _use_cloud(_local_lamp_configured()):
+        from actuators import xiaomi_cloud
+
+        return xiaomi_cloud.lamp_set(brightness, warmth)
+    return _local_lamp_set(brightness, warmth)
+
+
+def _local_lamp_set(brightness: int, warmth: str = "neutral") -> bool:
+    """Drive the lamp locally over miIO (same-LAN)."""
     brightness = max(0, min(100, int(brightness)))
     kelvin = WARMTH_KELVIN.get(warmth, 4000)
     try:
@@ -84,7 +135,17 @@ def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
 def diffuser_set(intensity: int, scent: str = "fresh") -> bool:
     """Drive a Mijia scent diffuser. >0 turns it on; intensity maps to a fan/level
     on MIoT devices that expose one. `scent` is informational (a diffuser can't
-    pick a fragrance — that's whatever cartridge is loaded)."""
+    pick a fragrance — that's whatever cartridge is loaded).
+    Routes to the cloud transport when configured for it (see XIAOMI_TRANSPORT)."""
+    if _use_cloud(_local_diffuser_configured()):
+        from actuators import xiaomi_cloud
+
+        return xiaomi_cloud.diffuser_set(intensity, scent)
+    return _local_diffuser_set(intensity, scent)
+
+
+def _local_diffuser_set(intensity: int, scent: str = "fresh") -> bool:
+    """Drive the diffuser locally over miIO (same-LAN)."""
     intensity = max(0, min(100, int(intensity)))
     on = intensity > 0
 
@@ -120,21 +181,42 @@ def diffuser_set(intensity: int, scent: str = "fresh") -> bool:
         return False
 
 
-def _discover() -> None:
-    """List Mijia devices on the LAN (gives IPs + device ids, NOT tokens).
-    Run `miiocli cloud` to get the tokens."""
-    try:
-        from miio import Discovery
+def _cloud(user: str = "", password: str = "") -> None:
+    """List every Mi-Home device with its ip + token, straight from the China
+    cloud (XIAOMI_REGION). This is the reliable way to get tokens — a LAN handshake
+    can find IPs but never the token, and CN devices aren't on the default servers.
 
-        Discovery.discover_mdns()
+    Creds come from args or XIAOMI_MI_USER / XIAOMI_MI_PASS. Read-only; nothing is
+    changed on your account."""
+    user = user or os.environ.get("XIAOMI_MI_USER", "")
+    password = password or os.environ.get("XIAOMI_MI_PASS", "")
+    if not (user and password):
+        print("[xiaomi] need Mi account creds: set XIAOMI_MI_USER / XIAOMI_MI_PASS "
+              "or pass them: python -m actuators.xiaomi --cloud <user> <pass>")
+        return
+    try:
+        from miio import CloudInterface
+
+        ci = CloudInterface(user, password)
+        devices = ci.get_devices(locale=XIAOMI_REGION)
+        if not devices:
+            print(f"[xiaomi] no devices found on region '{XIAOMI_REGION}' "
+                  f"(set XIAOMI_REGION if your account is elsewhere)")
+            return
+        print(f"[xiaomi] devices on region '{XIAOMI_REGION}':")
+        for did, d in devices.items():
+            ip = getattr(d, "ip", "?") or "(cloud-only / offline)"
+            print(f"  {getattr(d, 'name', '?')!r:30}  model={getattr(d, 'model', '?')}")
+            print(f"      ip={ip}  token={getattr(d, 'token', '?')}  did={did}")
     except Exception as exc:
-        print(f"[xiaomi] discovery failed ({exc}); try `miiocli discover` / `miiocli cloud`")
+        print(f"[xiaomi] cloud lookup failed ({exc}); "
+              f"alt: `miiocli cloud --server {XIAOMI_REGION}`")
 
 
 if __name__ == "__main__":
-    arg = sys.argv[1] if len(sys.argv) > 1 else "--discover"
-    if arg == "--discover":
-        _discover()
+    arg = sys.argv[1] if len(sys.argv) > 1 else "--cloud"
+    if arg == "--cloud":
+        _cloud(*(sys.argv[2:4]))
     elif arg == "lamp":
         bri = int(sys.argv[2]) if len(sys.argv) > 2 else 70
         warm = sys.argv[3] if len(sys.argv) > 3 else "warm"
@@ -144,4 +226,4 @@ if __name__ == "__main__":
         name = sys.argv[3] if len(sys.argv) > 3 else "fresh"
         diffuser_set(inten, name)
     else:
-        print("usage: python -m actuators.xiaomi [--discover | lamp <bri> <warm> | diffuser <intensity> <scent>]")
+        print("usage: python -m actuators.xiaomi [--cloud [user pass] | lamp <bri> <warm> | diffuser <intensity> <scent>]")
