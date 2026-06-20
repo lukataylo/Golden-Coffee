@@ -35,10 +35,16 @@ except ImportError:
 from agent import policy
 from agent.forecast import FootfallForecast
 
+from shared import llm
+
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 BACKEND_WS  = os.environ.get("BACKEND_WS",  "ws://127.0.0.1:8000/ws")
 MODEL       = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
 USE_CLAUDE  = bool(os.environ.get("ANTHROPIC_API_KEY"))
+# When Claude isn't configured but Gemini is, the agent reasons with Gemini
+# (real LLM rationales + decisions) instead of the deterministic rule policy.
+USE_LLM     = (not USE_CLAUDE) and (llm.provider() == "gemini")
+LLM_INTERVAL_S = float(os.environ.get("AGENT_LLM_INTERVAL_S", "20"))  # throttle (free Gemini ~15 rpm)
 FED_HISTORY = int(os.environ.get("FED_HISTORY", "60"))  # rolling scene window for ratio estimation
 FED_MIN_SCENES = 10  # need at least this much history before the first federation sync
 _TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
@@ -51,6 +57,23 @@ SYSTEM = (
     "Rules: no surge pricing, no discomfort to move people along, no individual tracking. "
     "Prefer the gentlest effective action. Always give a one-sentence customer-friendly "
     "rationale. If nothing needs doing, call no tool."
+)
+
+# Gemini path: same persona, but it must return a JSON array of actions (no tools).
+SYSTEM_LLM = (
+    SYSTEM + "\n\n"
+    "Respond with ONLY a JSON array of actions (no prose, no markdown fences). "
+    "Each item: {\"action\": <name>, \"params\": {...}, \"rationale\": <one customer-friendly sentence>}. "
+    "Return [] if nothing needs doing. Allowed actions and params:\n"
+    "- set_music_volume {\"volume\": 0-100}\n"
+    "- set_music {\"mood\": <one of the moods listed>}\n"
+    "- set_temperature {\"delta_c\": -2..2}  (small nudge; + warmer, - cooler)\n"
+    "- set_lighting {\"brightness\": 0-100, \"warmth\": \"warm\"|\"neutral\"|\"cool\"}\n"
+    "- set_scent {\"intensity\": 0-100, \"scent\": <short name>}\n"
+    "- push_discount {\"text\": <short offer>}\n"
+    "- notify_staff {\"text\": <short staff alert>}\n"
+    "Ground every choice in the measured room data (sound dB, light level, comfort "
+    "pillars, occupancy, queue, tables). Prefer the gentlest effective action; usually 0-2 actions."
 )
 
 # Maps Claude tool names → policy debounce key so the same windows apply
@@ -175,6 +198,19 @@ def _scene_summary(scene: dict) -> str:
         f"occupancy={scene.get('occupancy')}  queue={scene.get('queue_len')}",
         f"long_dwellers={len(long_dwellers)}",
     ]
+    # Measured ambient (the real sensors driving the Comfort Index).
+    if scene.get("sound_db") is not None:
+        s = f"sound={scene['sound_db']:.0f}dB"
+        if scene.get("sound_stress") is not None:
+            s += f"(stress={scene['sound_stress']:.0f})"
+        parts.append(s)
+    if scene.get("light_level") is not None:
+        parts.append(f"light={scene['light_level']:.0f}/100")
+    c = scene.get("comfort") or {}
+    if c.get("overall") is not None:
+        parts.append(
+            f"comfort={c.get('overall')} (sound={c.get('sound')},light={c.get('light')},temp={c.get('air')})"
+        )
     if overdue_tables:
         worst = max(overdue_tables, key=lambda t: t.get("wait_s", 0))
         parts.append(
@@ -375,6 +411,18 @@ class Agent:
             except Exception as exc:
                 print(f"[agent] Claude decide failed ({exc}); falling back to rules")
                 actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+        elif USE_LLM:
+            # Throttle LLM calls (free Gemini tier ~15 rpm); ambiance doesn't need
+            # per-second reasoning. Between calls the agent simply holds.
+            if now - getattr(self, "_last_llm_t", 0.0) < LLM_INTERVAL_S:
+                actions = []
+            else:
+                self._last_llm_t = now
+                try:
+                    actions = self._decide_llm(scene)
+                except Exception as exc:
+                    print(f"[agent] Gemini decide failed ({exc}); falling back to rules")
+                    actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         else:
             actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         actions += self._forecast_actions(scene, now)
@@ -448,6 +496,67 @@ class Agent:
             })
         return out
 
+    def _decide_llm(self, scene: dict) -> list[dict]:
+        """Gemini decision path: ask for a JSON array of actions, grounded in the
+        live measured room data. Same debounce + set_music expansion as Claude."""
+        import json as _json
+        from agent.music_model import MOODS, playlist_for
+
+        moods = ", ".join(MOODS.keys())
+        prompt = (
+            f"Current scene: {_scene_summary(scene)}\n"
+            f"{self._music_context(scene)}\n"
+            f"Available moods for set_music: {moods}\n"
+            "Decide what (if anything) to do for the room right now."
+        )
+        text = llm.complete(SYSTEM_LLM, prompt, max_tokens=512)
+        if not text:
+            return []
+        s = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        try:
+            parsed = _json.loads(s)
+        except Exception:
+            # tolerate a single object or trailing prose around the array
+            i, j = s.find("["), s.rfind("]")
+            if i == -1 or j == -1:
+                return []
+            parsed = _json.loads(s[i:j + 1])
+        if isinstance(parsed, dict):
+            parsed = [parsed]
+        valid = {"set_music_volume", "set_music", "set_temperature", "set_lighting",
+                 "set_scent", "push_discount", "notify_staff"}
+        now = time.time()
+        out: list[dict] = []
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
+            name = item.get("action")
+            if name not in valid:
+                continue
+            debounce_key = _CLAUDE_DEBOUNCE.get(name, name)
+            if not policy._due(self.state, debounce_key, now):
+                print(f"[agent] Gemini: {name} debounced ({debounce_key})")
+                continue
+            params = dict(item.get("params") or {})
+            rationale = item.get("rationale", "")
+            if name == "set_music":
+                m = MOODS.get(params.get("mood", ""))
+                if m is None:
+                    continue
+                params = {
+                    "mood": m.key, "label": m.label, "playlist_uri": playlist_for(m.key),
+                    "descriptors": m.descriptors, "bpm": m.bpm,
+                    "energy": round(m.energy, 2), "volume": m.volume,
+                }
+                self.state["music_mood"] = m.key
+            policy._mark(self.state, debounce_key, now)
+            out.append({
+                "type": "action", "ts": now, "action": name,
+                "params": params, "rationale": rationale,
+                "reversible": True, "auto": True,
+            })
+        return out
+
     # --- output ------------------------------------------------------------
     async def act_on(self, scene: dict, http: Optional[httpx.AsyncClient]) -> list[dict]:
         actions = self.decide_actions(scene)
@@ -463,7 +572,8 @@ class Agent:
 
 async def run_live() -> None:
     agent = Agent()
-    print(f"[agent] connecting to {BACKEND_WS}  (model={'Claude:'+MODEL if agent.use_claude else 'rule-based'})")
+    _brain = ("Claude:" + MODEL) if agent.use_claude else ("Gemini:" + os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")) if USE_LLM else "rule-based"
+    print(f"[agent] connecting to {BACKEND_WS}  (reasoning={_brain})")
     async with httpx.AsyncClient(timeout=3.0) as http:
         while True:
             try:
