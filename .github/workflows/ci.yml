@@ -1,0 +1,62 @@
+name: CI
+
+# Fast, deterministic checks that run with NO GPU, NO camera, NO API keys —
+# the same regime the live demo falls back to. Guards the two shared contracts
+# (SceneEvent / AgentAction) and every offline capability.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install lean test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Backend unit tests (auth)
+        run: python -m pytest backend/test_auth.py -q
+
+      - name: Deep capabilities eval (policy, music model, agent, schemas, actuators, geometry, federated)
+        run: python -m eval.capabilities_eval
+
+      - name: Policy self-test (offline, no key)
+        run: python -m agent.policy
+
+      - name: FLock federated port runs end-to-end
+        run: python -m federated.flock_model
+
+      - name: Federated simulation runs end-to-end
+        run: python -m federated.sim
+
+      - name: Import smoke — every core module loads
+        run: |
+          python - <<'PY'
+          import importlib
+          mods = [
+              "shared.schemas", "shared.comfort", "shared.mock_events",
+              "agent.policy", "agent.forecast", "agent.discounts",
+              "agent.music_model", "agent.agent",
+              "backend.main", "federated.node", "federated.sim",
+              "onchain.walrus",
+          ]
+          for m in mods:
+              importlib.import_module(m)
+              print("ok", m)
+          PY
