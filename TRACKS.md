@@ -77,5 +77,9 @@ Floorplan / Tables views, Comfort autopilot panel, action feed, ethics panel.
 
 ## Open cross-cutting tasks
 - [ ] Decide demo hardware (which Hue/IR/scent devices we actually bring).
-- [ ] Tune real zone + table geometry for the venue camera (A + C together).
+- [x] **Geometry is first-class** (`perception/geometry.py`): validation (bad coords /
+      degenerate / missing-zone now fail loudly on load), believable café presets
+      generated headlessly (`perception.run --preset counter_top --tables N --gen-zones
+      zones.json`, no GUI), and auto-table layout. `draw_zones` takes `--tables N` /
+      `--load`. Still to do: capture the *actual venue* geometry on its camera.
 - [ ] One-line eval summary + the privacy stance on a pitch slide (D, from A's eval).

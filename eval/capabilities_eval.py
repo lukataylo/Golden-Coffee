@@ -320,11 +320,98 @@ def eval_actuators() -> None:
 
 
 # ===========================================================================
+# 6. PERCEPTION GEOMETRY — validation, presets, auto-tables, load round-trip
+# ===========================================================================
+def eval_perception_geometry() -> None:
+    g = "perception_geometry"
+    from perception.geometry import (
+        PRESETS, REQUIRED_ZONES, GeometryError, assert_valid, auto_tables,
+        centroid, point_in_poly, polygon_area, preset, validate_geometry,
+    )
+
+    # geometry primitives
+    unit = [[0, 0], [1, 0], [1, 1], [0, 1]]
+    check(g, "polygon_area(unit square) == 1", abs(polygon_area(unit) - 1.0) < 1e-9)
+    cx, cy = centroid(unit)
+    check(g, "centroid(unit square) == (0.5, 0.5)", abs(cx - 0.5) < 1e-9 and abs(cy - 0.5) < 1e-9)
+    check(g, "point_in_poly inside", point_in_poly((0.5, 0.5), unit))
+    check(g, "point_in_poly outside", not point_in_poly((1.5, 0.5), unit))
+
+    # every preset is valid, complete, and warning-free
+    for name in PRESETS:
+        cfg = preset(name, tables=5)
+        errs, warns = validate_geometry(cfg)
+        check(g, f"preset '{name}' has no errors", errs == [], errs[:1])
+        check(g, f"preset '{name}' has all required zones",
+              all(z in cfg["zones"] for z in REQUIRED_ZONES))
+        check(g, f"preset '{name}' placed tables", len(cfg["tables"]) > 0, f"n={len(cfg['tables'])}")
+        check(g, f"preset '{name}' warning-free (tables in seating, queue meets counter)",
+              warns == [], warns[:1])
+
+    # auto_tables: count respected and all tables sit inside the seating polygon
+    seating = preset("counter_top")["zones"]["seating"]
+    tabs = auto_tables(seating, 6)
+    check(g, "auto_tables respects count", 0 < len(tabs) <= 6, f"n={len(tabs)}")
+    check(g, "auto_tables all inside seating",
+          all(point_in_poly(centroid(p), seating) for p in tabs.values()))
+    check(g, "auto_tables coords in 0..1",
+          all(0 <= c <= 1 for p in tabs.values() for pt in p for c in pt))
+
+    # validation catches each failure mode
+    good = preset("counter_top")
+    cases = {
+        "missing required zone": {**good, "zones": {k: v for k, v in good["zones"].items() if k != "counter"}},
+        "out-of-frame coords": {**good, "zones": {**good["zones"], "entry": [[0, 0], [1.4, 0], [1.4, 1], [0, 1]]}},
+        "degenerate polygon": {**good, "zones": {**good["zones"], "entry": [[0, 0], [0.1, 0], [0.2, 0]]}},
+        "too few points": {**good, "zones": {**good["zones"], "entry": [[0, 0], [0.1, 0.1]]}},
+        "unknown zone name": {**good, "zones": {**good["zones"], "lounge": [[0, 0], [0.1, 0], [0.1, 0.1]]}},
+    }
+    for label, bad in cases.items():
+        errs, _ = validate_geometry(bad)
+        check(g, f"rejects: {label}", len(errs) > 0, "no error raised")
+
+    # assert_valid raises on bad, returns warnings on good
+    raised = False
+    try:
+        assert_valid(cases["missing required zone"])
+    except GeometryError:
+        raised = True
+    check(g, "assert_valid raises GeometryError on bad geometry", raised)
+    check(g, "assert_valid returns warnings list on good geometry",
+          isinstance(assert_valid(good), list))
+
+    # end-to-end: a preset loads into perception.run globals and matches
+    import json as _json
+    from perception import run as prun
+    tmp = "eval/_geom_tmp.json"
+    with open(tmp, "w") as f:
+        _json.dump(preset("counter_left", tables=4), f)
+    try:
+        prun.load_geometry(tmp)
+        from shared.schemas import Zone
+        check(g, "load_geometry applies all zones",
+              all(z in prun.ZONE_POLYS_NORM for z in (Zone.ENTRY, Zone.QUEUE, Zone.COUNTER, Zone.SEATING)))
+        check(g, "load_geometry applies tables", len(prun.TABLE_POLYS_NORM) == 4, f"n={len(prun.TABLE_POLYS_NORM)}")
+        # a malformed file is rejected, not silently loaded
+        with open(tmp, "w") as f:
+            _json.dump({"zones": {"entry": [[0, 0], [2, 0], [0, 1]]}}, f)
+        rejected = False
+        try:
+            prun.load_geometry(tmp)
+        except GeometryError:
+            rejected = True
+        check(g, "load_geometry rejects malformed file", rejected)
+    finally:
+        os.path.exists(tmp) and os.remove(tmp)
+
+
+# ===========================================================================
 # report
 # ===========================================================================
 def main() -> int:
     verbose = "-v" in sys.argv
-    for fn in (eval_music_model, eval_policy, eval_agent, eval_schemas, eval_actuators):
+    for fn in (eval_music_model, eval_policy, eval_agent, eval_schemas, eval_actuators,
+               eval_perception_geometry):
         try:
             fn()
         except Exception as exc:  # noqa: BLE001 — a crashing capability is a failure, not a stop

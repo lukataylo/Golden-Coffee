@@ -45,10 +45,12 @@ STAFF_DWELL_S = 25.0    # a track living behind the counter this long looks like
 ACTIVITY_FULL = 0.05    # per-frame normalized centroid displacement that maps to activity=1.0
 HEATMAP_N = 8           # heatmap grid resolution (N x N)
 
-# Placeholder zones as fractions of the frame (x, y) — replace with real geometry
-# via a zone-drawing pass over the actual camera framing. Each is a polygon of
-# normalized (x, y) corners. For the people-walking demo clip these just slice the
-# frame into four vertical bands so the funnel/occupancy logic has something to chew.
+# Default zones as fractions of the frame (x, y) — these vertical bands suit the
+# people-walking demo clip. For a REAL camera, replace them with venue geometry:
+#   python -m perception.run --preset counter_top --tables 6 --gen-zones zones.json
+#   python -m perception.draw_zones --source <cam> --out zones.json   (GUI)
+# then run with `--zones zones.json` (validated on load by perception.geometry).
+# Each entry is a polygon of normalized (x, y) corners.
 ZONE_POLYS_NORM = {
     Zone.ENTRY: [(0.0, 0.0), (0.25, 0.0), (0.25, 1.0), (0.0, 1.0)],
     Zone.QUEUE: [(0.25, 0.0), (0.5, 0.0), (0.5, 1.0), (0.25, 1.0)],
@@ -139,8 +141,25 @@ def load_geometry(path: str) -> None:
     in place. Lets a track tune real camera geometry without touching code.
     Format: {"zones": {"entry": [[x,y],...]}, "tables": {"T1": [...]}, "cleaning": {...}}.
     """
+    from perception.geometry import geometry_summary
+
     with open(path) as f:
         cfg = json.load(f)
+    _apply_geometry(cfg)
+    print(f"[perception] geometry from {path}: {geometry_summary(cfg)}", flush=True)
+
+
+def _apply_geometry(cfg: dict) -> None:
+    """Validate a geometry config and apply it to the module globals in place.
+
+    Validates BEFORE mutating anything — bad geometry (out-of-frame coords,
+    degenerate polygons, a missing zone) silently breaks every downstream metric,
+    so fail loudly here. Warnings (e.g. a table outside seating) are printed.
+    """
+    from perception.geometry import assert_valid
+
+    for w in assert_valid(cfg):
+        print(f"[perception] geometry warning: {w}", flush=True)
     if "zones" in cfg:
         ZONE_POLYS_NORM.clear()
         for name, poly in cfg["zones"].items():
@@ -151,11 +170,6 @@ def load_geometry(path: str) -> None:
     if "cleaning" in cfg:
         CLEAN_POLYS_NORM.clear()
         CLEAN_POLYS_NORM.update({k: [tuple(p) for p in v] for k, v in cfg["cleaning"].items()})
-    print(
-        f"[perception] geometry from {path}: {len(ZONE_POLYS_NORM)} zones, "
-        f"{len(TABLE_POLYS_NORM)} tables, {len(CLEAN_POLYS_NORM)} cleaning zones",
-        flush=True,
-    )
 
 
 def dump_geometry(path: str) -> None:
@@ -550,11 +564,30 @@ def main() -> None:
     )
     parser.add_argument("--zones", help="load zone/table/cleaning geometry from a JSON file")
     parser.add_argument("--dump-zones", help="write the default geometry to this JSON path and exit")
+    parser.add_argument(
+        "--preset", help="generate realistic café geometry headlessly (no GUI): "
+        "counter_top | counter_left | bands. Use with --gen-zones to save, or alone to run with it.")
+    parser.add_argument("--gen-zones", help="with --preset: write the generated geometry here and exit")
+    parser.add_argument("--tables", type=int, default=4, help="table count for --preset (default 4)")
     args = parser.parse_args()
 
     if args.dump_zones:
         dump_geometry(args.dump_zones)
         return
+    # Headless geometry authoring: --preset builds a believable layout with no camera
+    # and no display. With --gen-zones we just write it and exit; otherwise we load it
+    # into the running pipeline (still overridable by an explicit --zones file below).
+    if args.preset:
+        from perception.geometry import geometry_summary, preset as gen_preset
+        cfg = gen_preset(args.preset, tables=args.tables)
+        if args.gen_zones:
+            with open(args.gen_zones, "w") as f:
+                json.dump(cfg, f, indent=2)
+            print(f"[perception] preset '{args.preset}': {geometry_summary(cfg)} -> {args.gen_zones} "
+                  f"(load with: python -m perception.run --zones {args.gen_zones})")
+            return
+        _apply_geometry(cfg)
+        print(f"[perception] preset '{args.preset}': {geometry_summary(cfg)} (in-memory)", flush=True)
     if args.zones:
         load_geometry(args.zones)
 

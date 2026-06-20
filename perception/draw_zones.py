@@ -6,20 +6,25 @@ loads. This is the "real camera geometry" setup step (the biggest accuracy win i
 the eval): replace the placeholder vertical bands with regions that match the venue.
 
 Run:  python -m perception.draw_zones --source 0 --out zones.json
-      python -m perception.draw_zones --source clips/grocery-store.mp4
+      python -m perception.draw_zones --source clips/grocery-store.mp4 --tables 6
+      python -m perception.draw_zones --source 0 --load zones.json   # edit existing
+
+No display? Skip this and generate geometry headlessly instead:
+      python -m perception.run --preset counter_top --tables 6 --gen-zones zones.json
 
 Controls (in the window):
   left-click  add a point to the current region
   n / p       next / previous region
   c           clear the current region's points
   u           undo last point
-  s           save -> --out and quit
+  s           save -> --out and quit (only if it passes validation)
   q / Esc     quit without saving
 
 Regions are drawn in this order (categorised automatically on save):
   entry, queue, counter, seating  -> "zones"
-  T1, T2, T3                      -> "tables"
+  T1..Tn (--tables n)             -> "tables"
   restroom                        -> "cleaning"
+Saving runs the geometry validator, so a bad layout is caught before it ships.
 """
 from __future__ import annotations
 
@@ -28,19 +33,29 @@ import json
 
 from perception.run import _resolve_source
 
-# (label, category) — category maps into the zones.json structure load_geometry reads.
-SLOTS = [
-    ("entry", "zones"), ("queue", "zones"), ("counter", "zones"), ("seating", "zones"),
-    ("T1", "tables"), ("T2", "tables"), ("T3", "tables"),
-    ("restroom", "cleaning"),
-]
+
+def build_slots(n_tables: int = 3, extra: list[str] | None = None) -> list[tuple[str, str]]:
+    """The ordered (label, category) regions to draw. `n_tables` controls how many
+    tables (T1..Tn); `extra` adds any labels found in a loaded file so editing an
+    existing zones.json never drops regions it didn't know about."""
+    slots = [("entry", "zones"), ("queue", "zones"), ("counter", "zones"), ("seating", "zones")]
+    slots += [(f"T{i}", "tables") for i in range(1, max(0, n_tables) + 1)]
+    slots += [("restroom", "cleaning")]
+    known = {s[0] for s in slots}
+    cat_for = {"zones": "zones", "tables": "tables", "cleaning": "cleaning"}
+    for label, cat in (extra or []):
+        if label not in known:
+            slots.append((label, cat_for.get(cat, "zones")))
+            known.add(label)
+    return slots
 
 
-def build_geometry(points_by_label: dict[str, list[tuple[int, int]]], w: int, h: int) -> dict:
+def build_geometry(points_by_label: dict[str, list[tuple[int, int]]], w: int, h: int,
+                   slots: list[tuple[str, str]] | None = None) -> dict:
     """Turn pixel polygons into the normalized {zones,tables,cleaning} JSON shape.
     Only regions with >= 3 points are included."""
     out: dict[str, dict] = {"zones": {}, "tables": {}, "cleaning": {}}
-    cat = dict(SLOTS)
+    cat = dict(slots or build_slots())
     for label, pts in points_by_label.items():
         if len(pts) < 3:
             continue
@@ -49,8 +64,20 @@ def build_geometry(points_by_label: dict[str, list[tuple[int, int]]], w: int, h:
     return out
 
 
-def save_geometry(points_by_label: dict, w: int, h: int, path: str) -> dict:
-    geo = build_geometry(points_by_label, w, h)
+def save_geometry(points_by_label: dict, w: int, h: int, path: str,
+                  slots: list[tuple[str, str]] | None = None) -> dict:
+    from perception.geometry import validate_geometry
+
+    geo = build_geometry(points_by_label, w, h, slots)
+    # Validate what we're about to write so mistakes surface here, not at runtime.
+    errors, warnings = validate_geometry(geo)
+    for w_ in warnings:
+        print(f"[draw_zones] warning: {w_}")
+    if errors:
+        print(f"[draw_zones] NOT saved — {len(errors)} problem(s) to fix first:")
+        for e in errors:
+            print(f"   - {e}")
+        return None
     with open(path, "w") as f:
         json.dump(geo, f, indent=2)
     n = sum(len(v) for v in geo.values())
@@ -59,10 +86,25 @@ def save_geometry(points_by_label: dict, w: int, h: int, path: str) -> dict:
     return geo
 
 
+def _load_points(path: str, w: int, h: int) -> tuple[dict[str, list], list[tuple[str, str]]]:
+    """Read an existing zones.json into pixel points (to edit), plus its label slots."""
+    with open(path) as f:
+        cfg = json.load(f)
+    pts: dict[str, list] = {}
+    extra: list[tuple[str, str]] = []
+    for cat in ("zones", "tables", "cleaning"):
+        for label, poly in (cfg.get(cat) or {}).items():
+            pts[label] = [(int(x * w), int(y * h)) for x, y in poly]
+            extra.append((label, cat))
+    return pts, extra
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Draw zone/table/cleaning geometry")
     parser.add_argument("--source", default="0", help="webcam index / file / stream URL")
     parser.add_argument("--out", default="zones.json", help="output JSON path")
+    parser.add_argument("--tables", type=int, default=3, help="number of tables to draw (T1..Tn)")
+    parser.add_argument("--load", help="prefill from an existing zones.json to edit it")
     args = parser.parse_args()
 
     import cv2
@@ -75,11 +117,18 @@ def main() -> None:
         raise SystemExit(f"[draw_zones] could not read a frame from {args.source!r}")
     h, w = frame.shape[:2]
 
-    points: dict[str, list] = {label: [] for label, _ in SLOTS}
+    loaded_pts: dict[str, list] = {}
+    extra: list[tuple[str, str]] = []
+    if args.load:
+        loaded_pts, extra = _load_points(args.load, w, h)
+        print(f"[draw_zones] editing {len(loaded_pts)} region(s) from {args.load}")
+    slots = build_slots(args.tables, extra)
+
+    points: dict[str, list] = {label: loaded_pts.get(label, []) for label, _ in slots}
     idx = {"i": 0}
 
     def cur() -> str:
-        return SLOTS[idx["i"]][0]
+        return slots[idx["i"]][0]
 
     def on_mouse(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -97,7 +146,7 @@ def main() -> None:
     print("[draw_zones] click points; n/p switch region, c clear, u undo, s save, q quit")
     while True:
         disp = frame.copy()
-        for label, _ in SLOTS:
+        for label, _ in slots:
             pts = points[label]
             color = (90, 220, 120) if label == cur() else (120, 120, 120)
             for p in pts:
@@ -111,16 +160,16 @@ def main() -> None:
         if k in (ord("q"), 27):
             break
         elif k == ord("n"):
-            idx["i"] = (idx["i"] + 1) % len(SLOTS)
+            idx["i"] = (idx["i"] + 1) % len(slots)
         elif k == ord("p"):
-            idx["i"] = (idx["i"] - 1) % len(SLOTS)
+            idx["i"] = (idx["i"] - 1) % len(slots)
         elif k == ord("c"):
             points[cur()].clear()
         elif k == ord("u") and points[cur()]:
             points[cur()].pop()
         elif k == ord("s"):
-            save_geometry(points, w, h, args.out)
-            break
+            if save_geometry(points, w, h, args.out, slots) is not None:
+                break  # only exit once it actually saved (passed validation)
     cv2.destroyAllWindows()
 
 

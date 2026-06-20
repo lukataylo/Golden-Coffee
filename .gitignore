@@ -30,3 +30,7 @@ data/
 
 # Locally re-trained music-model weights (baked defaults live in music_model.py)
 agent/music_weights.json
+
+# Per-venue camera geometry (generate with `perception.run --preset` or `draw_zones`)
+zones.json
+*.zones.json
