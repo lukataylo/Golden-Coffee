@@ -15,8 +15,14 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir flock-sdk
 
-# Only copy the modules the federated model depends on.
+# Only copy the modules the federated model depends on. The import chain is:
+#   flock_run -> flock_model -> federated.node -> agent.policy
+#                                              -> agent.{discounts,music_model}
+# so policy.py and discounts.py must travel with the model or the container
+# crashes on import (ModuleNotFoundError: agent.policy).
 COPY agent/__init__.py        agent/__init__.py
+COPY agent/policy.py          agent/policy.py
+COPY agent/discounts.py       agent/discounts.py
 COPY agent/music_model.py     agent/music_model.py
 COPY federated/               federated/
 COPY shared/__init__.py       shared/__init__.py
