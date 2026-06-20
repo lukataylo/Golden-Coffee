@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@6..72,0,300;6..72,0,400;6..72,0,500;6..72,1,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:#ece4d5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  ::selection{background:rgba(232,134,42,.28);color:#2a1607;}
+  @keyframes gd-drift1{0%{transform:translateX(-5%);}100%{transform:translateX(7%);}}
+  @keyframes gd-drift2{0%{transform:translateX(6%);}100%{transform:translateX(-6%);}}
+  @keyframes gd-drift3{0%{transform:translateX(-3%);}100%{transform:translateX(4%);}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+</helmet>
+
+<div style="width:100%;overflow-x:clip;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#2a1a0d;background:#ece4d5;">
+
+  <!-- ============ NAV ============ -->
+  <nav style="position:relative;z-index:90;display:flex;align-items:center;justify-content:space-between;max-width:1320px;margin:0 auto;padding:22px 28px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+      <span style="font-size:18px;font-weight:600;letter-spacing:-0.01em;color:#1f140a;">Golden Coffee</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:22px;">
+      <a href="#how" style="font-size:14px;color:#5b4a38;text-decoration:none;">How it works</a>
+      <a href="#cta" style="font-size:14px;color:#5b4a38;text-decoration:none;">Sign in</a>
+      <a href="#cta" style="display:inline-flex;align-items:center;white-space:nowrap;padding:9px 17px;border-radius:999px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font-weight:600;font-size:13.5px;text-decoration:none;box-shadow:0 6px 16px rgba(232,134,42,.3);">Book a demo</a>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section style="position:relative;z-index:80;max-width:1320px;margin:0 auto;padding:4px 16px 0;">
+    <div style="display:grid;grid-template-columns:0.82fr 1.18fr;gap:12px;height:calc(100dvh - 96px);min-height:480px;max-height:900px;">
+
+      <div style="position:relative;border-radius:26px;overflow:hidden;background:radial-gradient(120% 110% at 18% 22%, #FDE9B4 0%, #FACB6A 34%, #F2A23C 62%, #E07C25 100%);">
+        <div style="position:absolute;width:760px;height:760px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);left:-150px;top:-110px;"></div>
+        <div style="position:absolute;width:560px;height:560px;border-radius:50%;border:1.5px solid rgba(255,255,255,.42);left:-50px;top:-10px;"></div>
+        <div data-h="1" style="position:absolute;left:34px;bottom:30px;right:30px;opacity:0;">
+          <h1 style="font-family:'Newsreader',serif;font-weight:400;font-size:clamp(34px,3vw,46px);line-height:1.06;letter-spacing:-0.01em;color:#3a2208;margin:0;">Your room is<br>always on.</h1>
+        </div>
+      </div>
+
+      <div style="position:relative;border-radius:26px;overflow:hidden;">
+        <img data-parallax src="uploads/four-seasons-park-lane-richard-gaston-december2025-pr-global.webp" alt="café" style="position:absolute;inset:-7% 0;width:100%;height:114%;object-fit:cover;">
+        <div style="position:absolute;inset:0;background:linear-gradient(165deg,rgba(30,16,6,.05) 0%,rgba(30,16,6,.1) 40%,rgba(30,16,6,.78) 100%);"></div>
+        <div data-h="2" style="position:absolute;left:22px;right:22px;bottom:22px;opacity:0;border-radius:20px;padding:26px 26px 24px;background:linear-gradient(150deg,rgba(214,118,40,.74),rgba(150,72,24,.7));-webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);border:1px solid rgba(255,222,180,.3);box-shadow:0 20px 50px rgba(20,10,2,.4);">
+          <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:clamp(24px,2.1vw,32px);line-height:1.1;color:#FFF6EA;margin:0 0 10px;">Your comfort should be, too.</h2>
+          <p style="font-size:14.5px;line-height:1.5;color:rgba(255,243,228,.82);margin:0 0 16px;max-width:440px;">Golden Coffee reads your room from a single camera you already own — then quietly tunes the atmosphere and protects your speed of service, all day, every day.</p>
+          <form onSubmit="{{ onSubmit }}" style="display:flex;gap:8px;max-width:420px;">
+            <input type="email" placeholder="you@yourcafé.com" style="flex:1;min-width:0;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,243,228,.4);background:rgba(255,247,235,.16);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FFF6EA;font-size:14px;font-family:'Hanken Grotesk';outline:none;">
+            <button type="submit" style="padding:12px 18px;border-radius:12px;border:none;background:#FFF4E3;color:#2a1607;font-weight:700;font-size:14px;font-family:'Hanken Grotesk';cursor:pointer;white-space:nowrap;">Join waitlist</button>
+          </form>
+          <div style="font-size:12px;color:rgba(255,243,228,.78);margin-top:9px;">{{ formNote }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SUNRISE ============ -->
+  <section data-sunrise style="position:relative;z-index:70;margin-top:-40px;overflow:hidden;background:linear-gradient(180deg,#241507 0%,#3a2110 9%,#5e3413 19%,#9a5417 30%,#cf7c22 41%,#efa53a 51%,#f8ca60 60%,#fadf90 70%,#f5e6c0 82%,#efe6d6 92%,#ece4d5 100%);">
+
+    <!-- the SUN: pinned + fills on scroll -->
+    <div data-sun style="position:absolute;top:0;left:0;width:100%;height:100vh;display:grid;place-items:center;z-index:0;pointer-events:none;">
+      <div style="position:relative;width:min(116vw,1180px);height:min(116vw,1180px);display:grid;place-items:center;">
+        <div data-sunglow style="position:absolute;width:70%;height:70%;border-radius:50%;opacity:0;background:radial-gradient(circle,rgba(255,214,90,.55) 0%,rgba(255,170,60,.28) 38%,transparent 68%);filter:blur(20px);"></div>
+        <svg viewBox="0 0 600 600" style="width:100%;height:100%;overflow:visible;">
+          <defs>
+            <linearGradient id="gcSunFill" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#c8651a"/>
+              <stop offset="0.55" stop-color="#f0a23a"/>
+              <stop offset="1" stop-color="#ffd968"/>
+            </linearGradient>
+            <clipPath id="gcSunClip"><rect data-sunfill x="-20" y="600" width="640" height="640"/></clipPath>
+          </defs>
+          <g clip-path="url(#gcSunClip)"><circle cx="300" cy="300" r="296" fill="url(#gcSunFill)" opacity="0.92"/></g>
+          <circle cx="300" cy="300" r="296" fill="none" stroke="rgba(255,221,160,.5)" stroke-width="1.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div style="position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:0 28px;">
+
+      <div data-rv-group style="text-align:center;padding:200px 0 40px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:34px;line-height:1.12;color:#F6B25A;margin:0 0 16px;">24/7 care<br>for your room</h2>
+        <p style="font-size:15px;line-height:1.6;color:rgba(255,235,210,.72);margin:0 auto;max-width:360px;">Most rooms drift when no one's watching — the music, the queue, the empty 3pm. Golden Coffee keeps a steady hand on the atmosphere and the flow, every hour you're open.</p>
+      </div>
+
+      <div data-rv-group style="text-align:center;padding:180px 0 30px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:40px;line-height:1.12;color:#FFEACB;margin:0 0 18px;letter-spacing:-0.01em;text-wrap:balance;text-shadow:0 2px 30px rgba(40,20,5,.5);">The future of hospitality<br>is proactive</h2>
+        <p style="font-size:15.5px;line-height:1.6;color:rgba(255,239,219,.9);margin:0 auto;max-width:420px;text-shadow:0 1px 20px rgba(40,20,5,.45);">Not a dashboard you have to babysit. A copilot that notices the queue, the lull, the full room — and acts before it costs you the moment.</p>
+      </div>
+
+      <div data-rv-group style="text-align:center;padding:120px 0 26px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:34px;line-height:1.12;color:#FFEACB;margin:0 0 14px;text-shadow:0 2px 30px rgba(40,20,5,.5);">Intuitive nudges.<br>Total privacy.</h2>
+        <p style="font-size:15px;line-height:1.6;color:rgba(255,239,219,.92);margin:0 auto;max-width:400px;text-shadow:0 1px 20px rgba(40,20,5,.45);">It talks to your floor in plain language — no faces stored, anonymous track IDs only. You stay in control; a tap confirms or ignores.</p>
+      </div>
+      <div data-rv-group style="max-width:520px;margin:0 auto;padding-bottom:70px;display:flex;flex-direction:column;gap:12px;">
+        <div style="align-self:flex-start;max-width:78%;padding:14px 18px;border-radius:18px 18px 18px 5px;background:#FFFDF8;box-shadow:0 10px 28px rgba(120,60,10,.14);font-size:14.5px;line-height:1.45;color:#3a2a18;">Queue's building at the till — 3 waiting, one looking restless. Want me to ping Sam to open the second register?</div>
+        <div style="align-self:flex-end;white-space:nowrap;padding:13px 18px;border-radius:18px 18px 5px 18px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font-weight:600;font-size:14.5px;line-height:1.4;">Yes, do it.</div>
+        <div style="align-self:flex-start;max-width:78%;padding:14px 18px;border-radius:18px 18px 18px 5px;background:#FFFDF8;box-shadow:0 10px 28px rgba(120,60,10,.14);font-size:14.5px;line-height:1.45;color:#3a2a18;">Done — Sam's notified. Average wait should drop in about 3 minutes. I'll watch and let you know.</div>
+      </div>
+
+      <div data-rv-group style="text-align:center;padding:60px 0 26px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:34px;line-height:1.12;color:#3a2208;margin:0 0 14px;">Personalised atmosphere.<br>Intelligently adaptive.</h2>
+        <p style="font-size:15px;line-height:1.6;color:#7a5a32;margin:0 auto;max-width:430px;">Music, lights, scent and air all shift to how the room actually feels — cosy in a lull, fresh and bright when it's busy. A local model even picks the playlist mood.</p>
+      </div>
+      <div data-rv-group style="max-width:440px;margin:0 auto 26px;display:flex;flex-direction:column;gap:11px;">
+        <div style="align-self:flex-end;max-width:70%;padding:12px 16px;border-radius:16px 16px 4px 16px;background:#FFFDF8;box-shadow:0 8px 22px rgba(120,60,10,.12);font-size:14px;line-height:1.4;color:#3a2a18;">It's gone quiet. Can you lift the mood a little?</div>
+        <div style="align-self:flex-start;max-width:80%;padding:13px 16px;border-radius:16px 16px 16px 4px;background:linear-gradient(150deg,rgba(255,194,94,.95),rgba(232,134,42,.95));color:#2a1607;font-weight:500;font-size:14px;line-height:1.45;">On it — warmer lights, bossa nova at 96 BPM, roasted-cocoa scent up a notch. Comfort index now 92.</div>
+      </div>
+      <div data-rv style="max-width:300px;margin:14px auto 80px;position:relative;border-radius:22px;overflow:hidden;box-shadow:0 24px 60px rgba(120,60,10,.22);">
+        <img src="uploads/four-seasons-park-lane-richard-gaston-december2025-pr-global.webp" alt="guest moment" style="width:100%;height:300px;object-fit:cover;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(232,134,42,.34) 0%,rgba(150,60,16,.62) 100%);mix-blend-mode:multiply;"></div>
+        <div style="position:absolute;left:18px;right:18px;bottom:16px;font-family:'Newsreader',serif;font-size:17px;line-height:1.25;color:#FFF6EA;">A room that feels right keeps people staying — and coming back.</div>
+      </div>
+
+      <div data-rv-group style="text-align:center;padding:20px 0 26px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:34px;line-height:1.12;color:#3a2208;margin:0 0 14px;">Connect your floor.<br>Sync your day.</h2>
+        <p style="font-size:15px;line-height:1.6;color:#7a5a32;margin:0 auto;max-width:420px;">Golden Coffee reads the rhythm of your week — and gets the room ahead of the rush before it walks in the door.</p>
+      </div>
+      <div data-rv-group style="display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;padding-bottom:120px;">
+        <div style="width:200px;border-radius:18px;background:#FFFDF8;box-shadow:0 16px 40px rgba(120,60,10,.16);padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font:600 12px/1 'Hanken Grotesk';color:#3a2a18;">This week</span><span style="font:600 11px/1 'JetBrains Mono',monospace;color:#E8862A;">RUSH 12:30</span></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;">
+            <div style="aspect-ratio:1;border-radius:6px;background:#f3ead8;"></div><div style="aspect-ratio:1;border-radius:6px;background:#f3ead8;"></div><div style="aspect-ratio:1;border-radius:6px;background:#FBD98A;"></div><div style="aspect-ratio:1;border-radius:6px;background:#F2A23C;"></div><div style="aspect-ratio:1;border-radius:6px;background:#E8862A;"></div><div style="aspect-ratio:1;border-radius:6px;background:#FBD98A;"></div><div style="aspect-ratio:1;border-radius:6px;background:#f3ead8;"></div>
+            <div style="aspect-ratio:1;border-radius:6px;background:#f3ead8;"></div><div style="aspect-ratio:1;border-radius:6px;background:#FBD98A;"></div><div style="aspect-ratio:1;border-radius:6px;background:#F2A23C;"></div><div style="aspect-ratio:1;border-radius:6px;background:#E8862A;"></div><div style="aspect-ratio:1;border-radius:6px;background:#F2A23C;"></div><div style="aspect-ratio:1;border-radius:6px;background:#FBD98A;"></div><div style="aspect-ratio:1;border-radius:6px;background:#f3ead8;"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="width:46px;height:46px;border-radius:14px;background:#1DB954;display:grid;place-items:center;box-shadow:0 10px 24px rgba(29,185,84,.3);"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1DB954"/><path d="M7 10c3-1 7-.6 9.5.9M7.6 13c2.4-.7 5.4-.4 7.4.8M8 15.6c1.8-.5 4-.3 5.6.6" stroke="#0a0a0a" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg></div>
+          <div style="width:46px;height:46px;border-radius:14px;background:#FFFDF8;display:grid;place-items:center;box-shadow:0 10px 24px rgba(120,60,10,.16);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8862A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg></div>
+          <div style="width:46px;height:46px;border-radius:14px;background:#1f140a;display:grid;place-items:center;box-shadow:0 10px 24px rgba(20,10,2,.3);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FD8FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4 7 9H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2l2.5 5z"/><path d="M16 9a3.5 3.5 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11"/></svg></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:230px;">
+          <div style="padding:12px 16px;border-radius:14px 14px 14px 4px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font-weight:500;font-size:13.5px;line-height:1.4;">Lunch rush forecast 12:30 — pre-cooling the room and queuing an upbeat set now.</div>
+          <div style="padding:12px 16px;border-radius:14px 14px 14px 4px;background:#FFFDF8;box-shadow:0 8px 22px rgba(120,60,10,.12);font-size:13.5px;line-height:1.4;color:#3a2a18;">3:10pm lull likely — I'll fire a flat-white offer to fill the dead time.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ SCIENCE ============ -->
+  <section style="position:relative;z-index:60;margin-top:-48px;background:#f3ede0;border-radius:0 0 48px 48px;padding:140px 28px 110px;">
+    <div style="max-width:1080px;margin:0 auto;">
+      <div data-rv-group style="text-align:center;margin-bottom:64px;">
+        <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:36px;line-height:1.12;color:#2a1a0d;margin:0 0 14px;">Grounded in your data.<br>Built for real rooms.</h2>
+        <p style="font-size:15.5px;line-height:1.6;color:#6b5a44;margin:0 auto;max-width:480px;">Every action traces back to what the room is actually doing — a combination no off-the-shelf product offers.</p>
+      </div>
+      <div data-rv-group style="display:grid;grid-template-columns:repeat(4,1fr);gap:48px;max-width:1000px;margin:0 auto;">
+        <div style="text-align:center;">
+          <div style="width:62px;height:62px;border-radius:50%;background:rgba(232,134,42,.12);display:grid;place-items:center;margin:0 auto 22px;color:#E8862A;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.2a1.5 1.5 0 0 0 1.3-.8l.5-1A1.5 1.5 0 0 1 11 3.4h2a1.5 1.5 0 0 1 1.3.8l.5 1a1.5 1.5 0 0 0 1.3.8h1.2A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"/><circle cx="12" cy="12.5" r="3.2"/></svg></div>
+          <p style="font-size:15px;line-height:1.55;color:#5e4e3a;margin:0;">One camera you already own becomes a live read of the whole room.</p>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:62px;height:62px;border-radius:50%;background:rgba(232,134,42,.12);display:grid;place-items:center;margin:0 auto 22px;color:#E8862A;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="2.6"/></svg></div>
+          <p style="font-size:15px;line-height:1.55;color:#5e4e3a;margin:0;">Perception that speaks café — occupancy, queue, dwell and flow.</p>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:62px;height:62px;border-radius:50%;background:rgba(232,134,42,.12);display:grid;place-items:center;margin:0 auto 22px;color:#E8862A;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 15 9"/><path d="m14 5.6 1.3 2.6 2.6 1.3-2.6 1.3L14 13.4l-1.3-2.6L10.1 9.5l2.6-1.3z"/><path d="M18.6 14.4v2.8M17.2 15.8h2.8"/></svg></div>
+          <p style="font-size:15px;line-height:1.55;color:#5e4e3a;margin:0;">It acts for real — music, lights, AC, scent and second-till alerts.</p>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:62px;height:62px;border-radius:50%;background:rgba(232,134,42,.12);display:grid;place-items:center;margin:0 auto 22px;color:#E8862A;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="2.5"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg></div>
+          <p style="font-size:15px;line-height:1.55;color:#5e4e3a;margin:0;">Privacy-first — anonymous track IDs only, no faces ever stored.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAST / FUTURE ============ -->
+  <section style="position:relative;z-index:50;margin-top:-48px;overflow:hidden;background:transparent;border-radius:0 0 48px 48px;padding:130px 28px 120px;">
+    <div style="position:relative;z-index:3;max-width:1100px;margin:0 auto;text-align:center;">
+      <h2 data-rv style="font-family:'Newsreader',serif;font-weight:400;font-size:clamp(38px,4.4vw,64px);line-height:1.06;color:#2a1a0d;margin:0 0 28px;">The future of the café<br>is already here</h2>
+      <a data-rv href="#cta" style="display:inline-flex;align-items:center;white-space:nowrap;padding:12px 26px;border-radius:999px;border:1px solid rgba(120,60,10,.3);color:#7a3d0e;font-weight:600;font-size:14px;text-decoration:none;background:transparent;">Get early access</a>
+    </div>
+
+    <div style="position:relative;z-index:2;max-width:980px;margin:80px auto 0;">
+      <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,rgba(150,90,40,.2) 28%,rgba(150,90,40,.2) 72%,transparent);"></div>
+      <div style="position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(255,214,90,.85) 0%,rgba(255,176,56,.45) 24%,rgba(232,134,42,.16) 48%,transparent 70%);filter:blur(8px);"></div>
+      <div style="position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,232,150,.7) 40%,transparent 72%);filter:blur(4px);"></div>
+
+      <div style="position:relative;display:grid;grid-template-columns:1fr 1fr;min-height:600px;">
+        <div data-rv-group style="display:flex;flex-direction:column;align-items:flex-end;gap:40px;padding:0 64px;">
+          <div style="font-family:'Newsreader',serif;font-size:38px;color:rgba(120,95,68,.5);align-self:center;margin-bottom:8px;">From the past</div>
+          <div style="margin-right:30px;border:1.6px dashed rgba(184,106,38,.6);color:#B26A28;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:11px 20px;border-radius:999px;white-space:nowrap;">HEADCOUNTS BY EYE</div>
+          <div style="margin-right:-8px;border:1.6px dashed rgba(184,106,38,.6);color:#B26A28;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:11px 20px;border-radius:999px;white-space:nowrap;">GUESSWORK PLAYLISTS</div>
+          <div style="margin-right:70px;border:1.6px dashed rgba(184,106,38,.6);color:#B26A28;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:11px 20px;border-radius:999px;white-space:nowrap;">QUEUES SEEN TOO LATE</div>
+          <div style="margin-right:6px;border:1.6px dashed rgba(184,106,38,.6);color:#B26A28;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:11px 20px;border-radius:999px;white-space:nowrap;">ONE-SIZE ATMOSPHERE</div>
+          <div style="margin-right:90px;border:1.6px dashed rgba(184,106,38,.6);color:#B26A28;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:11px 20px;border-radius:999px;white-space:nowrap;">WALKED-OFF SALES</div>
+        </div>
+        <div data-rv-group style="display:flex;flex-direction:column;align-items:flex-start;gap:40px;padding:0 64px;">
+          <div style="font-family:'Newsreader',serif;font-size:38px;color:#E8862A;align-self:center;margin-bottom:8px;">To the future</div>
+          <div style="margin-left:24px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:12px 22px;border-radius:999px;white-space:nowrap;box-shadow:0 0 24px rgba(255,196,80,.6),0 0 56px rgba(255,170,50,.32);">LIVE OCCUPANCY</div>
+          <div style="margin-left:96px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:12px 22px;border-radius:999px;white-space:nowrap;box-shadow:0 0 24px rgba(255,196,80,.6),0 0 56px rgba(255,170,50,.32);">AUTO-TUNED ATMOSPHERE</div>
+          <div style="margin-left:40px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:12px 22px;border-radius:999px;white-space:nowrap;box-shadow:0 0 26px rgba(255,196,80,.7),0 0 60px rgba(255,170,50,.4);">SECOND-TILL ALERTS</div>
+          <div style="margin-left:120px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:12px 22px;border-radius:999px;white-space:nowrap;box-shadow:0 0 24px rgba(255,196,80,.6),0 0 56px rgba(255,170,50,.32);">OFF-PEAK OFFERS</div>
+          <div style="margin-left:56px;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font:700 12px/1 'Hanken Grotesk';letter-spacing:.08em;padding:12px 22px;border-radius:999px;white-space:nowrap;box-shadow:0 0 24px rgba(255,196,80,.6),0 0 56px rgba(255,170,50,.32);">RECOVERED REVENUE</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TESTIMONIALS ============ -->
+  <section style="position:relative;z-index:40;margin-top:-48px;background:#ece4d5;border-radius:0 0 48px 48px;padding:130px 28px 110px;overflow:hidden;">
+    <div data-rv-group style="max-width:760px;margin:0 auto 30px;text-align:center;">
+      <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:36px;line-height:1.12;color:#2a1a0d;margin:0 0 12px;">Real rooms.<br>Real difference.</h2>
+      <p style="font-size:15px;line-height:1.6;color:#6b5a44;margin:0 auto;max-width:380px;">See how Golden Coffee helps other cafés — and what it could do for yours.</p>
+    </div>
+    <div data-rv style="position:relative;height:520px;">
+      <sc-for list="{{ cards }}" as="c" hint-placeholder-count="5">
+        <div style="{{ c.cardStyle }}">
+          <div style="{{ c.quoteStyle }}">“{{ c.quote }}”</div>
+          <sc-if value="{{ c.isCenter }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:26px;display:flex;align-items:center;gap:10px;">
+              <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(150deg,#E0A05C,#9a5a28);display:grid;place-items:center;font:700 13px/1 'Hanken Grotesk';color:#fff;">{{ c.initials }}</div>
+              <div style="text-align:left;">
+                <div style="font:700 13.5px/1.2 'Hanken Grotesk';color:#2a1a0d;">{{ c.author }}</div>
+                <div style="font:500 12px/1.2 'Hanken Grotesk';color:#8a6a3e;">{{ c.role }}</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div data-rv style="display:flex;justify-content:center;gap:12px;margin-top:18px;">
+      <button onClick="{{ prev }}" style="width:46px;height:46px;border-radius:50%;border:1px solid rgba(120,60,10,.2);background:#fffdf8;color:#7a5a32;cursor:pointer;font-size:19px;display:grid;place-items:center;box-shadow:0 6px 16px rgba(120,60,10,.1);">‹</button>
+      <button onClick="{{ next }}" style="width:46px;height:46px;border-radius:50%;border:1px solid rgba(120,60,10,.2);background:#fffdf8;color:#7a5a32;cursor:pointer;font-size:19px;display:grid;place-items:center;box-shadow:0 6px 16px rgba(120,60,10,.1);">›</button>
+    </div>
+  </section>
+
+  <!-- ============ SKY CTA ============ -->
+  <section id="cta" style="position:relative;z-index:30;margin-top:-48px;overflow:hidden;background:linear-gradient(180deg,#235789 0%,#4a82b0 19%,#82add0 38%,#c3cdca 56%,#ecca97 74%,#ef9a44 88%,#E8862A 100%);border-radius:0 0 48px 48px;padding:230px 28px 200px;text-align:center;">
+    <div style="position:absolute;left:50%;top:120px;transform:translateX(-50%);width:1500px;height:1500px;border-radius:50%;border:1px solid rgba(255,245,225,.4);pointer-events:none;"></div>
+    <!-- horizon sun -->
+    <div style="position:absolute;left:50%;bottom:-170px;transform:translateX(-50%);width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(255,243,205,.95),rgba(255,202,120,.5) 42%,transparent 70%);filter:blur(8px);pointer-events:none;"></div>
+    <!-- simulated clouds -->
+    <div style="position:absolute;left:7%;top:13%;width:80px;height:80px;border-radius:50%;background:#fff;opacity:.9;filter:blur(9px);box-shadow:62px 16px 0 -2px #fff,124px 26px 0 -10px #fff,-52px 22px 0 -10px #fff,26px 36px 0 12px #fff;animation:gd-drift1 30s ease-in-out infinite alternate;pointer-events:none;"></div>
+    <div style="position:absolute;right:5%;top:21%;width:104px;height:104px;border-radius:50%;background:#fff;opacity:.82;filter:blur(11px);box-shadow:78px 20px 0 -4px #fff,150px 30px 0 -14px #fff,-64px 26px 0 -12px #fff,34px 44px 0 14px #fff;animation:gd-drift2 38s ease-in-out infinite alternate;pointer-events:none;"></div>
+    <div style="position:absolute;left:16%;top:43%;width:90px;height:90px;border-radius:50%;background:#FFF4E6;opacity:.8;filter:blur(12px);box-shadow:70px 16px 0 -4px #FFF4E6,134px 24px 0 -12px #FFF1DE,-56px 22px 0 -12px #FFF4E6,30px 38px 0 12px #FFF4E6;animation:gd-drift3 34s ease-in-out infinite alternate;pointer-events:none;"></div>
+    <div style="position:absolute;right:13%;top:52%;width:78px;height:78px;border-radius:50%;background:#FFEFDC;opacity:.78;filter:blur(12px);box-shadow:60px 14px 0 -4px #FFEFDC,116px 22px 0 -12px #FFE9CF,-48px 20px 0 -12px #FFEFDC;animation:gd-drift1 42s ease-in-out infinite alternate;pointer-events:none;"></div>
+    <div style="position:absolute;left:40%;top:8%;width:64px;height:64px;border-radius:50%;background:#fff;opacity:.7;filter:blur(10px);box-shadow:52px 12px 0 -6px #fff,100px 18px 0 -14px #fff,-40px 16px 0 -12px #fff;animation:gd-drift2 46s ease-in-out infinite alternate;pointer-events:none;"></div>
+    <div data-rv-group style="position:relative;z-index:2;max-width:780px;margin:0 auto;">
+      <h2 style="font-family:'Newsreader',serif;font-weight:400;font-size:clamp(46px,5.5vw,74px);line-height:1.08;color:#FFF9F0;margin:0 0 18px;text-wrap:balance;text-shadow:0 2px 34px rgba(30,46,68,.32);">Calmer rooms. Faster service.<br>Happier guests.</h2>
+      <div style="font-family:'Newsreader',serif;font-style:italic;font-size:clamp(24px,2.6vw,34px);color:#FFE9C6;margin-bottom:38px;text-shadow:0 2px 28px rgba(120,70,20,.28);">It's Golden Coffee.</div>
+      <form onSubmit="{{ onSubmit }}" style="display:flex;gap:10px;max-width:480px;margin:0 auto;">
+        <input type="email" placeholder="you@yourcafé.com" style="flex:1;min-width:0;padding:17px 20px;border-radius:14px;border:1px solid rgba(255,247,235,.6);background:rgba(255,250,243,.94);color:#2a1a0d;font-size:15.5px;font-family:'Hanken Grotesk';outline:none;box-shadow:0 10px 30px rgba(30,46,68,.16);">
+        <button type="submit" style="padding:17px 28px;border-radius:14px;border:none;background:#2a1607;color:#FFF4E3;font-weight:700;font-size:15.5px;font-family:'Hanken Grotesk';cursor:pointer;white-space:nowrap;box-shadow:0 10px 30px rgba(30,16,4,.3);">Get early access</button>
+      </form>
+      <div style="font-size:13px;color:rgba(255,247,236,.9);margin-top:16px;">{{ formNote }}</div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section id="how" style="position:relative;z-index:20;margin-top:-48px;background:#ece4d5;padding:140px 28px 70px;">
+    <div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:0.85fr 1.15fr;gap:48px;align-items:start;">
+      <h2 data-rv style="font-family:'Newsreader',serif;font-weight:400;font-size:30px;line-height:1.18;color:#2a1a0d;margin:0;">Here are a few things<br>you might be wondering.</h2>
+      <div data-rv-group>
+        <sc-for list="{{ faqItems }}" as="item" hint-placeholder-count="5">
+          <div style="border-bottom:1px solid rgba(120,60,10,.16);">
+            <button onClick="{{ item.onClick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0;background:none;border:none;cursor:pointer;text-align:left;font-family:'Hanken Grotesk';">
+              <span style="font-size:16px;font-weight:600;color:#2a1a0d;">{{ item.q }}</span>
+              <span style="{{ item.iconStyle }}">+</span>
+            </button>
+            <div style="{{ item.answerStyle }}">
+              <p style="font-size:14.5px;line-height:1.6;color:#6b5a44;margin:0;padding:0 0 20px;max-width:440px;">{{ item.a }}</p>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="position:relative;z-index:10;background:#ece4d5;padding:24px 28px 40px;">
+    <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(120,60,10,.16);padding-top:26px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="#1f140a"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#1f140a" stroke-width="2.6"/></svg>
+        <span style="font-size:14px;font-weight:600;color:#1f140a;">Golden Coffee</span>
+      </div>
+      <div style="font-size:12.5px;color:#8a7458;">© 2026 Golden Coffee · Privacy-first · No faces stored</div>
+      <div style="display:flex;gap:9px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:#ddd0bb;"></div>
+        <div style="width:30px;height:30px;border-radius:50%;background:#ddd0bb;"></div>
+        <div style="width:30px;height:30px;border-radius:50%;background:#ddd0bb;"></div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { testi: 0, openFaq: 0, sent: false };
+  testimonials = [
+    { quote: "It opens the second till before I've even clocked the queue. We've stopped losing the lunch rush.", author: "Aurora Lane", role: "Owner · Hearth & Co", initials: "AL" },
+    { quote: "The room just feels right now — the music dips when it's packed and lifts when it's quiet. Guests stay longer.", author: "Sam Mara", role: "Manager · Marlow Roasters", initials: "SM" },
+    { quote: "One camera, no new kit, live in an afternoon. It paid for itself the first week on recovered sales.", author: "Joel Reyes", role: "Owner · The Copper Bar", initials: "JR" },
+    { quote: "The 3pm lull used to kill us. Now an offer goes out on its own and the room fills back up.", author: "Priya Devan", role: "Owner · Olive + Ash", initials: "PD" },
+    { quote: "I stopped guessing the playlist. It reads the crowd better than I ever did on a busy Saturday.", author: "Tom Becker", role: "Floor lead · Northside", initials: "TB" },
+  ];
+  faqs = [
+    { q: "Who can use Golden Coffee?", a: "Any café, coffee shop or restaurant with a single existing ceiling or till-facing camera. No chain or scale required — it's built for independents." },
+    { q: "Do I need new cameras or hardware?", a: "No. Golden Coffee runs on a camera you already own. Optional smart devices (lights, AC, speakers) connect if you have them, but aren't required to start." },
+    { q: "Is any video or personal data stored?", a: "No faces are ever stored. Perception runs on anonymous track IDs only — no identity, no demographics, no employee scoring. Privacy-first by design." },
+    { q: "How long does setup take?", a: "About twelve minutes from plug-in to your first live read of the room. Actions can stay in suggest-only mode until you're comfortable letting it act." },
+    { q: "Will it work during a rush?", a: "That's the point. Rush copilot watches the queue and walk-offs in real time and nudges staff to open a second till before a line costs you the sale." },
+  ];
+
+  componentDidMount(){ this._tries = 0; this._initAnim(); }
+
+  _initAnim(){
+    const g = window.gsap, ST = window.ScrollTrigger;
+    if(!g || !ST){ if(this._tries++ > 50){ this._revealAll(); return; } setTimeout(() => this._initAnim(), 60); return; }
+    if(this._done) return; this._done = true;
+    g.registerPlugin(ST);
+    const d = document;
+
+    // hero load-in
+    const hero = d.querySelectorAll('[data-h]');
+    if(hero.length){
+      g.set(hero, { opacity:0, y:30 });
+      g.timeline({ defaults:{ ease:'power3.out', duration:1 } })
+        .to(d.querySelectorAll('[data-h="1"]'), { opacity:1, y:0 }, 0.15)
+        .to(d.querySelectorAll('[data-h="2"]'), { opacity:1, y:0 }, 0.35);
+    }
+
+    // staggered group reveals
+    d.querySelectorAll('[data-rv-group]').forEach(grp => {
+      const kids = grp.children;
+      g.set(kids, { opacity:0, y:34 });
+      g.to(kids, { opacity:1, y:0, duration:1, ease:'power3.out', stagger:0.13,
+        scrollTrigger:{ trigger:grp, start:'top 86%', once:true } });
+    });
+    // single-element reveals
+    d.querySelectorAll('[data-rv]').forEach(el => {
+      g.set(el, { opacity:0, y:34 });
+      g.to(el, { opacity:1, y:0, duration:1, ease:'power3.out',
+        scrollTrigger:{ trigger:el, start:'top 88%', once:true } });
+    });
+
+    // hero photo parallax
+    const img = d.querySelector('[data-parallax]');
+    if(img){ g.to(img, { yPercent:9, ease:'none',
+      scrollTrigger:{ trigger: img.closest('section'), start:'top bottom', end:'bottom top', scrub:0.4 } }); }
+
+    // THE SUN — pinned across the sunrise, fills bottom→top on scroll
+    const sun = d.querySelector('[data-sun]');
+    const fill = d.querySelector('[data-sunfill]');
+    const glow = d.querySelector('[data-sunglow]');
+    const sunrise = d.querySelector('[data-sunrise]');
+    if(sun && fill && sunrise){
+      ST.create({ trigger: sunrise, start:'top top', end:'+=95%', pin: sun, pinSpacing:false });
+      g.fromTo(fill, { attr:{ y:600 } }, { attr:{ y:0 }, ease:'none',
+        scrollTrigger:{ trigger: sunrise, start:'top top', end:'+=95%', scrub:0.4 } });
+      if(glow){ g.fromTo(glow, { opacity:0 }, { opacity:1, ease:'none',
+        scrollTrigger:{ trigger: sunrise, start:'top top', end:'+=80%', scrub:0.4 } }); }
+    }
+
+    setTimeout(() => ST.refresh(), 350);
+    window.addEventListener('load', () => ST.refresh());
+  }
+
+  _revealAll(){
+    document.querySelectorAll('[data-h],[data-rv]').forEach(e => { e.style.opacity=1; e.style.transform='none'; });
+    document.querySelectorAll('[data-rv-group]').forEach(grp => { Array.from(grp.children).forEach(c => { c.style.opacity=1; c.style.transform='none'; }); });
+  }
+
+  renderVals(){
+    const center = this.state.testi;
+    const N = this.testimonials.length;
+    const cards = this.testimonials.map((t, i) => {
+      let dd = ((i - center) % N + N) % N; if(dd > 2) dd -= N;
+      const ad = Math.abs(dd), sgn = dd < 0 ? -1 : 1;
+      const x = (ad === 0 ? 0 : ad === 1 ? 300 : 538) * sgn;
+      const rot = (ad === 0 ? 0 : ad === 1 ? 7 : 12) * sgn;
+      const sc = ad === 0 ? 1 : ad === 1 ? 0.9 : 0.82;
+      const op = ad === 0 ? 1 : ad === 1 ? 0.5 : 0.26;
+      const isC = ad === 0;
+      return {
+        quote: t.quote, author: t.author, role: t.role, initials: t.initials, isCenter: isC,
+        cardStyle: {
+          position:'absolute', top:'50%', left:'50%', width:'330px', height:'448px',
+          transform:`translate(-50%,-50%) translateX(${x}px) rotate(${rot}deg) scale(${sc})`,
+          transition:'transform .65s cubic-bezier(.4,0,.2,1), opacity .65s ease',
+          opacity: op, zIndex: 50 - ad * 10,
+          borderRadius:'22px', padding:'40px 34px',
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center',
+          background: isC ? '#FFFDF8' : 'rgba(250,243,230,.55)',
+          boxShadow: isC ? '0 34px 80px rgba(120,60,10,.2)' : 'none',
+        },
+        quoteStyle: {
+          fontFamily:"'Newsreader',serif", fontSize: isC ? '21px' : '19px', lineHeight:'1.4',
+          color: isC ? '#2a1a0d' : 'rgba(120,98,72,.5)', fontStyle: isC ? 'normal' : 'italic',
+          margin:0, textWrap:'pretty',
+        },
+      };
+    });
+    const open = this.state.openFaq;
+    return {
+      cards,
+      prev: () => this.setState(s => ({ testi: (s.testi + N - 1) % N })),
+      next: () => this.setState(s => ({ testi: (s.testi + 1) % N })),
+      onSubmit: (e) => { e.preventDefault(); this.setState({ sent: true }); },
+      formNote: this.state.sent ? "Thanks — we'll be in touch within a day." : "Free pilot · no card · cancel anytime.",
+      faqItems: this.faqs.map((f, i) => ({
+        q: f.q, a: f.a,
+        onClick: () => this.setState(s => ({ openFaq: s.openFaq === i ? -1 : i })),
+        iconStyle: { fontSize:'22px', fontWeight:'300', color:'#E8862A', flex:'none', transition:'transform .3s ease', transform: open === i ? 'rotate(45deg)' : 'rotate(0deg)' },
+        answerStyle: { overflow:'hidden', maxHeight: open === i ? '220px' : '0px', opacity: open === i ? 1 : 0, transition:'max-height .4s ease, opacity .3s ease' },
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>
