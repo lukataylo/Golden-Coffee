@@ -41,8 +41,6 @@ UNATTENDED_DWELL_S = 780    # seated + still for this long => likely wants servi
 LOW_ACTIVITY = 0.2          # track activity below this counts as "settled/seated"
 MANY_LONG_DWELLERS = 2      # >= this many settled guests in a full room
 HIGH_QUEUE = 5              # queue at/over this => service is slipping (3 can still wait)
-ABANDON_DELTA = 1           # walk-offs rising by >= this since last scene => act
-AVG_TICKET_GBP = 4.80       # average spend per customer (for walkaway £ metric)
 LULL_SUSTAINED_S = 600      # lull must hold 10 min before markdown activates
 
 # Table service SLA thresholds (sustained time before alert fires)
@@ -346,11 +344,6 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     hour = time.localtime(now).tm_hour
     occupancy = int(scene.get("occupancy", 0))
     queue_len = int(scene.get("queue_len", 0))
-    energy = float(scene.get("staff_productivity", 0.0))  # aggregate room movement/energy
-    funnel = scene.get("funnel", {}) or {}
-    abandoned = int(funnel.get("abandoned", 0))
-    walkaway_gbp = float(scene.get("walkaway_gbp") or abandoned * AVG_TICKET_GBP)
-
     long_dwellers = _long_dwellers(scene)
     unattended = _unattended_guests(scene)
     busy = occupancy >= HIGH_OCCUPANCY
@@ -361,27 +354,14 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     # --- 0. STAFF VERIFICATION: check if camera confirms previous alerts were acted on ---
     _check_verifications(scene, state, now, actions)
 
-    # --- 1. RUSH COPILOT: queue too long -> pull staff; walk-offs escalate if queue is already bad --
-    # Walk-offs alone don't trigger — people leave for personal reasons.
-    # We only care about walk-offs when the queue is already long enough to be the cause.
-    prev_abandoned = state.get("last_abandoned")
-    walkoffs_rising = prev_abandoned is not None and (abandoned - prev_abandoned) >= ABANDON_DELTA
-    state["last_abandoned"] = abandoned
+    # --- 1. RUSH COPILOT: queue too long -> pull staff ---
     if queue_len >= HIGH_QUEUE and _due(state, "notify_queue", now):
-        gbp_note = f" (~£{walkaway_gbp:.0f} lost today)" if walkaway_gbp > 0 else ""
-        if walkoffs_rising:
-            delta = abandoned - prev_abandoned
-            text = f"Queue at {queue_len} and {delta} just walked off{gbp_note} — open a second till now."
-            why = f"Queue at {queue_len} with walk-offs rising ({prev_abandoned}→{abandoned}); likely losing sales to the wait."
-            priority = "urgent"
-        else:
-            text = f"Queue at {queue_len}{gbp_note} — can someone open a second till?"
-            why = f"Queue length {queue_len} is over threshold {HIGH_QUEUE}; act before customers start leaving."
-            priority = "high"
+        text = f"Queue at {queue_len} — can someone open a second till?"
+        why  = f"Queue length {queue_len} is over threshold {HIGH_QUEUE}; act before customers start leaving."
         _mark(state, "notify_queue", now)
         actions.append(_action(
             now, "notify_staff",
-            {"text": text, "priority": priority},
+            {"text": text, "priority": "high"},
             why,
         ))
 
@@ -663,12 +643,9 @@ def _selftest() -> None:
         scene = _synthetic_scene(t).model_dump()
         scene["ts"] = base + t * 30  # deterministic advancing clock for debounce
         actions = decide(scene, state)
-        f = scene["funnel"]
         print(
             f"t={t:>2} occ={scene['occupancy']:>2} q={scene['queue_len']} "
-            f"energy={scene['staff_productivity']:.2f} "
-            f"long_dwell={len(_long_dwellers(scene))} "
-            f"walkoffs={f['abandoned']} -> {len(actions)} action(s)"
+            f"long_dwell={len(_long_dwellers(scene))} -> {len(actions)} action(s)"
         )
         for a in actions:
             print(f"      • {a.action} {a.params}")
@@ -682,8 +659,6 @@ def _selftest() -> None:
         "ts": base,
         "occupancy": 10,
         "queue_len": 1,
-        "staff_productivity": 0.4,
-        "funnel": {"abandoned": 0},
         "tracks": [
             {"id": i, "zone": "seating", "dwell_s": 700 + i * 20, "activity": 0.05}
             for i in range(4)
@@ -697,8 +672,6 @@ def _selftest() -> None:
         "ts": base + 1000,
         "occupancy": 6,
         "queue_len": 0,
-        "staff_productivity": 0.6,
-        "funnel": {"abandoned": 0},
         "tracks": [{"id": 1, "zone": "seating", "dwell_s": 820, "activity": 0.05}],
     }
     print("    --- unattended guest ---")

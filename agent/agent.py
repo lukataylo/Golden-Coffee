@@ -159,7 +159,6 @@ TOOLS = [
 
 def _scene_summary(scene: dict) -> str:
     """Build a compact, complete scene description for Claude's context window."""
-    f        = scene.get("funnel",   {}) or {}
     tables   = scene.get("tables",   []) or []
     cleaning = scene.get("cleaning", []) or []
 
@@ -174,10 +173,6 @@ def _scene_summary(scene: dict) -> str:
     parts = [
         f"time={hour:02d}:xx",
         f"occupancy={scene.get('occupancy')}  queue={scene.get('queue_len')}",
-        f"room_energy={scene.get('staff_productivity', 0):.2f}",
-        f"cups_made={scene.get('cups_made', 0)}",
-        (f"funnel(entered={f.get('entered',0)} ordered={f.get('ordered',0)} "
-         f"abandoned={f.get('abandoned',0)})"),
         f"long_dwellers={len(long_dwellers)}",
     ]
     if overdue_tables:
@@ -290,7 +285,7 @@ class Agent:
         self._fed_queue.append(float(scene.get("queue_len", 0) or 0))
         self._fed_scene_hist.append({
             "occupancy": scene.get("occupancy", 0), "queue_len": scene.get("queue_len", 0),
-            "staff_productivity": scene.get("staff_productivity", 0.0), "ts": scene.get("ts"),
+            "ts": scene.get("ts"),
         })
         if now - self._fed_last_sync < self._fed_round_s or len(self._fed_occ) < FED_MIN_SCENES:
             return []

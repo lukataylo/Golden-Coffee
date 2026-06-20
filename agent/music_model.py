@@ -144,7 +144,7 @@ def features(scene: dict) -> list[float]:
     """Map a SceneEvent dict to the model's normalized feature vector."""
     occ = float(scene.get("occupancy", 0) or 0)
     queue = float(scene.get("queue_len", 0) or 0)
-    energy = float(scene.get("staff_productivity", 0.0) or 0.0)  # aggregate room movement
+    energy = min(float(scene.get("occupancy", 0) or 0) / 12.0, 1.0)  # aggregate room movement
     hour = time.localtime(scene.get("ts") or time.time()).tm_hour
 
     occ_n = min(occ / 12.0, 1.0)
@@ -269,7 +269,7 @@ class MusicModel:
     @staticmethod
     def _rationale(scene: dict, m: Mood, occ: int) -> str:
         queue = int(scene.get("queue_len", 0) or 0)
-        energy = float(scene.get("staff_productivity", 0.0) or 0.0)
+        energy = min(float(scene.get("occupancy", 0) or 0) / 12.0, 1.0)
         bits = {
             "morning_rush":     f"Morning rush ({occ} in) — upbeat acoustic pop to keep the energy moving.",
             "midday_dwell":     f"Midday dwell ({occ} in) — smooth neo-soul / lo-fi for focus and a second pastry.",
@@ -293,7 +293,7 @@ def _oracle(scene: dict) -> str:
     """
     occ = int(scene.get("occupancy", 0) or 0)
     queue = int(scene.get("queue_len", 0) or 0)
-    energy = float(scene.get("staff_productivity", 0.0) or 0.0)
+    energy = min(float(scene.get("occupancy", 0) or 0) / 12.0, 1.0)
     hour = time.localtime(scene.get("ts") or time.time()).tm_hour
     if queue >= HIGH_QUEUE:
         return "rush_flow"

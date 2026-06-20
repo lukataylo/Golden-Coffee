@@ -1128,8 +1128,7 @@
       tables.push({ id:tid, occupied:occupied, wait_s:wait, status:status, needs_cleaning:(!occupied && (t+k)%5===0) });
     });
     return { type:"scene", ts:Date.now()/1000, tracks:tracks, occupancy:occupancy, queue_len:queue_len,
-             funnel:{ entered:10+Math.floor(t/5), approached:8+Math.floor(t/6), ordered:6+Math.floor(t/8), seated:5+Math.floor(t/9), abandoned:Math.floor(t/20) },
-             heatmap_grid:grid, staff_productivity:productivity, tables:tables, source:"mock" };
+             heatmap_grid:grid, tables:tables, source:"mock" };
   }
   function demoActions(scene, t) {
     var out = [], wave = (Math.sin(t/12)+1)/2, ts = scene.ts;

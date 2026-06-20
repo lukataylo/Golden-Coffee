@@ -43,7 +43,7 @@ try:
 except ImportError:
     pass
 
-from shared.schemas import Funnel, Role, SceneEvent, Track, Zone
+from shared.schemas import Role, SceneEvent, Track, Zone
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 _TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
@@ -474,7 +474,6 @@ class Pipeline:
             for z, poly in ZONE_POLYS_NORM.items()
         }
         self.tracks: dict[int, TrackState] = {}
-        self.funnel = Funnel()
         # cumulative dwell-density heatmap (seconds spent per cell)
         self.heat = [[0.0] * HEATMAP_N for _ in range(HEATMAP_N)]
         self.tablemon = TableMonitor()
@@ -1088,10 +1087,7 @@ def main() -> None:
                 tracks=tracks,
                 occupancy=occupancy,
                 queue_len=sum(1 for t in tracks if t.zone == Zone.QUEUE),
-                funnel=pipe.funnel,
-                cups_made=pipe.funnel.ordered,  # ordered == drinks proxy at counter
                 heatmap_grid=grid,
-                staff_productivity=productivity,
                 tables=tables,
                 cleaning=cleaning,
                 sound_db=snd.get("sound_db"),
