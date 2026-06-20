@@ -222,7 +222,7 @@
           <button id="reconfig-zones-btn" class="gc-ghost gc-ico" title="Reconfigure venue zones" aria-label="Reconfigure venue zones" onclick="wzShow(true);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17 14v7"/></svg></button>
           <button id="demo-btn" class="gc-ghost gc-ico" aria-pressed="false" aria-label="Demo" title="Run a self-contained synthetic café — no backend or camera needed"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg></button>
           <span id="conn" role="status" aria-live="polite" title="connecting…"><span class="dot"></span></span>
-          <div style="display:flex;align-items:center;gap:10px;padding:5px 6px 5px 5px;border-radius:999px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);"><div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 'Hanken Grotesk';color:#2a1a0d;background:linear-gradient(150deg,#FFB85C,#E8862A);">AL</div><div style="padding-right:6px;"><div style="font-size:12.5px;font-weight:600;line-height:1.1;">Aurora Lane</div><div style="font-size:10.5px;color:#9b8c7b;">Floor manager</div></div></div>
+          <div role="button" tabindex="0" title="Account · set up venue zones" aria-label="Account menu — set up venue zones" onclick="wzShow(true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();wzShow(true);}" style="display:flex;align-items:center;gap:10px;padding:5px 6px 5px 5px;border-radius:999px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(255,154,45,.5)'" onmouseout="this.style.borderColor='rgba(255,236,214,.1)'"><div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 'Hanken Grotesk';color:#2a1a0d;background:linear-gradient(150deg,#FFB85C,#E8862A);">AL</div><div style="padding-right:6px;"><div style="font-size:12.5px;font-weight:600;line-height:1.1;">Aurora Lane</div><div style="font-size:10.5px;color:#9b8c7b;">Floor manager</div></div></div>
         </div>
       </div>
 
@@ -1613,16 +1613,8 @@
     });
   };
 
-  // On load: show wizard if no geometry configured
-  fetch(EP_HTTP + '/geometry')
-    .then(function(r) { return r.json(); })
-    .then(function(g) {
-      var hasZones = g && g.zones && Object.keys(g.zones).length > 0;
-      if (!hasZones) wzShow(true);
-    })
-    .catch(function() {
-      wzShow(true);
-    });
+  // The venue-photo / zone wizard no longer auto-pops. It opens on demand from
+  // the user account (Aurora Lane) in the header — see wzShow(true).
 
 })();
 </script>
