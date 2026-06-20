@@ -13,7 +13,25 @@ python -m perception.run --source clips/people-walking.mp4 --dry-run --max-frame
 
 # Venue webcam on demo day
 python -m perception.run --source 0
+
+# Aqara G100 (or any RTSP/IP CCTV camera) — USB-C is power only, video is over Wi-Fi
+python -m perception.run --source "rtsp://<CAMERA_IP>:554/live/ch00_1?token=<TOKEN>"
 ```
+
+## RTSP / IP cameras (Aqara G100)
+The Aqara G100 does **not** expose video over USB-C (that port is power only). It
+streams over Wi-Fi via **RTSP**:
+
+1. In the **Aqara Home app**, open the G100 → Settings → enable **RTSP / local stream**.
+2. Copy the generated URL. Aqara uses a **token in the URL**, not user/pass:
+   `rtsp://<CAMERA_IP>:554/live/ch00_1?token=<TOKEN>`
+3. Pass it to `--source`. `perception/run.py` routes `rtsp://` through the FFMPEG
+   backend and forces **TCP transport** (`rtsp_transport;tcp`) so the stream
+   survives Wi-Fi packet loss.
+
+Notes: the Mac and the camera must be on the **same network**; the token can
+expire/rotate (re-copy from the app if the stream stops opening). Sanity-check the
+URL first with `ffplay "<rtsp_url>"` or VLC before running the pipeline.
 
 ## Reality check on "live coffee shop" feeds
 Genuine 24/7 livestreams of a **real café interior with a counter** are scarce —

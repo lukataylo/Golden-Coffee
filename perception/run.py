@@ -566,10 +566,17 @@ def main() -> None:
     model = YOLO(args.model)
     tracker = sv.ByteTrack()
 
-    # Use the FFMPEG backend for network streams (HLS/RTSP); default otherwise.
+    # Use the FFMPEG backend for network streams (HLS/RTSP/RTMP); default otherwise.
+    is_network = isinstance(source, str) and source.startswith(("http", "rtsp", "rtmp"))
+    if is_network and source.startswith("rtsp"):
+        # Force TCP transport so RTSP (e.g. Aqara G100) survives Wi-Fi packet loss
+        # instead of tearing down the stream. Must be set before VideoCapture opens.
+        os.environ.setdefault(
+            "OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp|stimeout;5000000"
+        )
     cap = (
         cv2.VideoCapture(source, cv2.CAP_FFMPEG)
-        if isinstance(source, str) and source.startswith("http")
+        if is_network
         else cv2.VideoCapture(source)
     )
     if not cap.isOpened():
