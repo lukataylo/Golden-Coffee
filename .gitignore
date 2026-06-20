@@ -34,3 +34,4 @@ agent/music_weights.json
 # Per-venue camera geometry (generate with `perception.run --preset` or `draw_zones`)
 zones.json
 *.zones.json
+dashboard/scan/shots/
