@@ -1,4 +1,4 @@
-/* Golden Coffee Floorplan Scanner — live 3D twin.
+/* Coffee Steve Floorplan Scanner — live 3D twin.
  *
  * Consumes the zones.json contract (zones/tables/cleaning + optional room) and
  * builds an extruded scene: colored zone slabs in the XZ plane, thin walls along

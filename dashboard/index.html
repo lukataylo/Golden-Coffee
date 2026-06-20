@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Golden Coffee — LIVE · Comfort</title>
+<title>Coffee Steve — LIVE · Comfort</title>
 <!-- Hearth web-fonts with full system fallback (renders fine offline / venue wifi). -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <!--
-  Golden Coffee LIVE comfort dashboard. Single static file, no build step, no
+  Coffee Steve LIVE comfort dashboard. Single static file, no build step, no
   external JS CDN (uses local ./vendor/three.min.js + ./floor3d.js). Comfort-first
   "control-v2" design, wired to the live WebSocket scene/action stream with the
   same-origin + ?ws= resolution, reconnect/backoff, video fallback chain
@@ -221,8 +221,8 @@
       <!-- HEADER -->
       <div style="display:flex;align-items:center;gap:18px;padding:13px 16px;border-radius:20px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.14),0 10px 30px rgba(0,0,0,.3);">
         <div style="display:flex;align-items:center;gap:12px;flex:none;">
-          <div style="width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(150deg,rgba(255,154,45,.32),rgba(210,100,60,.12));border:1px solid rgba(255,154,45,.36);color:#FF9A2D;box-shadow:inset 0 1px 0 rgba(255,255,255,.18);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M16 9h2.5a2.5 2.5 0 0 1 0 5H16"/><path d="M7 4.6c.4-.6.4-1.2 0-1.8M10.5 4.6c.4-.6.4-1.2 0-1.8M13.5 4.6c.4-.6.4-1.2 0-1.8"/></svg></div>
-          <div><div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;line-height:1.1;">Golden Coffee</div><div style="font:500 11px/1.2 'JetBrains Mono',monospace;color:#B8A794;letter-spacing:.04em;margin-top:2px;">guest experience · live</div></div>
+          <div style="width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(150deg,rgba(255,154,45,.32),rgba(210,100,60,.12));border:1px solid rgba(255,154,45,.36);color:#FF9A2D;box-shadow:inset 0 1px 0 rgba(255,255,255,.18);"><svg width="22" height="17" viewBox="0 0 264 206" fill="currentColor" aria-hidden="true"><g transform="matrix(1,0,0,1,-1111.59949,-165.094777)"><g transform="matrix(1.632812,0,0,1.632812,0,0)"><path d="M801.494,190.068C794.53,190.36 798,194.16 795.047,203.367C786.152,231.1 764.344,226.818 736.501,226.833C711.165,226.848 687.349,231.658 681.328,194.522C680.803,191.288 680.35,103.817 681.541,102.532C682.908,101.056 683.353,101.79 749.5,101.603C791.846,101.483 791.996,100.455 795.421,101.784C799.695,103.443 794.504,118.933 799.523,119.08C804.522,119.227 825.803,115.791 838.043,137.73C847.966,155.518 840.078,190.663 803.498,190.055C802.472,190.038 802.574,190.061 801.494,190.068ZM738.854,173.472C739.348,194.192 739.711,195.074 741.446,195.014C742.035,194.994 753.318,189.641 754.342,189.155C759.388,186.761 755.277,184.716 746.926,176.066C744.601,173.659 738.764,166.608 738.742,170.544C738.736,171.521 738.859,172.495 738.854,173.472ZM766.431,136.852C765.966,136.801 758.591,134.999 752.572,140.582C751.753,141.342 746.274,146.424 747.309,153.525C750.757,177.182 780.164,164.942 772.676,162.177C759.301,157.239 765.152,144.846 771.401,142.304C777.077,139.994 766.997,137.019 766.431,136.852ZM706.328,140.285C691.223,154.814 709.275,176.139 726.127,165.011C731.519,161.451 717.453,162.68 718.203,151.487C718.845,141.906 730.677,142.197 725.196,138.957C716,133.52 707.568,139.418 706.328,140.285ZM797.224,164.5C797.235,167.818 796.175,175.548 799.488,175.634C803.339,175.734 816.546,177.248 824.074,166.235C832.522,153.878 825.118,133.66 806.5,133.495C805.772,133.488 797.886,133.419 797.455,134.48C797.208,135.09 797.225,135.077 797.224,164.5Z"/></g></g></svg></div>
+          <div><div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;line-height:1.1;">Coffee Steve</div><div style="font:500 11px/1.2 'JetBrains Mono',monospace;color:#B8A794;letter-spacing:.04em;margin-top:2px;">guest experience · live</div></div>
         </div>
         <form id="cmd-form" style="flex:1;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:13px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);color:#9b8c7b;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -1251,7 +1251,7 @@
   trendBuf = [curIndex, curIndex]; renderTrend();
   setInterval(sampleTrend, 2000);
   setInterval(renderFeed, 1000); // tick relative times
-  console.log("[Golden Coffee] ws=" + EP.ws + " http=" + EP.http + " floor3d=" + floor3dOK);
+  console.log("[Coffee Steve] ws=" + EP.ws + " http=" + EP.http + " floor3d=" + floor3dOK);
 
   var forceDemo = /[?&]demo=1\b/.test(location.search) || location.protocol === "file:";
   if (forceDemo) setDemo(true);
@@ -1320,13 +1320,13 @@
         }
         spToken = data.access_token;
         spPlayer = new Spotify.Player({
-          name: "Golden Coffee",
+          name: "Coffee Steve",
           getOAuthToken: function(cb) { cb(spToken); },
           volume: 0.5,
         });
         spPlayer.addListener("ready", function(e) {
           spDeviceId = e.device_id;
-          var s = $("sp-status"); if (s) s.textContent = "Connected · Golden Coffee";
+          var s = $("sp-status"); if (s) s.textContent = "Connected · Coffee Steve";
           console.log("[spotify] ready, device_id:", spDeviceId);
         });
         spPlayer.addListener("not_ready", function() {
