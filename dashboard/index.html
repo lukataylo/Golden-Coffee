@@ -349,55 +349,50 @@
     var hour = new Date().getHours();
     var evening = hour >= 18 || hour < 7;
 
-    // SOUND — priority: hardware mic (indoor_sound_db) > camera (sound_db) > vol proxy
-    var sound, soundDb = null, stress = null;
+    // SOUND — real sensor only. Hardware mic (indoor_sound_db) or camera-derived (sound_db).
+    // No proxy fallback: if no sensor, score is null.
+    var sound = null, soundDb = null, stress = null;
     if (typeof s.indoor_sound_db === "number") {
       soundDb = s.indoor_sound_db;
-      sound = clamp(band(soundDb, 42, 50, 65, 78), 0, 100);
+      sound = Math.round(clamp(band(soundDb, 42, 50, 65, 78), 0, 100));
     } else if (typeof s.sound_db === "number") {
-      soundDb = s.sound_db; stress = (typeof s.sound_stress === "number") ? s.sound_stress : 0;
-      sound = clamp(band(soundDb, 42, 52, 66, 80) - 0.45 * stress, 0, 100);
-    } else {
-      var q = s.queue_len || 0, vol = comfort.volume || 0;
-      sound = clamp(100 - Math.abs(vol - 55) * 1.25 - Math.min(q * 5, 25), 0, 100);
+      soundDb = s.sound_db;
+      stress = (typeof s.sound_stress === "number") ? s.sound_stress : 0;
+      sound = Math.round(clamp(band(soundDb, 42, 52, 66, 80) - 0.45 * stress, 0, 100));
     }
 
-    // LIGHT — priority: hardware lux (indoor_lux) > camera brightness (light_level) > brightness proxy
-    var light, lightLevel = null;
+    // LIGHT — real sensor only. Hardware lux sensor (indoor_lux) or camera (light_level).
+    // No proxy fallback: if no sensor, score is null.
+    var light = null, lightLevel = null;
     if (typeof s.indoor_lux === "number") {
-      light = clamp(band(s.indoor_lux, 80, 150, 300, 600), 0, 100);
+      light = Math.round(clamp(band(s.indoor_lux, 80, 150, 300, 600), 0, 100));
     } else if (typeof s.light_level === "number") {
       lightLevel = s.light_level;
-      light = evening ? band(lightLevel, 10, 30, 52, 82) : band(lightLevel, 18, 44, 70, 92);
-    } else {
-      var bri = comfort.brightness || 0;
-      light = clamp(100 - Math.abs(bri - 52) * 1.1 + (comfort.warmth === "warm" ? 5 : 0), 0, 100);
+      light = Math.round(evening ? band(lightLevel, 10, 30, 52, 82) : band(lightLevel, 18, 44, 70, 92));
     }
 
-    // AIR — real sensors (indoor_temp_c + indoor_humidity_rh) when available, else setpoint proxy
-    var air, tempC = null;
+    // AIR — real sensors only. Needs indoor_temp_c (+ optional indoor_humidity_rh).
+    // No proxy fallback: if no sensor, score is null.
+    var air = null, tempC = null;
     if (typeof s.indoor_temp_c === "number") {
       tempC = s.indoor_temp_c;
       var tScore = clamp(100 - Math.abs(tempC - 21) * 20, 0, 100);
       var hScore = typeof s.indoor_humidity_rh === "number"
         ? clamp(100 - Math.max(0, s.indoor_humidity_rh - 60) * 2.5
                     - Math.max(0, 40 - s.indoor_humidity_rh) * 2.5, 0, 100)
-        : 80;
+        : tScore; // temp-only if no humidity sensor
       air = Math.round((tScore + hScore) / 2);
-    } else {
-      var sp = (comfort.setpoint == null ? 20.5 : comfort.setpoint);
-      tempC = sp;
-      air = clamp(100 - 9 * Math.abs(sp - 20.5), 0, 100);
     }
 
-    // SCENT — no sensor exists; proxy from the agent's last set_scent command intensity
-    var inten = comfort.intensity || 0;
-    var scent = clamp(100 - Math.abs(inten - 55) * 1.1, 0, 100);
+    // SCENT — no consumer sensor exists. Always null.
+    var scent = null;
 
-    var overall = Math.round(sound * CI_W.sound + light * CI_W.light + air * CI_W.air * 0.85 + scent * 0.05);
-    return { overall: overall, sound: Math.round(sound), light: Math.round(light),
-             air: Math.round(air), scent: Math.round(scent), tempC: tempC,
-             soundDb: soundDb, stress: stress, lightLevel: lightLevel,
+    // Overall CI = average of whatever real pillars we have. Null if none.
+    var pillars = [sound, light, air].filter(function(v) { return v !== null; });
+    var overall = pillars.length ? Math.round(pillars.reduce(function(a,b){return a+b;},0) / pillars.length) : null;
+
+    return { overall: overall, sound: sound, light: light, air: air, scent: scent,
+             tempC: tempC, soundDb: soundDb, stress: stress, lightLevel: lightLevel,
              daypart: evening ? "evening" : "day" };
   }
   function comfortLabel(v) {
@@ -457,27 +452,44 @@
 
   function renderComfort() {
     var c = computeComfort(); curIndex = c.overall;
-    // index card
-    $("ci-value").textContent = c.overall;
-    setBar("ci-sound", c.sound); setBar("ci-light", c.light); setBar("ci-air", c.air);
-    // measured readouts on each row (from perception/room when live)
+    // index card — show "—" for any pillar with no real sensor data
+    $("ci-value").textContent = c.overall !== null ? c.overall : "—";
+    function setBarOrDash(prefix, val) {
+      $(prefix + "-fill").style.width = (val !== null ? val : 0) + "%";
+      $(prefix + "-num").textContent = val !== null ? val : "—";
+    }
+    setBarOrDash("ci-sound", c.sound);
+    setBarOrDash("ci-light", c.light);
+    setBarOrDash("ci-air",   c.air);
+    setBarOrDash("ci-scent", c.scent);
+    // row labels with live sensor readings when available
     var sl = $("ci-sound-lab");
-    if (sl) sl.textContent = (c.soundDb != null)
-      ? "Sound " + Math.round(c.soundDb) + "dB" + (c.stress >= 45 ? " ⚠" : "")
-      : "Sound";
+    if (sl) sl.textContent = c.soundDb != null
+      ? "Sound " + Math.round(c.soundDb) + " dB" + (c.stress != null && c.stress >= 45 ? " ⚠" : "")
+      : "Sound · no sensor";
     var ll = $("ci-light-lab");
-    if (ll) ll.textContent = (c.lightLevel != null) ? "Light " + Math.round(c.lightLevel) : "Light";
+    if (ll) ll.textContent = c.light != null
+      ? "Light" + (c.lightLevel != null ? " " + Math.round(c.lightLevel) : "")
+      : "Light · no sensor";
     var al = $("ci-air-lab");
-    if (al) al.textContent = (c.tempC != null) ? "Temp " + c.tempC.toFixed(1) + "°" : "Temperature";
-    var lab = comfortLabel(c.overall), pill = $("ci-pill");
-    pill.style.color = lab.color; pill.style.background = lab.bg; pill.style.borderColor = lab.border;
-    $("ci-pill-dot").style.background = lab.dot; $("ci-pill-text").textContent = lab.text;
-    $("ci-desc").textContent = descFor(c.overall);
+    if (al) al.textContent = c.tempC != null ? "Temp " + c.tempC.toFixed(1) + "°C" : "Air · no sensor";
+    var stl = $("ci-scent-lab");
+    if (stl) stl.textContent = "Scent · no sensor";
+    var overall = c.overall !== null ? c.overall : 50;
+    var lab = comfortLabel(overall), pill = $("ci-pill");
+    if (c.overall !== null) {
+      pill.style.color = lab.color; pill.style.background = lab.bg; pill.style.borderColor = lab.border;
+      $("ci-pill-dot").style.background = lab.dot; $("ci-pill-text").textContent = lab.text;
+      $("ci-desc").textContent = descFor(overall);
+    } else {
+      $("ci-pill-text").textContent = "Waiting for sensors";
+      $("ci-desc").textContent = "Connect sensors to see live comfort data.";
+    }
     // hero comfort chip
-    $("chip-comfort").textContent = c.overall;
+    $("chip-comfort").textContent = c.overall !== null ? c.overall : "—";
     var cw = $("chip-comfort-word");
-    cw.textContent = c.overall >= 85 ? "great" : c.overall >= 70 ? "good" : "low";
-    cw.style.color = c.overall >= 85 ? "#6FCF97" : c.overall >= 70 ? "#F2C14E" : "#EB6A4E";
+    cw.textContent = overall >= 85 ? "great" : overall >= 70 ? "good" : "low";
+    cw.style.color = overall >= 85 ? "#6FCF97" : overall >= 70 ? "#F2C14E" : "#EB6A4E";
     // device tiles
     setToggle("tg-music", comfort.volume > 0);
     $("music-pct").textContent = Math.round(comfort.volume) + "%";

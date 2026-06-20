@@ -91,35 +91,13 @@ def _synthetic_scene(t: int) -> SceneEvent:
 
     walkaway_gbp = round(funnel.abandoned * AVG_TICKET_GBP, 2)
 
-    # Synthetic environmental sensors — simulate a real sensor suite.
+    # Outdoor temp only — derived from time of day, reasonable to estimate.
     hour = time.localtime().tm_hour
-
-    # Outdoor temp: day curve ~10°C dawn → ~20°C midday → ~14°C evening.
     outdoor_temp_c = round(10.0 + 10.0 * math.sin((hour - 6) * math.pi / 12), 1)
 
-    # Indoor temperature: HVAC baseline 21°C, rises ~0.25°C per person (body heat),
-    # afternoon sun adds ~1°C, small random noise ±0.3°C.
-    indoor_temp_c = round(
-        21.0
-        + occupancy * 0.25
-        + (1.0 if 13 <= hour <= 16 else 0.0)
-        + math.sin(t * 0.17) * 0.3,
-        1,
-    )
-
-    # Indoor humidity: rises with occupancy (breathing, hot drinks), baseline 45%RH.
-    indoor_humidity_rh = round(45.0 + 20.0 * wave, 1)  # 45–65 %RH
-
-    # Ambient sound: ~45 dB empty café, +2 dB per pair of people, peaks ~75 dB.
-    indoor_sound_db = round(
-        45.0 + (occupancy / 2) * 2.0 + queue_len * 1.5 + math.sin(t * 0.3) * 1.5,
-        1,
-    )
-
-    # Illuminance: natural light peaks at midday (~400 lux), low at dawn/dusk (~80 lux).
-    # Artificial lights add a constant ~150 lux during opening hours.
-    natural_lux = max(0.0, 350.0 * math.sin((hour - 6) * math.pi / 14))
-    indoor_lux = round(natural_lux + 150.0 + math.sin(t * 0.11) * 10.0, 1)
+    # All indoor sensor fields are left None — real values must come from hardware.
+    # (indoor_temp_c, indoor_humidity_rh, indoor_sound_db, indoor_lux)
+    # The policy and Comfort Index will show null for those pillars until sensors connect.
 
     return SceneEvent(
         ts=time.time(),
@@ -134,10 +112,6 @@ def _synthetic_scene(t: int) -> SceneEvent:
         cleaning=cleaning,
         walkaway_gbp=walkaway_gbp,
         outdoor_temp_c=outdoor_temp_c,
-        indoor_temp_c=indoor_temp_c,
-        indoor_humidity_rh=indoor_humidity_rh,
-        indoor_sound_db=indoor_sound_db,
-        indoor_lux=indoor_lux,
         source="mock",
     )
 
