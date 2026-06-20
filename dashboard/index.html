@@ -236,10 +236,9 @@
             <div style="display:flex;align-items:baseline;gap:8px;margin-top:10px;"><span id="ci-value" style="font-size:46px;font-weight:700;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;">—</span><span style="font-size:15px;color:#9b8c7b;font-weight:500;">/ 100</span></div>
             <div id="ci-desc" style="font-size:12.5px;color:#cdbfae;margin-top:6px;">Reading the room…</div>
             <div style="display:flex;flex-direction:column;gap:11px;margin-top:16px;">
-              <div style="display:flex;align-items:center;gap:10px;"><span id="ci-sound-lab" style="width:64px;font-size:11.5px;color:#B8A794;">Activity</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-sound-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-sound-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
-              <div style="display:flex;align-items:center;gap:10px;"><span id="ci-light-lab" style="width:64px;font-size:11.5px;color:#B8A794;">Light</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-light-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-light-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
-              <div style="display:flex;align-items:center;gap:10px;"><span style="width:64px;font-size:11.5px;color:#B8A794;">Air</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-air-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-air-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
-              <div style="display:flex;align-items:center;gap:10px;"><span style="width:64px;font-size:11.5px;color:#B8A794;">Scent</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-scent-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#A9BDD6,#FF9A2D);"></span></span><span id="ci-scent-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
+              <div style="display:flex;align-items:center;gap:10px;"><span id="ci-sound-lab" style="width:88px;font-size:11.5px;color:#B8A794;">Sound</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-sound-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-sound-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
+              <div style="display:flex;align-items:center;gap:10px;"><span id="ci-light-lab" style="width:88px;font-size:11.5px;color:#B8A794;">Light</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-light-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-light-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
+              <div style="display:flex;align-items:center;gap:10px;"><span id="ci-air-lab" style="width:88px;font-size:11.5px;color:#B8A794;">Temperature</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-air-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-air-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
             </div>
           </div>
 
@@ -335,11 +334,11 @@
   var curIndex = 0;
 
   // --- Comfort Index — canonical formula, mirrors shared/comfort.py ---------
-  // Pillars: Sound .30, Light .25, Air .25, Scent .20. Each pillar is a
+  // Pillars: Sound .40, Light .30, Temperature .30. Each pillar is a
   // trapezoidal "comfort band": 100 across the ideal range, ramping to 0 at the
-  // outer edges. Sound + Light use MEASURED signals from perception when present
-  // (mic loudness/stress, camera brightness); Air + Scent are set-point driven.
-  var CI_W = { sound:0.30, light:0.25, air:0.25, scent:0.20 };
+  // outer edges. All three read the ROOM: Sound = mic loudness/stress, Light =
+  // camera brightness, Temperature = the temperature we're holding the room at.
+  var CI_W = { sound:0.40, light:0.30, air:0.30 };
   function band(x, lo, ilo, ihi, hi) {
     if (x >= ilo && x <= ihi) return 100;
     if (x < ilo) return x <= lo ? 0 : clamp(100 * (x - lo) / (ilo - lo), 0, 100);
@@ -371,20 +370,14 @@
       light = clamp(100 - Math.abs(bri - 52) * 1.1 + (comfort.warmth === "warm" ? 5 : 0), 0, 100);
     }
 
-    // AIR — climate set-point deviation from neutral (20.5°C) + humidity if sensed.
+    // TEMPERATURE — deviation of the room temperature we're holding from neutral
+    // (20.5°C): ±2°C ≈ 82, ±4°C ≈ 64.
     var sp = (comfort.setpoint == null ? 20.5 : comfort.setpoint);
     var air = clamp(100 - 9 * Math.abs(sp - 20.5), 0, 100);
-    if (typeof s.indoor_humidity_rh === "number") {
-      var hum = band(s.indoor_humidity_rh, 20, 38, 56, 75);
-      air = 0.7 * air + 0.3 * hum;
-    }
 
-    // SCENT — diffuser intensity band (set-point; no sensor).
-    var scent = band(comfort.intensity || 0, 0, 40, 62, 100);
-
-    var overall = Math.round(sound * CI_W.sound + light * CI_W.light + air * CI_W.air + scent * CI_W.scent);
+    var overall = Math.round(sound * CI_W.sound + light * CI_W.light + air * CI_W.air);
     return { overall:overall, sound:Math.round(sound), light:Math.round(light),
-             air:Math.round(air), scent:Math.round(scent),
+             air:Math.round(air), tempC:sp,
              soundDb:soundDb, stress:stress, lightLevel:lightLevel,
              daypart: evening ? "evening" : "day" };
   }
@@ -441,14 +434,16 @@
     var c = computeComfort(); curIndex = c.overall;
     // index card
     $("ci-value").textContent = c.overall;
-    setBar("ci-sound", c.sound); setBar("ci-light", c.light); setBar("ci-air", c.air); setBar("ci-scent", c.scent);
-    // measured readouts on the Sound / Light rows (from perception when live)
+    setBar("ci-sound", c.sound); setBar("ci-light", c.light); setBar("ci-air", c.air);
+    // measured readouts on each row (from perception/room when live)
     var sl = $("ci-sound-lab");
     if (sl) sl.textContent = (c.soundDb != null)
-      ? "Activity " + Math.round(c.soundDb) + "dB" + (c.stress >= 45 ? " ⚠" : "")
-      : "Activity";
+      ? "Sound " + Math.round(c.soundDb) + "dB" + (c.stress >= 45 ? " ⚠" : "")
+      : "Sound";
     var ll = $("ci-light-lab");
     if (ll) ll.textContent = (c.lightLevel != null) ? "Light " + Math.round(c.lightLevel) : "Light";
+    var al = $("ci-air-lab");
+    if (al) al.textContent = (c.tempC != null) ? "Temp " + c.tempC.toFixed(1) + "°" : "Temperature";
     var lab = comfortLabel(c.overall), pill = $("ci-pill");
     pill.style.color = lab.color; pill.style.background = lab.bg; pill.style.borderColor = lab.border;
     $("ci-pill-dot").style.background = lab.dot; $("ci-pill-text").textContent = lab.text;

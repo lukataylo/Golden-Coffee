@@ -4,19 +4,20 @@ The Comfort Index is the single number the product is built around: *how nice
 does it feel to be in this room right now*, 0–100. It is a weighted blend of
 four pillars, each itself 0–100:
 
-    ┌─────────┬────────┬───────────────────────────────────────────────────┐
-    │ Pillar  │ Weight │ Driven by                                          │
-    ├─────────┼────────┼───────────────────────────────────────────────────┤
-    │ Sound   │  0.30  │ measured loudness (dB SPL approx) + acoustic stress│
-    │ Light   │  0.25  │ measured scene brightness from the camera (daypart)│
-    │ Air     │  0.25  │ climate set-point vs neutral + indoor humidity     │
-    │ Scent   │  0.20  │ diffuser intensity (no sensor — set-point driven)  │
-    └─────────┴────────┴───────────────────────────────────────────────────┘
+    ┌─────────────┬────────┬───────────────────────────────────────────────┐
+    │ Pillar      │ Weight │ Driven by (all measured from the room)         │
+    ├─────────────┼────────┼───────────────────────────────────────────────┤
+    │ Sound       │  0.40  │ mic loudness (dB SPL approx) + acoustic stress │
+    │ Light       │  0.30  │ camera scene brightness (daypart-aware)        │
+    │ Temperature │  0.30  │ the temperature we're holding the room at       │
+    └─────────────┴────────┴───────────────────────────────────────────────┘
 
 Why these weights: in hospitality research the *acoustic* environment is the
 single biggest driver of how long guests stay and how they rate a room, so
-Sound leads. Light and thermal/air comfort are close behind and roughly equal.
-Scent is a genuine finishing touch — real, but secondary.
+Sound leads. Light and thermal comfort follow and are roughly equal.
+(Scent was an earlier pillar; it's been retired — the index now tracks only
+signals genuinely measured from the room. The `air` name is kept internally for
+the Temperature pillar to avoid churning the schema.)
 
 Each pillar uses a "comfort band": a plateau of 100 between an ideal low/high,
 ramping linearly down to 0 at an outer low/high. A café isn't best at one exact
@@ -37,11 +38,12 @@ from typing import Optional
 
 NEUTRAL_TEMP_C = 20.5  # the thermal "comfort centre" the Air pillar measures against
 
-# Pillar weights (must sum to 1.0).
-W_SOUND = 0.30
-W_LIGHT = 0.25
-W_AIR = 0.25
-W_SCENT = 0.20
+# Pillar weights (must sum to 1.0). Three room-measured pillars:
+#   Sound (mic), Light (camera), Temperature (the temp we hold the room at).
+W_SOUND = 0.40
+W_LIGHT = 0.30
+W_AIR = 0.30   # "Temperature" pillar (kept the `air` name internally)
+W_SCENT = 0.0  # scent retired from the index
 
 
 def clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
@@ -180,7 +182,7 @@ def comfort_index(
     air = air_score(setpoint_c, humidity_rh)
     scn = scent_score(scent_intensity)
 
-    pillars = [(snd, W_SOUND), (lit, W_LIGHT), (air, W_AIR), (scn, W_SCENT)]
+    pillars = [(snd, W_SOUND), (lit, W_LIGHT), (air, W_AIR)]  # scent retired from the index
     present = [(v, w) for v, w in pillars if v is not None]
     wsum = sum(w for _, w in present)
     overall = round(sum(v * w for v, w in present) / wsum) if wsum else 0
@@ -203,7 +205,7 @@ def comfort_index(
 # A machine-readable mirror of the spec, so the dashboard JS and the docs can be
 # checked against this one source of truth.
 COMFORT_SPEC = {
-    "weights": {"sound": W_SOUND, "light": W_LIGHT, "air": W_AIR, "scent": W_SCENT},
+    "weights": {"sound": W_SOUND, "light": W_LIGHT, "air": W_AIR},  # air == Temperature pillar
     "neutral_temp_c": NEUTRAL_TEMP_C,
     "bands": {
         "sound_db": {"lo": 42, "ideal_lo": 52, "ideal_hi": 66, "hi": 80, "stress_weight": 0.45},

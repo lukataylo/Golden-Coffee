@@ -16,20 +16,18 @@ The index is a weighted blend of four pillars, each scored 0–100:
 
 | Pillar | Weight | Driven by | Sensor |
 |--------|:------:|-----------|--------|
-| **Sound** | 0.30 | loudness + acoustic stress | microphone (real) |
-| **Light** | 0.25 | scene brightness, daypart-aware | camera (real) |
-| **Air**   | 0.25 | climate set-point vs neutral + humidity | thermostat / RH sensor |
-| **Scent** | 0.20 | diffuser intensity | set-point (no sensor) |
+| **Sound** | 0.40 | loudness + acoustic stress | microphone (real) |
+| **Light** | 0.30 | scene brightness, daypart-aware | camera (real) |
+| **Temperature** | 0.30 | the temperature we hold the room at | thermostat set-point |
 
 **Why these weights.** In hospitality research the *acoustic* environment is the
 strongest single driver of how long guests stay and how they rate a space, so
-Sound leads. Light and thermal/air comfort follow and are roughly equal. Scent is
-a real but secondary finishing touch.
+Sound leads. Light and thermal comfort follow and are roughly equal.
 
-**Sound and Light are genuinely *measured*** — off the microphone and the camera
-the venue already has. Air and Scent are *set-point driven* (we score what we've
-asked the devices to do, since most venues have no ambient thermometer/RH or
-scent sensor). When a humidity reading is present it folds into Air.
+The index tracks only signals genuinely tied to the room: **Sound and Light are
+*measured*** off the microphone and camera the venue already has; **Temperature**
+is the set-point we hold the room at. (Scent was an earlier pillar and has been
+retired. Internally the Temperature pillar still uses the field name `air`.)
 
 ## The comfort band
 

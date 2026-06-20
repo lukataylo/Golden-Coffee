@@ -1,9 +1,11 @@
-"""Smart lighting control for comfort/ambiance — Philips Hue (via `phue`).
+"""Smart lighting control for comfort/ambiance — Xiaomi/Mijia or Philips Hue.
 
 Comfort autopilot uses this to set a warm, dim, cozy room in a lull and a brighter
-neutral room when it's busy/daytime.
+neutral room when it's busy/daytime. A Xiaomi/Mijia lamp (local miIO, see
+actuators/xiaomi.py) takes priority when configured; otherwise we use Philips Hue
+(via `phue`).
 
-Pre-hackathon setup (do once):
+Pre-hackathon setup (do once) — Hue:
   1. Find the Hue Bridge IP (router admin, the Hue app, or https://discovery.meethue.com).
      Set HUE_BRIDGE_IP.
   2. Press the round button on the Hue Bridge, then within 30s run
@@ -32,9 +34,19 @@ WARMTH_MIRED = {"warm": 450, "neutral": 320, "cool": 200}
 
 
 def set_lighting(brightness: int, warmth: str = "neutral") -> bool:
-    """Set brightness (0-100) and warmth (warm|neutral|cool) on the Hue lights."""
+    """Set brightness (0-100) and warmth (warm|neutral|cool) on the smart lights.
+
+    A Xiaomi/Mijia lamp on the LAN takes priority when configured; otherwise we
+    fall through to a Philips Hue bridge."""
     brightness = max(0, min(100, int(brightness)))
     mired = WARMTH_MIRED.get(warmth, 320)
+
+    # Xiaomi/Mijia lamp first (local miIO) — see actuators/xiaomi.py.
+    from actuators import xiaomi
+
+    if xiaomi.lamp_configured():
+        return xiaomi.lamp_set(brightness, warmth)
+
     if not HUE_BRIDGE_IP:
         print(f"[lights] (no HUE_BRIDGE_IP) would set brightness {brightness}% / {warmth}")
         return False

@@ -19,6 +19,7 @@ anthropic>=0.40.0           # Claude tool-use loop
 spotipy>=2.24.0             # Spotify volume (needs Premium + active device)
 broadlink>=0.18.3          # Infrared blaster (RM4): AC/heater + (optional) scent diffuser
 phue>=1.1                  # Philips Hue smart lighting (comfort/ambiance)
+python-miio>=0.6.0          # Xiaomi/Mijia lamp + scent diffuser over local miIO
 requests>=2.32.0            # Telegram bot notifications
 python-dotenv>=1.0.0        # load API keys from .env
 
