@@ -177,7 +177,9 @@ def _blur_faces_inplace(frame, det, w: int, h: int, face_detector=None) -> None:
             continue
         roi = frame[hy1:hy2, hx1:hx2]
         if roi.size:
-            small = cv2.resize(roi, (max(1, roi.shape[1] // 12), max(1, roi.shape[0] // 12)),
+            # Mosaic: smaller block = less blur. Block ≈ 6 px (was 12 → 50% finer).
+            block = 6
+            small = cv2.resize(roi, (max(1, roi.shape[1] // block), max(1, roi.shape[0] // block)),
                                interpolation=cv2.INTER_LINEAR)
             frame[hy1:hy2, hx1:hx2] = cv2.resize(
                 small, (roi.shape[1], roi.shape[0]), interpolation=cv2.INTER_NEAREST)
