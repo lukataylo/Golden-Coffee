@@ -344,6 +344,11 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     hour = time.localtime(now).tm_hour
     occupancy = int(scene.get("occupancy", 0))
     queue_len = int(scene.get("queue_len", 0))
+    # Aggregate room "energy" — mean movement/activity across tracked people
+    # (0..1). A separate signal from occupancy: a full-but-settled room reads as
+    # low energy. Empty/untracked scenes default to 0.0 (flat).
+    _acts = [float(t.get("activity", 0.0)) for t in (scene.get("tracks") or [])]
+    energy = (sum(_acts) / len(_acts)) if _acts else 0.0
     long_dwellers = _long_dwellers(scene)
     unattended = _unattended_guests(scene)
     busy = occupancy >= HIGH_OCCUPANCY
