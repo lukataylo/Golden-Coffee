@@ -51,7 +51,11 @@ def dispatch(action: dict) -> None:
                 mood=str(p.get("mood", "")),
             )
         elif name == "set_temperature":
-            infrared.set_temperature(float(p.get("delta_c", 0)))
+            tc = p.get("target_c")
+            infrared.set_temperature(
+                target_c=float(tc) if tc is not None else None,
+                delta_c=float(p["delta_c"]) if p.get("delta_c") is not None else None,
+            )
         elif name == "set_lighting":
             lights.set_lighting(int(p.get("brightness", 70)), str(p.get("warmth", "neutral")))
         elif name == "set_scent":

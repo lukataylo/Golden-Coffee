@@ -60,17 +60,36 @@ def _send(code_hex: str) -> bool:
     return True
 
 
-def set_temperature(delta_c: float) -> bool:
-    """Negative delta => send the AC 'cool' code; positive => 'warm'. Returns False
-    (after printing intent) if the device or the relevant code is unavailable."""
-    kind = "cool" if delta_c < 0 else "warm"
+_last_target_c: float = 21.0  # remembered setpoint so absolute targets map to cool/warm IR
+
+
+def set_temperature(target_c: float | None = None, delta_c: float | None = None) -> bool:
+    """Drive the AC/heater via IR. The policy's thermal model sends an ABSOLUTE
+    `target_c`; manual overrides may still send a relative `delta_c`. With only
+    cool/warm IR pulses we pick a direction:
+      - delta_c: <0 => cool, >0 => warm.
+      - target_c: cool if below the last setpoint, warm if above (then remember it).
+    Returns False (after printing intent) if the device/code is unavailable."""
+    global _last_target_c
+    if target_c is not None:
+        if abs(target_c - _last_target_c) < 0.25:
+            print(f"[ir] target {target_c:.1f}C ~= current setpoint — no change")
+            return True
+        kind = "cool" if target_c < _last_target_c else "warm"
+        _last_target_c = target_c
+        label = f"target {target_c:.1f}C"
+    else:
+        d = float(delta_c or 0)
+        kind = "cool" if d < 0 else "warm"
+        _last_target_c += d
+        label = f"delta {d:+.1f}C"
     code = _load_code(kind)
     if not code:
-        print(f"[ir] (no {kind} code configured) would send AC '{kind}' (delta {delta_c:+.1f}C)")
+        print(f"[ir] (no {kind} code configured) would send AC '{kind}' ({label})")
         return False
     try:
         _send(code)
-        print(f"[ir] sent AC '{kind}' code (delta {delta_c:+.1f}C)")
+        print(f"[ir] sent AC '{kind}' code ({label})")
         return True
     except Exception as exc:
         print(f"[ir] failed to send '{kind}': {exc}")
