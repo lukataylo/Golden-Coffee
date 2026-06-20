@@ -17,9 +17,10 @@
   const WALL_T = 0.12;       // wall thickness
 
   const COLORS = {
-    entry: 0x9aa0a6, queue: 0x6fb6e0, counter: 0xd9a441, seating: 0x7ed87e,
-    restroom: 0xe0876f, table: 0xb58fe0, room: 0xe7c074, floor: 0x1d1813,
-    off: 0x86c79a,        // outdoor / patio ("off" zone) — leafy green
+    // muted, realistic floor tints (softer than neon so the room reads as a café)
+    entry: 0x7e7d76, queue: 0x5f86a3, counter: 0xc79a4a, seating: 0x86a07d,
+    restroom: 0xb07560, table: 0xb58fe0, room: 0xe7c074, floor: 0x1d1813,
+    off: 0x7da487,        // outdoor / patio ("off" zone) — muted leafy green
     counterTop: 0x3a2c1c, // dark wood bar top
     chair: 0x6b4f33,      // café chair / stool
   };
@@ -167,7 +168,7 @@
     geo.rotateX(-Math.PI / 2);     // shape's XY plane -> world XZ
     geo.translate(0, (y || 0) + height, 0);
     const mat = new THREE.MeshStandardMaterial({
-      color, roughness: 0.7, metalness: 0.05, transparent: true, opacity: 0.92,
+      color, roughness: 0.85, metalness: 0.02, transparent: true, opacity: 0.55,
     });
     return new THREE.Mesh(geo, mat);
   }
