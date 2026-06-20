@@ -406,12 +406,87 @@ def eval_perception_geometry() -> None:
 
 
 # ===========================================================================
+# 7. FEDERATED LEARNING — agent federation (Layer 1) + music FlockModel (Layer 2)
+# ===========================================================================
+def eval_federated() -> None:
+    g = "federated"
+
+    # --- Layer 2: federated music model (softmax weight FedAvg) -------------
+    from federated.music_flock_model import (
+        MusicFlockModel, VENUE_PROFILES, deserialize_weights, serialize_weights,
+        full_eval_set, accuracy,
+    )
+    from agent.music_model import MOOD_KEYS, FEATURE_NAMES
+
+    test = full_eval_set()
+    models, params = [], []
+    for name in VENUE_PROFILES:
+        m = MusicFlockModel(profile=name)
+        m.init_dataset("")
+        p = m.train()
+        models.append(m); params.append(p)
+
+    check(g, "FlockModel.train returns non-empty bytes", all(isinstance(p, bytes) and p for p in params))
+    w0 = deserialize_weights(params[0])["weights"]
+    check(g, "weights have full shape (6 moods × 10 feats)",
+          set(w0) == set(MOOD_KEYS) and all(len(w0[k]) == len(FEATURE_NAMES) for k in MOOD_KEYS))
+
+    # serialize/deserialize round-trips
+    rt = deserialize_weights(serialize_weights(w0, 99))
+    check(g, "weight serialize round-trips", rt["n_scenes"] == 99 and rt["weights"]["rush_flow"] == w0["rush_flow"])
+
+    global_bytes = models[0].aggregate(params)
+    gw = deserialize_weights(global_bytes)
+    check(g, "aggregate returns valid global weights",
+          set(gw["weights"]) == set(MOOD_KEYS) and gw["n_scenes"] > 0)
+
+    fed_acc = models[0].evaluate(global_bytes, test)
+    solo_mean = sum(models[i].evaluate(params[i], test) for i in range(len(models))) / len(models)
+    check(g, "federated beats mean-solo accuracy (the FL win)", fed_acc >= solo_mean,
+          f"fed={fed_acc:.3f} solo_mean={solo_mean:.3f}")
+    check(g, "federated accuracy is reasonable (>=0.7)", fed_acc >= 0.70, f"fed={fed_acc:.3f}")
+    # a data-poor venue (morning only) is lifted by federation
+    morning_idx = list(VENUE_PROFILES).index("morning_cafe")
+    morning_solo = models[morning_idx].evaluate(params[morning_idx], test)
+    check(g, "federation lifts the data-poor venue", fed_acc > morning_solo,
+          f"fed={fed_acc:.3f} morning_solo={morning_solo:.3f}")
+
+    # --- Layer 1: agent runs a live federation round and patches policy -----
+    import agent.policy as _pol
+    snap = (_pol.LULL_OCCUPANCY, _pol.HIGH_OCCUPANCY, _pol.HIGH_QUEUE)
+    try:
+        from agent.agent import Agent
+        ag = Agent(use_claude=False)
+        ag._fed_round_s = 1.0
+        base = ts_at(13)
+        fired = None
+        for i in range(14):
+            scene = {"occupancy": 5 + (i % 4), "queue_len": i % 3, "staff_productivity": 0.5,
+                     "funnel": {"abandoned": 0}, "ts": base + i * 1.0}
+            for a in ag.decide_actions(scene):
+                if a["action"] == "tune_policy" and fired is None:
+                    fired = a
+        check(g, "agent fires a tune_policy federation round", fired is not None)
+        if fired:
+            need = {"lull", "high", "queue", "n_nodes"}
+            check(g, "tune_policy params complete", need <= set(fired["params"]), sorted(need - set(fired["params"])))
+            check(g, "tune_policy is a valid AgentAction", isinstance(AgentAction(**fired), AgentAction))
+            check(g, "federation includes peer cafés (n_nodes>1)", fired["params"]["n_nodes"] > 1,
+                  fired["params"].get("n_nodes"))
+            check(g, "federation patched live policy thresholds",
+                  (_pol.LULL_OCCUPANCY, _pol.HIGH_OCCUPANCY, _pol.HIGH_QUEUE) != snap)
+        check(g, "tune_policy is a known ActionName", "tune_policy" in set(ActionName.__args__))
+    finally:
+        _pol.LULL_OCCUPANCY, _pol.HIGH_OCCUPANCY, _pol.HIGH_QUEUE = snap  # restore globals
+
+
+# ===========================================================================
 # report
 # ===========================================================================
 def main() -> int:
     verbose = "-v" in sys.argv
     for fn in (eval_music_model, eval_policy, eval_agent, eval_schemas, eval_actuators,
-               eval_perception_geometry):
+               eval_perception_geometry, eval_federated):
         try:
             fn()
         except Exception as exc:  # noqa: BLE001 — a crashing capability is a failure, not a stop

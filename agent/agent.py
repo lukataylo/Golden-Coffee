@@ -39,6 +39,8 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 BACKEND_WS  = os.environ.get("BACKEND_WS",  "ws://127.0.0.1:8000/ws")
 MODEL       = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
 USE_CLAUDE  = bool(os.environ.get("ANTHROPIC_API_KEY"))
+FED_HISTORY = int(os.environ.get("FED_HISTORY", "60"))  # rolling scene window for ratio estimation
+FED_MIN_SCENES = 10  # need at least this much history before the first federation sync
 _TOKEN_HEADERS = {"X-Token": os.environ["INGEST_TOKEN"]} if os.environ.get("INGEST_TOKEN") else {}
 
 SYSTEM = (
@@ -200,6 +202,19 @@ class Agent:
         self.state: dict = {}
         self.forecast = FootfallForecast()
         self._forecast_debounce: float = 0.0
+        # --- federated learning (Layer 1): this venue is a live node in a café
+        # federation. Each round it estimates its own {lull,high,queue} capacity
+        # ratios from recent scenes, aggregates them with the network (peers), and
+        # patches its own absolute thresholds — privacy-preserving (only ratios
+        # leave the venue, never footage). Surfaced as a `tune_policy` action.
+        from collections import deque
+        self._fed_enabled = os.environ.get("AGENT_FEDERATION", "1") != "0"
+        self._fed_capacity = int(os.environ.get("SHOP_CAPACITY", "12"))
+        self._fed_round_s = float(os.environ.get("FED_ROUND_S", "20"))
+        self._fed_occ: deque = deque(maxlen=FED_HISTORY)
+        self._fed_queue: deque = deque(maxlen=FED_HISTORY)
+        self._fed_last_sync = 0.0
+        self._fed_peers: Optional[list] = None  # lazily-built simulated network
         self.use_claude = use_claude
         self.client = None
         if self.use_claude:
@@ -236,6 +251,71 @@ class Agent:
             "reversible": True, "auto": True,
         }]
 
+    # --- federated learning (Layer 1) --------------------------------------
+    def _simulated_peers(self) -> list:
+        """Build the federation's *other* café nodes once (their submitted params).
+
+        Stands in for real peer venues so a single-camera demo still shows genuine
+        cross-shop learning: three differently-sized cafés (city bar, office café,
+        suburban) each train() their ratios on their own history. In a real
+        deployment these `bytes` arrive from the FLock aggregator instead."""
+        from federated.flock_model import GoldenCoffeeModel
+        venues = [
+            dict(capacity=10, occ_mean=0.80, occ_amp=0.15, queue_mean=0.20),
+            dict(capacity=20, occ_mean=0.55, occ_amp=0.40, queue_mean=0.15),
+            dict(capacity=40, occ_mean=0.35, occ_amp=0.20, queue_mean=0.08),
+        ]
+        peers = []
+        for i, cfg in enumerate(venues):
+            m = GoldenCoffeeModel(seed=i * 42, **cfg)
+            m.init_dataset("")          # no file → synthetic history
+            peers.append(m.train())     # this venue's submitted ratio params (bytes)
+        return peers
+
+    def _federation_actions(self, scene: dict, now: float) -> list[dict]:
+        """Run one federation round if due: estimate this venue's ratios from recent
+        scenes, aggregate with the network, and patch the live policy thresholds.
+        Emits a `tune_policy` action only when a threshold actually moves."""
+        if not self._fed_enabled:
+            return []
+        self._fed_occ.append(float(scene.get("occupancy", 0) or 0))
+        self._fed_queue.append(float(scene.get("queue_len", 0) or 0))
+        if now - self._fed_last_sync < self._fed_round_s or len(self._fed_occ) < FED_MIN_SCENES:
+            return []
+        self._fed_last_sync = now
+
+        from federated.node import estimate_ratios, patch_policy
+        from federated.flock_model import (
+            GoldenCoffeeModel, serialize_params, deserialize_params,
+        )
+        cap = self._fed_capacity
+        local = estimate_ratios(list(self._fed_occ), list(self._fed_queue), cap)
+        local_params = serialize_params(
+            local["lull_ratio"], local["high_ratio"], local["queue_ratio"], len(self._fed_occ))
+        if self._fed_peers is None:
+            self._fed_peers = self._simulated_peers()
+
+        g = deserialize_params(GoldenCoffeeModel().aggregate([local_params, *self._fed_peers]))
+        old = (policy.LULL_OCCUPANCY, policy.HIGH_OCCUPANCY, policy.HIGH_QUEUE)
+        patch_policy(g["lull_ratio"], g["high_ratio"], g["queue_ratio"], cap)
+        new = (policy.LULL_OCCUPANCY, policy.HIGH_OCCUPANCY, policy.HIGH_QUEUE)
+        if new == old:
+            return []  # network agreed with us this round — nothing to announce
+        n_nodes = 1 + len(self._fed_peers)
+        return [{
+            "type": "action", "ts": now, "action": "tune_policy",
+            "params": {
+                "lull": new[0], "high": new[1], "queue": new[2], "n_nodes": n_nodes,
+                "lull_ratio": round(g["lull_ratio"], 3), "high_ratio": round(g["high_ratio"], 3),
+                "queue_ratio": round(g["queue_ratio"], 3),
+            },
+            "rationale": (
+                f"Network learning ({n_nodes} cafés): busy threshold {old[1]}→{new[1]}, "
+                f"lull {old[0]}→{new[0]}, queue {old[2]}→{new[2]}. Only capacity ratios "
+                f"were shared — no footage ever leaves a venue."),
+            "reversible": True, "auto": True,
+        }]
+
     # --- decision making ---------------------------------------------------
     def decide_actions(self, scene: dict) -> list[dict]:
         """Return a list of AgentAction dicts for this scene."""
@@ -249,6 +329,7 @@ class Agent:
         else:
             actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         actions += self._forecast_actions(scene, now)
+        actions += self._federation_actions(scene, now)
         return actions
 
     def _music_context(self, scene: dict) -> str:

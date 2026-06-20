@@ -1307,7 +1307,7 @@
     }
 
     // ---------- action render ----------
-    var ACTION_ICON = { set_music_volume:"🔊", set_music:"🎵", set_temperature:"🌡", set_lighting:"💡", set_scent:"🌸", push_discount:"💸", notify_staff:"🔔", suggest_layout:"🧭" };
+    var ACTION_ICON = { set_music_volume:"🔊", set_music:"🎵", set_temperature:"🌡", set_lighting:"💡", set_scent:"🌸", push_discount:"💸", notify_staff:"🔔", suggest_layout:"🧭", tune_policy:"🧠" };
     function inferZone(text) {
       var t = (text || "").toLowerCase();
       if (/seat|table|dining/.test(t)) return "seating";
@@ -1338,6 +1338,23 @@
         var z = (a.params && a.params.zone) || inferZone(a.params && a.params.text);
         flashAlert(z, "Staff alert · " + z);
       }
+      if (a.action === "tune_policy") { updateFedBadge(a.params || {}); }
+    }
+    // Federated-learning status badge: shows the live café count + the thresholds
+    // the network last agreed on. Created on first tune_policy, then updated.
+    function updateFedBadge(p) {
+      var badge = $("fed-badge");
+      if (!badge) {
+        badge = document.createElement("div");
+        badge.id = "fed-badge";
+        badge.style.cssText = "margin:8px 0;padding:8px 12px;border:1px solid var(--line,#3334);" +
+          "border-radius:10px;font-size:12px;line-height:1.5;background:rgba(120,180,255,.06)";
+        var feed = $("feed");
+        if (feed && feed.parentNode) feed.parentNode.insertBefore(badge, feed);
+      }
+      badge.innerHTML = "🧠 <b>Federated learning</b> · " + (p.n_nodes || "?") +
+        " cafés · thresholds <b>lull " + p.lull + " · busy " + p.high + " · queue " + p.queue +
+        "</b> <span style='opacity:.6'>(only capacity ratios shared — no footage leaves a venue)</span>";
     }
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, function (c) {

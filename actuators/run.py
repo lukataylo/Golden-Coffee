@@ -62,6 +62,11 @@ def dispatch(action: dict) -> None:
             notify.notify_staff(p.get("text", ""))
         elif name == "suggest_layout":
             print(f"[actuators] layout suggestion: {p.get('text', '')}")
+        elif name == "tune_policy":
+            # Not a device — a federated-learning threshold update. Nothing to
+            # actuate; the agent already patched its own policy. Log for the demo.
+            print(f"[actuators] policy tuned by federation: lull={p.get('lull')} "
+                  f"high={p.get('high')} queue={p.get('queue')} ({p.get('n_nodes')} cafés)")
         else:
             print(f"[actuators] no handler for {name!r}")
     except Exception as exc:

@@ -302,16 +302,18 @@ def _dataset() -> list[tuple[list[float], str]]:
     return rows
 
 
-def train(epochs: int = 300, lr: float = 0.3, l2: float = 1e-4) -> dict[str, list[float]]:
-    """Fit softmax-regression weights on the oracle-labelled dataset.
+def fit(data: list[tuple[list[float], str]], epochs: int = 300,
+        lr: float = 0.3, l2: float = 1e-4) -> dict[str, list[float]]:
+    """Softmax-regression gradient descent on a labelled (features, mood) dataset.
 
     Pure Python (no numpy) so it runs in the demo venv. Returns
-    {mood_key: [weight per feature]} — paste into DEFAULT_WEIGHTS to bake it in.
+    {mood_key: [weight per feature]}. Factored out of `train()` so federated
+    learning (`federated.music_flock_model`) can fit on a *single venue's* data
+    and then average the resulting weight vectors across cafés.
     """
-    data = _dataset()
     nfeat = len(FEATURE_NAMES)
     W = {k: [0.0] * nfeat for k in MOOD_KEYS}
-
+    n = max(1, len(data))
     for _ in range(epochs):
         grads = {k: [0.0] * nfeat for k in MOOD_KEYS}
         for feats, label in data:
@@ -321,11 +323,15 @@ def train(epochs: int = 300, lr: float = 0.3, l2: float = 1e-4) -> dict[str, lis
                 err = probs[ki] - (1.0 if k == label else 0.0)
                 for j in range(nfeat):
                     grads[k][j] += err * feats[j]
-        n = len(data)
         for k in MOOD_KEYS:
             for j in range(nfeat):
                 W[k][j] -= lr * (grads[k][j] / n + l2 * W[k][j])
     return {k: [round(w, 4) for w in W[k]] for k in MOOD_KEYS}
+
+
+def train(epochs: int = 300, lr: float = 0.3, l2: float = 1e-4) -> dict[str, list[float]]:
+    """Fit weights on the full oracle-labelled dataset (bakes DEFAULT_WEIGHTS)."""
+    return fit(_dataset(), epochs=epochs, lr=lr, l2=l2)
 
 
 # Locally-trained weights (produced by `train()`); deterministic & offline.

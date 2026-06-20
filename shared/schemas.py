@@ -102,6 +102,7 @@ ActionName = Literal[
     "push_discount",
     "notify_staff",
     "suggest_layout",
+    "tune_policy",        # federated learning: cross-café threshold update {lull, high, queue, n_nodes}
 ]
 
 
