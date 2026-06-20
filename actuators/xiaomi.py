@@ -53,17 +53,62 @@ XIAOMI_REGION = os.environ.get("XIAOMI_REGION", "cn")
 # Yeelight colour-temperature spans ~1700K (warm) .. 6500K (cool).
 WARMTH_KELVIN = {"warm": 2700, "neutral": 4000, "cool": 6000}
 
+# How to reach the devices:
+#   local — miIO on the LAN (fast, same network required)
+#   cloud — via the Mi cloud (works across networks, e.g. gear in China)
+#   auto  — local when it's configured, otherwise cloud
+XIAOMI_TRANSPORT = os.environ.get("XIAOMI_TRANSPORT", "auto").lower()
 
-def lamp_configured() -> bool:
+
+def _local_lamp_configured() -> bool:
     return bool(XIAOMI_LAMP_IP and XIAOMI_LAMP_TOKEN)
 
 
-def diffuser_configured() -> bool:
+def _local_diffuser_configured() -> bool:
     return bool(XIAOMI_DIFFUSER_IP and XIAOMI_DIFFUSER_TOKEN)
 
 
+def _use_cloud(local_ok: bool) -> bool:
+    """Decide whether this call should go via the cloud transport."""
+    if XIAOMI_TRANSPORT == "cloud":
+        return True
+    if XIAOMI_TRANSPORT == "local":
+        return False
+    return not local_ok  # auto: cloud only when local isn't set up
+
+
+def lamp_configured() -> bool:
+    from actuators import xiaomi_cloud
+
+    if XIAOMI_TRANSPORT == "local":
+        return _local_lamp_configured()
+    if XIAOMI_TRANSPORT == "cloud":
+        return xiaomi_cloud.lamp_configured()
+    return _local_lamp_configured() or xiaomi_cloud.lamp_configured()
+
+
+def diffuser_configured() -> bool:
+    from actuators import xiaomi_cloud
+
+    if XIAOMI_TRANSPORT == "local":
+        return _local_diffuser_configured()
+    if XIAOMI_TRANSPORT == "cloud":
+        return xiaomi_cloud.diffuser_configured()
+    return _local_diffuser_configured() or xiaomi_cloud.diffuser_configured()
+
+
 def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
-    """Set a Mijia/Yeelight lamp's brightness (0-100) and warmth. >0 turns it on."""
+    """Set a Mijia/Yeelight lamp's brightness (0-100) and warmth. >0 turns it on.
+    Routes to the cloud transport when configured for it (see XIAOMI_TRANSPORT)."""
+    if _use_cloud(_local_lamp_configured()):
+        from actuators import xiaomi_cloud
+
+        return xiaomi_cloud.lamp_set(brightness, warmth)
+    return _local_lamp_set(brightness, warmth)
+
+
+def _local_lamp_set(brightness: int, warmth: str = "neutral") -> bool:
+    """Drive the lamp locally over miIO (same-LAN)."""
     brightness = max(0, min(100, int(brightness)))
     kelvin = WARMTH_KELVIN.get(warmth, 4000)
     try:
@@ -90,7 +135,17 @@ def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
 def diffuser_set(intensity: int, scent: str = "fresh") -> bool:
     """Drive a Mijia scent diffuser. >0 turns it on; intensity maps to a fan/level
     on MIoT devices that expose one. `scent` is informational (a diffuser can't
-    pick a fragrance — that's whatever cartridge is loaded)."""
+    pick a fragrance — that's whatever cartridge is loaded).
+    Routes to the cloud transport when configured for it (see XIAOMI_TRANSPORT)."""
+    if _use_cloud(_local_diffuser_configured()):
+        from actuators import xiaomi_cloud
+
+        return xiaomi_cloud.diffuser_set(intensity, scent)
+    return _local_diffuser_set(intensity, scent)
+
+
+def _local_diffuser_set(intensity: int, scent: str = "fresh") -> bool:
+    """Drive the diffuser locally over miIO (same-LAN)."""
     intensity = max(0, min(100, int(intensity)))
     on = intensity > 0
 

@@ -518,9 +518,6 @@ async def spotify_callback(code: Optional[str] = None, error: Optional[str] = No
     _sp_refresh_tok = tok.get("refresh_token")
     _sp_access_tok  = tok.get("access_token")
     _sp_expires_at  = time.time() + tok.get("expires_in", 3600) - 60
-    # One-time bootstrap: log the refresh token so it can be persisted as the
-    # SPOTIPY_REFRESH_TOKEN env var (survives restarts). Safe to remove after.
-    print(f"[spotify] SPOTIPY_REFRESH_TOKEN={_sp_refresh_tok}", flush=True)
     return {"ok": True, "message": "Spotify connected — dashboard is ready on any device. You can close this tab."}
 
 
