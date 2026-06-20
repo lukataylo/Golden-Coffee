@@ -451,9 +451,12 @@ def eval_federated() -> None:
     check(g, "federation lifts the data-poor venue", fed_acc > morning_solo,
           f"fed={fed_acc:.3f} morning_solo={morning_solo:.3f}")
 
-    # --- Layer 1: agent runs a live federation round and patches policy -----
+    # --- Layer 1 + live Layer 2: agent runs a federation round, patches policy
+    #     thresholds AND the live music-model weights ---------------------------
+    import copy as _copy
     import agent.policy as _pol
     snap = (_pol.LULL_OCCUPANCY, _pol.HIGH_OCCUPANCY, _pol.HIGH_QUEUE)
+    snap_w = _copy.deepcopy(_pol._MUSIC_MODEL.weights)
     try:
         from agent.agent import Agent
         ag = Agent(use_claude=False)
@@ -468,7 +471,7 @@ def eval_federated() -> None:
                     fired = a
         check(g, "agent fires a tune_policy federation round", fired is not None)
         if fired:
-            need = {"lull", "high", "queue", "n_nodes"}
+            need = {"lull", "high", "queue", "n_nodes", "music_synced"}
             check(g, "tune_policy params complete", need <= set(fired["params"]), sorted(need - set(fired["params"])))
             check(g, "tune_policy is a valid AgentAction", isinstance(AgentAction(**fired), AgentAction))
             check(g, "federation includes peer cafés (n_nodes>1)", fired["params"]["n_nodes"] > 1,
@@ -476,8 +479,14 @@ def eval_federated() -> None:
             check(g, "federation patched live policy thresholds",
                   (_pol.LULL_OCCUPANCY, _pol.HIGH_OCCUPANCY, _pol.HIGH_QUEUE) != snap)
         check(g, "tune_policy is a known ActionName", "tune_policy" in set(ActionName.__args__))
+        # Live Layer 2: the running music model's weights were federated in place
+        check(g, "federation patched live music-model weights", ag._fed_music_synced and
+              _pol._MUSIC_MODEL.weights != snap_w)
+        check(g, "music weights keep valid shape after federation",
+              all(len(_pol._MUSIC_MODEL.weights[k]) == len(FEATURE_NAMES) for k in MOOD_KEYS))
     finally:
         _pol.LULL_OCCUPANCY, _pol.HIGH_OCCUPANCY, _pol.HIGH_QUEUE = snap  # restore globals
+        _pol._MUSIC_MODEL.weights = snap_w
 
 
 # ===========================================================================

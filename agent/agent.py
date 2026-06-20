@@ -215,6 +215,12 @@ class Agent:
         self._fed_queue: deque = deque(maxlen=FED_HISTORY)
         self._fed_last_sync = 0.0
         self._fed_peers: Optional[list] = None  # lazily-built simulated network
+        # Layer 2 wired live: each round also FedAvgs this venue's local music-model
+        # fit into the running global weights (policy._MUSIC_MODEL), so federation
+        # tunes *which moods play*, not just the occupancy thresholds.
+        self._fed_scene_hist: deque = deque(maxlen=FED_HISTORY)
+        self._fed_music_synced = False
+        self._fed_music_rounds = 0
         self.use_claude = use_claude
         self.client = None
         if self.use_claude:
@@ -280,6 +286,10 @@ class Agent:
             return []
         self._fed_occ.append(float(scene.get("occupancy", 0) or 0))
         self._fed_queue.append(float(scene.get("queue_len", 0) or 0))
+        self._fed_scene_hist.append({
+            "occupancy": scene.get("occupancy", 0), "queue_len": scene.get("queue_len", 0),
+            "staff_productivity": scene.get("staff_productivity", 0.0), "ts": scene.get("ts"),
+        })
         if now - self._fed_last_sync < self._fed_round_s or len(self._fed_occ) < FED_MIN_SCENES:
             return []
         self._fed_last_sync = now
@@ -299,22 +309,64 @@ class Agent:
         old = (policy.LULL_OCCUPANCY, policy.HIGH_OCCUPANCY, policy.HIGH_QUEUE)
         patch_policy(g["lull_ratio"], g["high_ratio"], g["queue_ratio"], cap)
         new = (policy.LULL_OCCUPANCY, policy.HIGH_OCCUPANCY, policy.HIGH_QUEUE)
-        if new == old:
-            return []  # network agreed with us this round — nothing to announce
+
+        # Layer 2: also FedAvg this venue's music-model fit into the live weights.
+        music_first = self._federate_music()
+
+        if new == old and not music_first:
+            return []  # network agreed with us, music already federated — nothing new
         n_nodes = 1 + len(self._fed_peers)
+        bits = []
+        if new != old:
+            bits.append(f"busy threshold {old[1]}→{new[1]}, lull {old[0]}→{new[0]}, queue {old[2]}→{new[2]}")
+        if music_first:
+            bits.append("music model now uses federated weights (which moods play)")
         return [{
             "type": "action", "ts": now, "action": "tune_policy",
             "params": {
                 "lull": new[0], "high": new[1], "queue": new[2], "n_nodes": n_nodes,
                 "lull_ratio": round(g["lull_ratio"], 3), "high_ratio": round(g["high_ratio"], 3),
                 "queue_ratio": round(g["queue_ratio"], 3),
+                "music_synced": self._fed_music_synced, "music_rounds": self._fed_music_rounds,
             },
             "rationale": (
-                f"Network learning ({n_nodes} cafés): busy threshold {old[1]}→{new[1]}, "
-                f"lull {old[0]}→{new[0]}, queue {old[2]}→{new[2]}. Only capacity ratios "
-                f"were shared — no footage ever leaves a venue."),
+                f"Network learning ({n_nodes} cafés): " + "; ".join(bits) +
+                ". Only ratios + model weights were shared — no footage ever leaves a venue."),
             "reversible": True, "auto": True,
         }]
+
+    def _federate_music(self) -> bool:
+        """FedAvg this venue's local music-model fit into the running global weights.
+
+        Trains the softmax on the venue's recent scene history (small/fast), then
+        averages it — weighted by scene counts — with the current global weights via
+        the Layer-2 `MusicFlockModel.aggregate`, and patches `policy._MUSIC_MODEL`
+        in place. So the federation round also tunes *what music plays*, not just
+        the occupancy thresholds. Returns True only on the FIRST sync (for the feed).
+        """
+        try:
+            import agent.music_model as mm
+            from federated.music_flock_model import (
+                MusicFlockModel, serialize_weights, deserialize_weights,
+            )
+            data = [(mm.features(s), mm._oracle(s)) for s in self._fed_scene_hist]
+            if len(data) < FED_MIN_SCENES:
+                return False
+            local_w = mm.fit(data, epochs=80)
+            # Treat the current global as a heavily-weighted prior so a single venue
+            # nudges — not hijacks — the shared model (real FedAvg by scene count).
+            global_params = serialize_weights(policy._MUSIC_MODEL.weights, n_scenes=2000)
+            local_params = serialize_weights(local_w, n_scenes=len(data))
+            new_global = deserialize_weights(
+                MusicFlockModel().aggregate([global_params, local_params]))["weights"]
+            policy._MUSIC_MODEL.weights = {k: list(v) for k, v in new_global.items()}
+            self._fed_music_rounds += 1
+            first = not self._fed_music_synced
+            self._fed_music_synced = True
+            return first
+        except Exception as exc:
+            print(f"[agent] music federation skipped: {exc}")
+            return False
 
     # --- decision making ---------------------------------------------------
     def decide_actions(self, scene: dict) -> list[dict]:
