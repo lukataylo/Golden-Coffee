@@ -409,8 +409,18 @@ class Agent:
             try:
                 actions = self._decide_claude(scene)
             except Exception as exc:
-                print(f"[agent] Claude decide failed ({exc}); falling back to rules")
-                actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+                # Claude primary → Gemini backup → rule-based, so a Claude outage
+                # or rate-limit degrades to the next-best reasoning, not silence.
+                print(f"[agent] Claude decide failed ({exc})")
+                if llm.provider() and (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
+                    try:
+                        print("[agent] backup: reasoning with Gemini")
+                        actions = self._decide_llm(scene)
+                    except Exception as exc2:
+                        print(f"[agent] Gemini backup failed ({exc2}); using rules")
+                        actions = [a.model_dump() for a in policy.decide(scene, self.state)]
+                else:
+                    actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         elif USE_LLM:
             # Throttle LLM calls (free Gemini tier ~15 rpm); ambiance doesn't need
             # per-second reasoning. Between calls the agent simply holds.
