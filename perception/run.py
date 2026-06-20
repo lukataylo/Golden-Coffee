@@ -913,6 +913,10 @@ def main() -> None:
         action="store_true",
         help="strip bboxes from events, add DP noise to heatmap, skip video stream (Flock.io demo)",
     )
+    parser.add_argument("--no-audio", action="store_true",
+                        help="disable the microphone Sound pillar (loudness + acoustic stress)")
+    parser.add_argument("--audio-device", type=int, default=None,
+                        help="sounddevice input device index for the mic (default: system default)")
     args = parser.parse_args()
 
     if args.dump_zones:
@@ -994,6 +998,13 @@ def main() -> None:
     if not args.dry_run:
         poster = _BackgroundPoster(BACKEND_URL, _TOKEN_HEADERS, w, h)
 
+    # Audio sensing for the Comfort Index's Sound pillar (loudness + stress).
+    # Privacy: we never record or transmit audio — only the two derived numbers.
+    audio = None
+    if not args.no_audio and not args.privacy_mode:
+        from perception.audio import AudioMonitor
+        audio = AudioMonitor(device=args.audio_device).start()
+
     # Fix 6: federated emit thread — posts aggregate ratios only (no tracks/bboxes)
     # to the federation server so cross-shop learning works without sharing raw data.
     if not args.dry_run:
@@ -1057,6 +1068,18 @@ def main() -> None:
             last_frame_t = video_t
 
         if video_t - last_emit_t >= EMIT_EVERY_S:
+            # Measured ambient: light off the camera frame, loudness/stress off the mic.
+            from perception.light import measure_light
+            from shared.comfort import comfort_index
+            lite = measure_light(frame)
+            snd = audio.read() if audio is not None else {"sound_db": None, "sound_stress": None}
+            hour = time.localtime().tm_hour
+            ci = comfort_index(
+                sound_db=snd.get("sound_db"),
+                sound_stress=snd.get("sound_stress"),
+                light_level=lite["light_level"],
+                hour=hour,
+            )
             event = SceneEvent(
                 ts=time.time(),
                 tracks=tracks,
@@ -1068,6 +1091,11 @@ def main() -> None:
                 staff_productivity=productivity,
                 tables=tables,
                 cleaning=cleaning,
+                sound_db=snd.get("sound_db"),
+                sound_stress=snd.get("sound_stress"),
+                light_level=lite["light_level"],
+                light_lux=lite["light_lux"],
+                comfort=ci.as_dict(),
                 source="perception",
             )
             if args.dry_run:
@@ -1083,6 +1111,8 @@ def main() -> None:
             break
 
     cap.release()
+    if audio is not None:
+        audio.close()
     if poster is not None:
         frames_sent = poster.frames_sent
         poster.close()

@@ -3,6 +3,7 @@
 ultralytics>=8.3.0          # YOLO11
 supervision>=0.25.0         # ByteTrack, zones, dwell timers, heatmaps (MIT)
 opencv-python>=4.10.0
+sounddevice>=0.4.6          # microphone capture for the Comfort Index Sound pillar (loudness + stress)
 
 # Backend / realtime
 fastapi>=0.115.0

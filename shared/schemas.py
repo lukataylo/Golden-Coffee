@@ -89,7 +89,34 @@ class SceneEvent(BaseModel):
     forecast_next_hour: Optional[int] = None  # predicted occupancy for the next clock hour
     outdoor_temp_c: Optional[float] = None   # outdoor thermometer (°C) — sets seasonal baseline
     indoor_humidity_rh: Optional[float] = None  # indoor relative humidity % — humidity offset
+    # --- measured ambient (sensed, not set-point) -----------------------------
+    sound_db: Optional[float] = None        # measured loudness, approx dB SPL (from mic)
+    sound_stress: Optional[float] = None    # acoustic stress 0..100 (loudness/choppiness/harshness)
+    light_level: Optional[float] = None     # measured scene brightness 0..100 (from camera)
+    light_lux: Optional[float] = None       # rough perceptual lux estimate (uncalibrated)
+    comfort: Optional["ComfortIndex"] = None  # the full Comfort Index breakdown for this tick
     source: Literal["mock", "perception"] = "mock"
+
+
+# ---------------------------------------------------------------------------
+# Comfort Index — the headline 0–100 "how nice does it feel" number, broken
+# into its four pillars. Computed canonically in shared.comfort.comfort_index().
+# ---------------------------------------------------------------------------
+class ComfortIndex(BaseModel):
+    overall: int = 0                       # 0..100 weighted blend of the pillars present
+    sound: Optional[int] = None            # Sound pillar 0..100
+    light: Optional[int] = None            # Light pillar 0..100
+    air: Optional[int] = None              # Air (thermal + humidity) pillar 0..100
+    scent: Optional[int] = None            # Scent pillar 0..100
+    label: str = ""                        # "Feels great" / "Comfortable" / ...
+    sound_db: Optional[float] = None       # echo of the measured loudness driving Sound
+    sound_stress: Optional[float] = None   # echo of acoustic stress driving Sound
+    light_level: Optional[float] = None    # echo of measured brightness driving Light
+    daypart: str = "day"                   # "day" | "evening" (shifts the Light ideal band)
+
+
+# Resolve the forward reference SceneEvent -> ComfortIndex now that it exists.
+SceneEvent.model_rebuild()
 
 
 # ---------------------------------------------------------------------------
