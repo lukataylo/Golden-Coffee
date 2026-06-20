@@ -136,6 +136,7 @@ ActionName = Literal[
     "suggest_layout",
     "tune_policy",        # federated learning: cross-café threshold update {lull, high, queue, n_nodes}
     "update_menu_price",  # quiet-period markdown: {item_id, display_price, base_price, discount_pct, never_surge}
+    "staff_verified",     # camera confirmed staff acted on an alert {table_id, alert_type, response_time_s}
 ]
 
 

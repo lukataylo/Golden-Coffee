@@ -50,6 +50,7 @@ TABLE_DIRTY_SLA_S   = 180   # 7b: guest sitting with dirty table ≥ 3 min
 TABLE_ORDER_SLA_S   = 360   # 7c: waiting_to_order ≥ 6 min
 TABLE_BILL_SLA_S    = 240   # 7d: requested_bill ≥ 4 min
 TABLE_SLA_COOLDOWN  = 300   # 5 min repeat-alert cooldown per table per rule
+VERIFY_TIMEOUT_S    = 600   # 10 min: escalate if camera sees no resolution
 
 # Perishable items eligible for quiet-period markdown (never surge — prices only go down).
 # In production these come from the POS/inventory API; mocked here for demo.
@@ -228,6 +229,62 @@ DEFAULT_DEBOUNCE_S = 120
 
 
 # --------------------------------------------------------------------------
+# Staff-action verification — camera watches for the expected outcome.
+# When a table alert fires, we register it as pending. Each tick we check
+# whether the camera confirms the table was actually resolved. If yes, we
+# broadcast a staff_verified event with the response time. If no resolution
+# within VERIFY_TIMEOUT_S, we escalate.
+# --------------------------------------------------------------------------
+def _register_pending(state: dict, key: str, table_id: str, alert_type: str, now: float) -> None:
+    state.setdefault("pending_verifications", {})[key] = {
+        "table_id": table_id, "alert_type": alert_type, "fired_at": now,
+    }
+
+
+def _check_verifications(scene: dict, state: dict, now: float, actions: list) -> None:
+    pending = state.get("pending_verifications")
+    if not pending:
+        return
+    tables_by_id = {t.get("id"): t for t in (scene.get("tables", []) or [])}
+    resolved_keys = []
+    for key, v in list(pending.items()):
+        tid        = v["table_id"]
+        atype      = v["alert_type"]
+        elapsed    = now - v["fired_at"]
+        table      = tables_by_id.get(tid, {})
+
+        verified = False
+        if atype == "7b" and not table.get("needs_cleaning", True):
+            verified = True   # table cleared
+        elif atype == "7c" and table.get("status") != "waiting_to_order":
+            verified = True   # order taken (status moved on)
+        elif atype == "7d" and table.get("status") == "empty":
+            verified = True   # bill paid, guests left
+
+        if verified:
+            rs = int(elapsed)
+            actions.append(_action(
+                now, "staff_verified",
+                {"table_id": tid, "alert_type": atype,
+                 "response_time_s": rs, "verified_by": "camera"},
+                f"Camera confirmed: staff resolved {atype} alert for Table {tid} "
+                f"in {rs // 60}m {rs % 60}s.",
+            ))
+            resolved_keys.append(key)
+        elif elapsed > VERIFY_TIMEOUT_S:
+            actions.append(_action(
+                now, "notify_staff",
+                {"text": f"ESCALATION: Table {tid} unresolved for {int(elapsed // 60)} min.",
+                 "priority": "urgent", "channel": "wearables", "escalation": True},
+                f"Table {tid} {atype} alert fired {int(elapsed // 60)} min ago — "
+                f"camera sees no resolution. Escalating.",
+            ))
+            resolved_keys.append(key)
+    for key in resolved_keys:
+        pending.pop(key, None)
+
+
+# --------------------------------------------------------------------------
 # debounce helpers — `state` is owned by the caller and persists across calls.
 # --------------------------------------------------------------------------
 def _due(state: dict, key: str, now: float, window_s: float | None = None) -> bool:
@@ -300,6 +357,9 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     music_auto = state.get("music_mode", "auto") == "auto"
 
     actions: list[AgentAction] = []
+
+    # --- 0. STAFF VERIFICATION: check if camera confirms previous alerts were acted on ---
+    _check_verifications(scene, state, now, actions)
 
     # --- 1. RUSH COPILOT: queue too long -> pull staff; walk-offs escalate if queue is already bad --
     # Walk-offs alone don't trigger — people leave for personal reasons.
@@ -520,6 +580,7 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
                 f"Table {tid} occupied but not cleared; guest sitting with dirty dishes "
                 f"for {int(occupied_s // 60)}+ min.",
             ))
+            _register_pending(state, f"7b_{tid}", tid, "7b", now)
 
         # 7c: Order-taking SLA — waiting_to_order for ≥ 6 min
         if (occupied and status == "waiting_to_order" and wait_s >= TABLE_ORDER_SLA_S
@@ -534,6 +595,7 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
                 },
                 f"Table {tid} hasn't been served in {int(wait_s // 60)} min — order-taking SLA breach.",
             ))
+            _register_pending(state, f"7c_{tid}", tid, "7c", now)
 
         # 7d: Bill request SLA — requested_bill for ≥ 4 min
         if (status == "requested_bill" and wait_s >= TABLE_BILL_SLA_S
@@ -549,6 +611,7 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
                 f"Table {tid} requested the bill {int(wait_s // 60)}+ min ago — "
                 f"guest is waiting to leave.",
             ))
+            _register_pending(state, f"7d_{tid}", tid, "7d", now)
 
     # 7-catch-all: "overdue" status (generic un-served table, from POS or mock)
     overdue_tables = [t for t in tables if t.get("status") == "overdue"]
