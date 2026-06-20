@@ -220,11 +220,27 @@ def _save_session(server, user_id, service_token, ssecurity) -> None:
         pass
 
 
+def _session_json() -> str:
+    """The cached session JSON, from the file or — for deploys with no writable FS
+    (Railway/containers) — the XIAOMI_SESSION_JSON env var. Env wins if both exist."""
+    env = os.environ.get("XIAOMI_SESSION_JSON", "").strip()
+    if env:
+        return env
+    if SESSION_FILE.exists():
+        return SESSION_FILE.read_text()
+    return ""
+
+
+def session_available() -> bool:
+    return bool(_session_json())
+
+
 def load_session() -> _Cloud | None:
-    if not SESSION_FILE.exists():
+    raw = _session_json()
+    if not raw:
         return None
     try:
-        d = json.loads(SESSION_FILE.read_text())
+        d = json.loads(raw)
         return _Cloud(d["server"], d["user_id"], d["service_token"], d["ssecurity"])
     except Exception:
         return None
@@ -320,11 +336,11 @@ def login_qr(server: str | None = None) -> _Cloud | None:
 
 # --------------------------------------------------------------- control ------
 def lamp_configured() -> bool:
-    return bool(LAMP_DID and SESSION_FILE.exists())
+    return bool(LAMP_DID and session_available())
 
 
 def diffuser_configured() -> bool:
-    return bool(DIFF_DID and SESSION_FILE.exists())
+    return bool(DIFF_DID and session_available())
 
 
 def _need_session() -> _Cloud | None:
