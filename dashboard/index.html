@@ -152,6 +152,13 @@
         <b>Drop a photo here or click to browse</b>
         <span style="font-size:11px">JPG · PNG · HEIC — any photo from your phone works</span>
       </label>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <label style="font-size:12px;color:#9b8c7b;white-space:nowrap;" for="wz-table-count">Number of tables:</label>
+        <input id="wz-table-count" type="number" min="0" max="30" value="3"
+          style="width:70px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,236,214,.18);
+          background:rgba(28,18,10,.7);color:#F6EEE4;font-size:13px;font-family:inherit;outline:none;">
+        <span style="font-size:11px;color:#9b8c7b;">Set to 0 if no individual tables needed</span>
+      </div>
       <div class="wz-stat" id="wz-s1-stat"></div>
     </div>
 
@@ -1335,16 +1342,33 @@
     return location.origin;
   })();
 
-  var WZ_REGIONS = [
+  var WZ_BASE_REGIONS = [
     {label:'entry',    cat:'zones',    color:'#6fb6e0', hint:'Entry / door — where customers walk in', req:true},
     {label:'queue',    cat:'zones',    color:'#e0876f', hint:'Ordering queue — the line before the counter', req:true},
     {label:'counter',  cat:'zones',    color:'#d9a441', hint:'Service counter — where staff take orders', req:true},
     {label:'seating',  cat:'zones',    color:'#7ed87e', hint:'Seating area — tables and chairs', req:true},
-    {label:'T1',       cat:'tables',   color:'#b58fe0', hint:'Table 1 (optional)', req:false},
-    {label:'T2',       cat:'tables',   color:'#b58fe0', hint:'Table 2 (optional)', req:false},
-    {label:'T3',       cat:'tables',   color:'#b58fe0', hint:'Table 3 (optional)', req:false},
     {label:'restroom', cat:'cleaning', color:'#f0c040', hint:'Restroom / cleaning zone (optional)', req:false},
   ];
+
+  // Table colors cycle through purples/teals for visual distinction
+  var TABLE_COLORS = ['#b58fe0','#7eb8d8','#e08fa0','#8fe0b5','#e0c08f','#8f9de0','#d88fe0','#e0d48f'];
+
+  function buildRegions(tableCount) {
+    var regions = WZ_BASE_REGIONS.slice(0, 4); // entry/queue/counter/seating
+    for (var i = 1; i <= tableCount; i++) {
+      regions.push({
+        label: 'T' + i,
+        cat: 'tables',
+        color: TABLE_COLORS[(i - 1) % TABLE_COLORS.length],
+        hint: 'Table ' + i + ' (optional — skip with →)',
+        req: false,
+      });
+    }
+    regions.push(WZ_BASE_REGIONS[4]); // restroom last
+    return regions;
+  }
+
+  var WZ_REGIONS = buildRegions(3);
 
   var wz = { ri:0, polys:{}, draft:[], mouse:null, img:null, sx:1, sy:1 };
 
@@ -1464,6 +1488,8 @@
     var url = URL.createObjectURL(file);
     var img = new Image();
     img.onload = function() {
+      var tc = Math.max(0, Math.min(30, parseInt(document.getElementById('wz-table-count').value) || 0));
+      WZ_REGIONS = buildRegions(tc);
       wz.img = img; wz.polys = {}; wz.draft = []; wz.ri = 0;
       wzStep(2); wzUpdateTabs();
       setTimeout(wzRender, 60);
@@ -1499,6 +1525,7 @@
   };
   document.getElementById('wz-redo').onclick = function() {
     wz.img = null; wz.polys = {}; wz.draft = []; wz.ri = 0;
+    WZ_REGIONS = buildRegions(parseInt(document.getElementById('wz-table-count').value) || 3);
     document.getElementById('wz-file').value = '';
     document.getElementById('wz-dropzone').innerHTML =
       '<div class="dz-icon">📷</div><b>Drop a photo here or click to browse</b>' +
@@ -1550,10 +1577,10 @@
     .then(function(r) { return r.json(); })
     .then(function(g) {
       var hasZones = g && g.zones && Object.keys(g.zones).length > 0;
-      if (!hasZones) wzShow(false);
+      if (!hasZones) wzShow(true);
     })
     .catch(function() {
-      wzShow(false);
+      wzShow(true);
     });
 
 })();
