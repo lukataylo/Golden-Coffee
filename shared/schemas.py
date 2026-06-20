@@ -116,5 +116,22 @@ class AgentAction(BaseModel):
     auto: bool = True                            # False if triggered by a human override
 
 
+# ---------------------------------------------------------------------------
+# Music mode — auto (model picks) vs custom (employee picks).
+# ---------------------------------------------------------------------------
+class MusicMode(str, Enum):
+    AUTO = "auto"
+    CUSTOM = "custom"
+
+
+class MusicModeEvent(BaseModel):
+    """Broadcast over WS whenever the music mode changes."""
+    type: Literal["music_mode"] = "music_mode"
+    ts: float
+    mode: MusicMode
+    source_kind: Optional[str] = None   # "spotify" | "youtube" | "playlist_url"
+    source_value: Optional[str] = None  # account handle or URL
+
+
 # Convenience union for anything broadcast over the websocket.
-Message = Union[SceneEvent, AgentAction]
+Message = Union[SceneEvent, AgentAction, MusicModeEvent]

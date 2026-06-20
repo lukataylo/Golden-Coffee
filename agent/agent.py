@@ -80,10 +80,12 @@ TOOLS = [
         "name": "set_music",
         "description": (
             "Change WHAT music is playing (mood/genre/playlist), not just volume. "
-            "Use the local music model's vibes: 'sunrise_acoustic' (quiet morning), "
-            "'daytime_focus' (steady daytime), 'upbeat_lift' (flat/low-energy room), "
-            "'rush_flow' (queue building — steady groove keeps the line moving), "
-            "'busy_calm' (full room — soft so it stays talkable), 'evening_warm' (evening wind-down). "
+            "Time-slot moods: 'morning_rush' (07:00-11:00, upbeat acoustic pop/indie rock), "
+            "'midday_dwell' (11:00-15:00, neo-soul/lo-fi hip hop for focus), "
+            "'afternoon_lounge' (15:00-close, bossa nova/jazz soul wind-down). "
+            "Operational overrides: 'rush_flow' (queue building — steady groove), "
+            "'busy_calm' (full room — soft so it stays talkable), "
+            "'upbeat_lift' (flat/low-energy room — lift the vibe). "
             "Switch the mood when the room's state clearly calls for a different vibe."
         ),
         "input_schema": {
@@ -91,8 +93,8 @@ TOOLS = [
             "properties": {
                 "mood": {
                     "type": "string",
-                    "enum": ["sunrise_acoustic", "daytime_focus", "upbeat_lift",
-                             "rush_flow", "busy_calm", "evening_warm"],
+                    "enum": ["morning_rush", "midday_dwell", "afternoon_lounge",
+                             "rush_flow", "busy_calm", "upbeat_lift"],
                 },
                 "rationale": {"type": "string"},
             },
@@ -477,7 +479,13 @@ async def run_live() -> None:
                             data = json.loads(raw)
                         except Exception:
                             continue
-                        if data.get("type") == "scene":
+                        if data.get("type") == "music_mode":
+                            mode = data.get("mode", "auto")
+                            agent.state["music_mode"] = mode
+                            if mode == "custom":
+                                agent.state.pop("music_mood", None)
+                            print(f"[agent] music mode → {mode}")
+                        elif data.get("type") == "scene":
                             try:
                                 await agent.act_on(data, http)
                             except Exception as exc:

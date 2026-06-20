@@ -40,7 +40,7 @@ LONG_DWELL_S = 600          # a seated guest over this has been there a while (1
 UNATTENDED_DWELL_S = 780    # seated + still for this long => likely wants service
 LOW_ACTIVITY = 0.2          # track activity below this counts as "settled/seated"
 MANY_LONG_DWELLERS = 2      # >= this many settled guests in a full room
-HIGH_QUEUE = 3              # queue at/over this => service is slipping
+HIGH_QUEUE = 5              # queue at/over this => service is slipping (3 can still wait)
 ABANDON_DELTA = 1           # walk-offs rising by >= this since last scene => act
 AVG_TICKET_GBP = 4.80       # average spend per customer (for walkaway £ metric)
 
@@ -163,48 +163,47 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     long_dwellers = _long_dwellers(scene)
     unattended = _unattended_guests(scene)
     busy = occupancy >= HIGH_OCCUPANCY
+    music_auto = state.get("music_mode", "auto") == "auto"
 
     actions: list[AgentAction] = []
 
-    # --- 1. RUSH COPILOT: queue building / walk-offs rising -> pull staff ----
+    # --- 1. RUSH COPILOT: queue too long -> pull staff; walk-offs escalate if queue is already bad --
+    # Walk-offs alone don't trigger — people leave for personal reasons.
+    # We only care about walk-offs when the queue is already long enough to be the cause.
     prev_abandoned = state.get("last_abandoned")
     walkoffs_rising = prev_abandoned is not None and (abandoned - prev_abandoned) >= ABANDON_DELTA
     state["last_abandoned"] = abandoned
-    if (queue_len >= HIGH_QUEUE or walkoffs_rising) and _due(state, "notify_queue", now):
-        if queue_len >= HIGH_QUEUE and walkoffs_rising:
-            why = f"Queue at {queue_len} and {abandoned - prev_abandoned} just walked off"
-        elif queue_len >= HIGH_QUEUE:
-            why = f"Queue length {queue_len} is over threshold {HIGH_QUEUE}"
+    if queue_len >= HIGH_QUEUE and _due(state, "notify_queue", now):
+        gbp_note = f" (~£{walkaway_gbp:.0f} lost today)" if walkaway_gbp > 0 else ""
+        if walkoffs_rising:
+            delta = abandoned - prev_abandoned
+            text = f"Queue at {queue_len} and {delta} just walked off{gbp_note} — open a second till now."
+            why = f"Queue at {queue_len} with walk-offs rising ({prev_abandoned}→{abandoned}); likely losing sales to the wait."
+            priority = "urgent"
         else:
-            why = f"Walk-offs rising ({prev_abandoned}→{abandoned}) — customers leaving the line"
-        gbp_note = f" (~£{walkaway_gbp:.0f} lost today to walk-offs)" if walkaway_gbp > 0 else ""
+            text = f"Queue at {queue_len}{gbp_note} — can someone open a second till?"
+            why = f"Queue length {queue_len} is over threshold {HIGH_QUEUE}; act before customers start leaving."
+            priority = "high"
         _mark(state, "notify_queue", now)
         actions.append(_action(
             now, "notify_staff",
-            {"text": f"Queue building{gbp_note} — can someone open a second till?",
-             "priority": "high"},
-            f"{why}; open another till so we don't lose the sale.",
+            {"text": text, "priority": priority},
+            why,
         ))
 
     # --- 1b. LOCAL MUSIC MODEL: pick the track/mood from the room's data ------
-    # A small on-device softmax model maps occupancy/queue/energy/time-of-day to
-    # a café "mood" (genre, BPM, playlist). It changes *what's playing* (the
-    # volume rules below still tune loudness). Hysteresis avoids thrashing.
-    current_mood = state.get("music_mood")
-    # Controller influence: anything that writes state["music_bias"] (a
-    # {mood: logit_nudge} dict — build one with music_model.bias_for_hint) steers
-    # the model. The scene can still override a soft nudge, so it's a lean, not a lock.
-    directive, changed = _MUSIC_MODEL.recommend(
-        scene, current_mood, bias=state.get("music_bias"),
-    )
-    if changed and _due(state, "music_mood", now):
-        # Only advance the stored mood when we actually switch the track, so a
-        # debounced switch is retried next tick rather than silently dropped.
-        _mark(state, "music_mood", now)
-        state["music_mood"] = directive.mood
-        actions.append(_action(
-            now, "set_music", directive.params(), directive.rationale,
-        ))
+    # Only runs in auto mode — custom mode means the employee is in control.
+    if music_auto:
+        current_mood = state.get("music_mood")
+        directive, changed = _MUSIC_MODEL.recommend(
+            scene, current_mood, bias=state.get("music_bias"),
+        )
+        if changed and _due(state, "music_mood", now):
+            _mark(state, "music_mood", now)
+            state["music_mood"] = directive.mood
+            actions.append(_action(
+                now, "set_music", directive.params(), directive.rationale,
+            ))
 
     # --- 2. AMBIENT: busy room -> cool for comfort + soften the music --------
     if busy and len(long_dwellers) >= MANY_LONG_DWELLERS:
@@ -216,7 +215,7 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
                 f"Room is full ({occupancy}) and will be warming up; a slight "
                 f"cool-down keeps it comfortable.",
             ))
-        if _due(state, "music", now):
+        if music_auto and _due(state, "music", now):
             _mark(state, "music", now)
             actions.append(_action(
                 now, "set_music_volume", {"volume": MUSIC_BUSY_VOLUME},
@@ -254,7 +253,7 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     # --- 3. AMBIENT: lull / flat energy -> lift the vibe with music ----------
     is_lull = occupancy <= LULL_OCCUPANCY
     low_energy = energy < LOW_ENERGY
-    if (is_lull or low_energy) and not busy and _due(state, "music", now):
+    if music_auto and (is_lull or low_energy) and not busy and _due(state, "music", now):
         if is_lull:
             vol, why = MUSIC_LULL_VOLUME, f"Only {occupancy} in — lift the vibe with brighter music."
         else:

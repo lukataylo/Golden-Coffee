@@ -51,30 +51,52 @@ class Mood:
 
 # Default playlist URIs point at large, public Spotify café/mood playlists.
 # Treat them as placeholders — set MUSIC_PLAYLIST_<MOOD> to your own for the demo.
+#
+# Three time-slot moods (the recommended catalogue):
+#   morning_rush    07:00–10:59  Upbeat Acoustic Pop / Light Indie Rock
+#   midday_dwell    11:00–14:59  Neo-Soul & Lo-Fi Hip Hop
+#   afternoon_lounge 15:00–close  Bossa Nova / Indie Folk / Jazz Soul
+#
+# Three operational overrides (room-state driven, override time slot):
+#   rush_flow    queue building → keep the line moving
+#   busy_calm    room full      → soft so people can talk
+#   upbeat_lift  flat energy    → brighten a dead room
 MOODS: dict[str, Mood] = {
-    "sunrise_acoustic": Mood(
-        "sunrise_acoustic", "Sunrise acoustic", "warm acoustic morning coffeehouse folk",
-        bpm=84, energy=0.35, volume=52, playlist="spotify:playlist:37i9dQZF1DX0jgyAiPl8Af",
+    "morning_rush": Mood(
+        "morning_rush", "Morning Rush",
+        "upbeat acoustic pop light indie rock bright cheerful mid-to-fast tempo",
+        bpm=118, energy=0.72, volume=58,
+        playlist="spotify:playlist:37i9dQZF1DX0jgyAiPl8Af",
     ),
-    "daytime_focus": Mood(
-        "daytime_focus", "Daytime focus", "mellow indie lofi study beats relaxed",
-        bpm=94, energy=0.45, volume=48, playlist="spotify:playlist:37i9dQZF1DWWQRwui0ExPn",
+    "midday_dwell": Mood(
+        "midday_dwell", "Midday Dwell",
+        "neo-soul lo-fi hip hop instrumental smooth mellow focus background",
+        bpm=78, energy=0.38, volume=44,
+        playlist="spotify:playlist:37i9dQZF1DWWQRwui0ExPn",
     ),
-    "upbeat_lift": Mood(
-        "upbeat_lift", "Upbeat lift", "bright upbeat feel-good indie pop sunny",
-        bpm=116, energy=0.72, volume=60, playlist="spotify:playlist:37i9dQZF1DX9XIFQuFvzM4",
+    "afternoon_lounge": Mood(
+        "afternoon_lounge", "Afternoon Lounge",
+        "bossa nova indie folk jazz soul warm textured premium relaxing wind-down",
+        bpm=85, energy=0.40, volume=46,
+        playlist="spotify:playlist:37i9dQZF1DXbITWG1ZJKYt",
     ),
     "rush_flow": Mood(
-        "rush_flow", "Rush flow", "steady mid-tempo groove soulful nu-jazz keep moving",
-        bpm=104, energy=0.55, volume=46, playlist="spotify:playlist:37i9dQZF1DX2sUQwD7tbmL",
+        "rush_flow", "Rush Flow",
+        "steady mid-tempo groove soulful nu-jazz keep the line moving",
+        bpm=104, energy=0.55, volume=46,
+        playlist="spotify:playlist:37i9dQZF1DX2sUQwD7tbmL",
     ),
     "busy_calm": Mood(
-        "busy_calm", "Busy & calm", "soft downtempo chill so a full room stays talkable",
-        bpm=80, energy=0.38, volume=38, playlist="spotify:playlist:37i9dQZF1DWTvNyxOwkztu",
+        "busy_calm", "Busy & Calm",
+        "soft downtempo chill ambient so a full room stays talkable",
+        bpm=80, energy=0.38, volume=38,
+        playlist="spotify:playlist:37i9dQZF1DWTvNyxOwkztu",
     ),
-    "evening_warm": Mood(
-        "evening_warm", "Evening warm", "warm jazz soul late evening wind-down cosy",
-        bpm=76, energy=0.30, volume=44, playlist="spotify:playlist:37i9dQZF1DXbITWG1ZJKYt",
+    "upbeat_lift": Mood(
+        "upbeat_lift", "Upbeat Lift",
+        "bright feel-good indie pop sunny energetic vibe-lifter",
+        bpm=116, energy=0.70, volume=60,
+        playlist="spotify:playlist:37i9dQZF1DX9XIFQuFvzM4",
     ),
 }
 MOOD_KEYS: list[str] = list(MOODS.keys())
@@ -111,11 +133,11 @@ def bias_for_hint(prefer: str | None = None, strength: float = HINT_STRENGTH) ->
 # counts (e.g. total walk-offs), which only ever grow and would mislead the model.
 FEATURE_NAMES = [
     "bias", "occ", "queue", "energy",
-    "morning", "afternoon", "evening", "busy", "lull", "rush",
+    "morning", "midday", "late_aft", "busy", "lull", "rush",
 ]
 BUSY_OCC = 8     # >= this => a full/busy room
 LULL_OCC = 3     # <= this => a flat/quiet room
-HIGH_QUEUE = 3   # >= this => the queue is building (rush)
+HIGH_QUEUE = 3   # >= this => the queue is building (music adapts early; staff alert is at 5)
 
 
 def features(scene: dict) -> list[float]:
@@ -127,15 +149,17 @@ def features(scene: dict) -> list[float]:
 
     occ_n = min(occ / 12.0, 1.0)
     queue_n = min(queue / 6.0, 1.0)
-    # Time-of-day buckets cover all 24h (late night 23:00–05:00 reads as "evening"
-    # — a café open then wants the same cosy wind-down vibe).
-    morning = 1.0 if 5 <= hour < 11 else 0.0
-    afternoon = 1.0 if 11 <= hour < 17 else 0.0
-    evening = 1.0 if (hour >= 17 or hour < 5) else 0.0
+    # Time-of-day buckets aligned to the recommended catalogue:
+    #   morning   07:00–10:59  (Morning Rush slot)
+    #   midday    11:00–14:59  (Mid-Day Dwell slot)
+    #   late_aft  15:00–close + pre-open  (Late Afternoon / Lounge slot)
+    morning = 1.0 if 7 <= hour < 11 else 0.0
+    midday = 1.0 if 11 <= hour < 15 else 0.0
+    late_aft = 1.0 if (hour >= 15 or hour < 7) else 0.0
     busy = 1.0 if occ >= BUSY_OCC else 0.0
     lull = 1.0 if occ <= LULL_OCC else 0.0
     rush = 1.0 if queue >= HIGH_QUEUE else 0.0
-    return [1.0, occ_n, queue_n, energy, morning, afternoon, evening, busy, lull, rush]
+    return [1.0, occ_n, queue_n, energy, morning, midday, late_aft, busy, lull, rush]
 
 
 # ---------------------------------------------------------------------------
@@ -247,12 +271,12 @@ class MusicModel:
         queue = int(scene.get("queue_len", 0) or 0)
         energy = float(scene.get("staff_productivity", 0.0) or 0.0)
         bits = {
-            "sunrise_acoustic": f"Quiet morning ({occ} in) — gentle acoustic to open the day.",
-            "daytime_focus": f"Steady daytime ({occ} in) — mellow focus music suits the room.",
-            "upbeat_lift": f"Room feels flat (energy {energy:.2f}) — brighter, upbeat music to lift the vibe.",
-            "rush_flow": f"Queue building ({queue}) — a steady groove keeps the line moving without stress.",
-            "busy_calm": f"Full and buzzy ({occ} in) — soft downtempo so it stays easy to talk in.",
-            "evening_warm": f"Evening wind-down ({occ} in) — warm, cosy music for the hour.",
+            "morning_rush":     f"Morning rush ({occ} in) — upbeat acoustic pop to keep the energy moving.",
+            "midday_dwell":     f"Midday dwell ({occ} in) — smooth neo-soul / lo-fi for focus and a second pastry.",
+            "afternoon_lounge": f"Afternoon lounge ({occ} in) — warm bossa nova / jazz soul for a premium wind-down.",
+            "rush_flow":        f"Queue building ({queue}) — steady groove keeps the line moving without stress.",
+            "busy_calm":        f"Full and buzzy ({occ} in) — soft downtempo so it stays easy to talk in.",
+            "upbeat_lift":      f"Room feels flat (energy {energy:.2f}) — brighter, upbeat music to lift the vibe.",
         }
         return f"{bits.get(m.key, m.label)} → {m.label} (~{m.bpm} BPM)."
 
@@ -265,8 +289,7 @@ class MusicModel:
 def _oracle(scene: dict) -> str:
     """Heuristic ground-truth mood for a scene — the labels we learn from.
 
-    Encodes the product intent so the trained model generalises it smoothly:
-    rush > busy > flat-energy lull > time-of-day default.
+    Priority: rush > busy > flat-energy lull > time-of-day slot.
     """
     occ = int(scene.get("occupancy", 0) or 0)
     queue = int(scene.get("queue_len", 0) or 0)
@@ -278,11 +301,11 @@ def _oracle(scene: dict) -> str:
         return "busy_calm"
     if occ <= LULL_OCC and energy < 0.45:
         return "upbeat_lift"
-    if hour >= 17 or hour < 5:
-        return "evening_warm"
-    if 5 <= hour < 11:
-        return "sunrise_acoustic"
-    return "daytime_focus"
+    if 7 <= hour < 11:
+        return "morning_rush"
+    if 11 <= hour < 15:
+        return "midday_dwell"
+    return "afternoon_lounge"  # 15:00–close + pre-open
 
 
 def _dataset() -> list[tuple[list[float], str]]:
@@ -335,14 +358,14 @@ def train(epochs: int = 300, lr: float = 0.3, l2: float = 1e-4) -> dict[str, lis
 
 
 # Locally-trained weights (produced by `train()`); deterministic & offline.
-# feature order: bias, occ, queue, energy, morning, afternoon, evening, busy, lull, rush
+# feature order: bias, occ, queue, energy, morning, midday, late_aft, busy, lull, rush
 DEFAULT_WEIGHTS: dict[str, list[float]] = {
-    "sunrise_acoustic": [0.0858, -0.1986, -0.2657, 0.3334, 1.7895, -0.6963, -1.0073, -0.7959, -0.2115, -0.5973],
-    "daytime_focus": [0.0858, -0.1986, -0.2657, 0.3334, -0.6963, 1.7895, -1.0073, -0.7959, -0.2115, -0.5973],
-    "upbeat_lift": [0.2478, -0.7641, -0.2936, -1.0009, 0.0192, 0.0192, 0.2095, -0.5748, 2.0144, -0.7223],
-    "rush_flow": [-0.4502, 0.0137, 1.9631, -0.2085, -0.1687, -0.1687, -0.1127, 0.3549, -0.189, 4.4871],
-    "busy_calm": [-0.2488, 1.3814, -0.7555, -0.1043, -0.109, -0.109, -0.0308, 3.1049, -0.9868, -1.6306],
-    "evening_warm": [0.2795, -0.2338, -0.3826, 0.6469, -0.8346, -0.8346, 1.9487, -1.2931, -0.4156, -0.9396],
+    "morning_rush":     [0.0174, -0.1809, -0.2193,  0.2189,  1.5841, -0.4925, -1.0742, -0.6068, -0.1401, -0.4682],
+    "midday_dwell":     [0.0174, -0.1809, -0.2193,  0.2189, -0.4925,  1.5841, -1.0742, -0.6068, -0.1401, -0.4682],
+    "afternoon_lounge": [0.4225, -0.2406, -0.4422,  0.8462, -0.7433, -0.7433,  1.9092, -1.5806, -0.5336, -1.1359],
+    "rush_flow":        [-0.4427, 0.0086,  1.9446, -0.1962, -0.1776, -0.1776, -0.0875,  0.3298, -0.1918,  4.4445],
+    "busy_calm":        [-0.2424, 1.3599, -0.7602, -0.0908, -0.1275, -0.1275,  0.0127,  3.0469, -0.9787, -1.6390],
+    "upbeat_lift":      [0.2278, -0.7661, -0.3036, -0.9971, -0.0431, -0.0431,  0.3141, -0.5825,  1.9843, -0.7332],
 }
 
 _WEIGHTS_FILE = os.path.join(os.path.dirname(__file__), "music_weights.json")

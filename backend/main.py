@@ -27,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from shared.schemas import AgentAction, SceneEvent
+from shared.schemas import AgentAction, MusicModeEvent, SceneEvent
 
 # Repo root is the parent of this file's directory (backend/). Resolve to an
 # absolute path so static serving works regardless of the container CWD.
@@ -98,6 +98,9 @@ class Hub:
         self.last_frame: Optional[bytes] = None
         self.frame_version: int = 0
         self.geometry: Optional[dict] = None  # active floorplan geometry (zones.json)
+        # Music mode — "auto" (model picks) or "custom" (employee picks).
+        self.music_mode: str = "auto"
+        self.music_source: dict = {}
 
     def set_frame(self, data: bytes) -> None:
         self.last_frame = data
@@ -114,6 +117,12 @@ class Hub:
             # executor) can skip re-firing real devices. Don't mutate the stored
             # dict — the dashboard still wants the un-flagged history.
             await ws.send_json({**action, "replayed": True})
+        # Always send current music mode so a freshly-connected agent/dashboard
+        # knows whether to suppress music actions.
+        await ws.send_json({
+            "type": "music_mode", "ts": time.time(),
+            "mode": self.music_mode, **self.music_source,
+        })
 
     def disconnect(self, ws: WebSocket) -> None:
         self.clients.discard(ws)
@@ -318,6 +327,30 @@ async def action(act: AgentAction, x_token: Optional[str] = Header(None)) -> dic
     hub.action_log.append(payload)
     await hub.broadcast(payload)
     return {"ok": True}
+
+
+@app.get("/music/mode")
+async def get_music_mode() -> dict:
+    """Current music mode + source (for dashboard on load)."""
+    return {"mode": hub.music_mode, **hub.music_source}
+
+
+@app.post("/music/mode")
+async def set_music_mode(event: MusicModeEvent) -> dict:
+    """Frontend toggle: switch between auto and custom mode.
+
+    Auto   — agent music model picks genre/mood from the room state.
+    Custom — employee controls music (Spotify/YouTube connect or playlist URL).
+             Agent silences all set_music / set_music_volume actions.
+    """
+    hub.music_mode = event.mode.value
+    hub.music_source = {
+        "source_kind": event.source_kind,
+        "source_value": event.source_value,
+    }
+    payload = event.model_dump()
+    await hub.broadcast(payload)
+    return {"ok": True, "mode": hub.music_mode}
 
 
 @app.post("/override")
