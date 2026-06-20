@@ -51,3 +51,6 @@ codeplain/**/node_modules/
 codeplain/plain_modules/
 codeplain/codeplain.log
 codeplain/*.log
+
+# local-only pitch / narrative notes (not for the public repo)
+pitch/
