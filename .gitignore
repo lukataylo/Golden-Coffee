@@ -35,3 +35,9 @@ agent/music_weights.json
 zones.json
 *.zones.json
 dashboard/scan/shots/
+
+# local tooling (Xiaomi token extractor, tokens)
+.tools/
+
+# Xiaomi cloud QR session (contains a service token)
+.xiaomi_session.json
