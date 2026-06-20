@@ -256,6 +256,7 @@
               <div style="position:absolute;left:16px;bottom:16px;display:flex;gap:10px;z-index:3;">
                 <div style="padding:9px 13px;border-radius:14px;background:rgba(28,18,10,.46);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(255,236,214,.16);box-shadow:inset 0 1px 0 rgba(255,240,220,.16);"><div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#cdbfae;">Comfort</div><div style="display:flex;align-items:baseline;gap:4px;margin-top:5px;"><span id="chip-comfort" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">—</span><span id="chip-comfort-word" style="font-size:11px;color:#6FCF97;font-weight:600;"></span></div></div>
 <div style="padding:9px 13px;border-radius:14px;background:rgba(28,18,10,.46);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(255,236,214,.16);box-shadow:inset 0 1px 0 rgba(255,240,220,.16);"><div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#cdbfae;">Mood</div><div style="display:flex;align-items:baseline;gap:4px;margin-top:5px;"><span id="chip-mood" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;">—</span></div></div>
+<div id="chip-risk-wrap" title="Average ticket × customers who left the queue without ordering, today" style="padding:9px 13px;border-radius:14px;background:rgba(28,18,10,.46);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(235,106,78,.28);box-shadow:inset 0 1px 0 rgba(255,240,220,.16);"><div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#cdbfae;">Walked away</div><div style="display:flex;align-items:baseline;gap:4px;margin-top:5px;"><span id="chip-risk" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:#F2A48E;">£0</span></div></div>
               </div>
             </div>
 
@@ -733,11 +734,22 @@
     return   { text:"Calm",    color:"#6FCF97" };
   }
 
+  var _lostGbpToday = 0;  // running max — the cumulative £ walked away never decreases
   function updateChips(s) {
     s = s || {};
     var mood = roomMood(s);
     $("chip-mood").textContent = mood.text;
     $("chip-mood").style.color = mood.color;
+    // £-at-risk headline: avg ticket × walk-offs (customers who left the queue).
+    var ab = Number(s.abandons) || 0;
+    var ticket = (typeof s.avg_ticket_gbp === "number") ? s.avg_ticket_gbp : 5.5;
+    var lost = Math.round(ab * ticket);
+    if (lost > _lostGbpToday) _lostGbpToday = lost;
+    var el = $("chip-risk");
+    if (el) {
+      el.textContent = "£" + _lostGbpToday;
+      el.style.color = _lostGbpToday >= 50 ? "#EB6A4E" : "#F2A48E";
+    }
   }
 
   // ====================================================================
@@ -1166,7 +1178,9 @@
       var status = !occupied ? "empty" : wait >= 300 ? "overdue" : wait >= 120 ? "waiting" : "seated";
       tables.push({ id:tid, occupied:occupied, wait_s:wait, status:status, needs_cleaning:(!occupied && (t+k)%5===0) });
     });
+    var abandons = Math.round(0.012 * queue_len * queue_len * t);  // walk-offs climb under queue pressure
     return { type:"scene", ts:Date.now()/1000, tracks:tracks, occupancy:occupancy, queue_len:queue_len,
+             abandons:abandons, avg_ticket_gbp:5.5,
              heatmap_grid:grid, tables:tables, source:"mock" };
   }
   function demoActions(scene, t) {
