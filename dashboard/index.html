@@ -1018,6 +1018,7 @@
       body: JSON.stringify({ type: "music_mode", ts: Date.now() / 1000, mode: m })
     }).catch(function(e) { console.warn("[music-mode]", e); });
   }
+  window.setMusicMode = setMusicMode;
 
   // Fetch current mode on load
   fetch(EP.http + "/music/mode").then(function(r) { return r.json(); }).then(function(d) {
@@ -1089,6 +1090,9 @@
   function spPlayPause() { if (spPlayer) spPlayer.togglePlay(); }
   function spPrev()      { if (spPlayer) spPlayer.previousTrack(); }
   function spNext()      { if (spPlayer) spPlayer.nextTrack(); }
+  window.spPlayPause = spPlayPause;
+  window.spPrev = spPrev;
+  window.spNext = spNext;
 
   function spPlaylist(uri) {
     if (!spToken) return;
