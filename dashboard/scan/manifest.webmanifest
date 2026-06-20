@@ -1,0 +1,19 @@
+{
+  "name": "Golden Coffee Floorplan Scanner",
+  "short_name": "GC Scanner",
+  "description": "Scan a cafe or restaurant floorplan and generate a 3D twin.",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": ".",
+  "scope": ".",
+  "theme_color": "#14110e",
+  "background_color": "#14110e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

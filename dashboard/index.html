@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Golden Coffee — Live Monitoring</title>
+  <!-- Hearth skin web-fonts (Hanken Grotesk + JetBrains Mono). Loaded with a
+       full system fallback in --sans/--mono, so the dashboard still renders if
+       this CDN is unreachable on venue wifi / offline. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <!--
     Golden Coffee live monitoring dashboard. Single static file, dark theme,
     no build step / npm / external CDN. Works served same-origin from the
@@ -428,6 +434,131 @@
       .card, header{ background:var(--glass-solid) !important;
         -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
     }
+
+    /* ===================================================================
+       HEARTH SKIN — warm-espresso liquid-glass evolution of Graphite.
+       Ported from "Golden Coffee Control v2 · Comfort". Appended last so
+       these win; every element ID / data-action hook and the live
+       WebSocket JS stay untouched. Degrades to system fonts if the
+       web-font CDN is unreachable.
+       =================================================================== */
+    :root{
+      /* warm espresso ramp */
+      --bg:#21150b; --bg2:#2a1a0d; --bg3:#34221c;
+      --line:rgba(255,236,214,0.12); --line2:rgba(255,236,214,0.08);
+      --ink:#F6EEE4; --muted:#9b8c7b; --muted2:#cdbfae;
+      /* one brand accent + 3 semantic, carried from the design */
+      --gold:#FF9A2D; --gold-soft:#FFB85C;
+      --green:#6FCF97; --red:#EB6A4E; --red-hot:#EB6A4E; --blue:#5C82B8; --violet:#A9BDD6;
+      --glass:rgba(52,36,22,0.50); --glass-solid:#2a1a0d;
+      --shadow:0 18px 50px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,240,220,.12);
+      --sans:'Hanken Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    }
+    /* warm espresso glow behind the glass */
+    body{ font-family:var(--sans) !important;
+      background:radial-gradient(120% 90% at 78% -8%, #4d3015 0%, #3a2410 38%, #2a1a0d 72%, #21150b 100%) !important; }
+    .bg-layer{ background:radial-gradient(120% 90% at 78% -8%, #4d3015 0%, #3a2410 38%, #2a1a0d 72%, #21150b 100%); }
+    /* re-warm the aurora ribbons to the Hearth orange/terracotta */
+    .aurora{ filter:blur(46px) saturate(160%); opacity:.9; }
+    .aurora .rib.r1{ background:radial-gradient(58% 50% at 50% 50%, rgba(255,154,45,.62), rgba(210,100,60,.20) 54%, transparent 74%); }
+    .aurora .rib.r2{ background:radial-gradient(56% 46% at 50% 50%, rgba(232,134,42,.66), rgba(187,67,41,.22) 52%, transparent 72%); }
+    .aurora .rib.r3{ background:radial-gradient(60% 50% at 50% 50%, rgba(255,154,45,.50), rgba(210,100,60,.18) 55%, transparent 74%); }
+    .aurora .rib.r4{ background:radial-gradient(60% 50% at 50% 50%, rgba(235,106,78,.46), rgba(201,90,40,.16) 55%, transparent 74%); }
+
+    /* glass cards: warm tint + larger Hearth radius + specular catch-light */
+    .card{ border-radius:20px !important;
+      box-shadow:var(--shadow), 0 10px 30px rgba(46,24,8,.30) !important; }
+    .comfort-card{ box-shadow:var(--shadow), inset 0 0 0 1px rgba(255,154,45,.10) !important;
+      border-color:rgba(255,154,45,.24) !important; }
+    .kpi::after{ border-radius:20px;
+      background:linear-gradient(135deg, rgba(255,240,220,0.26), rgba(255,240,220,0.04) 42%, rgba(255,240,220,0) 72%); }
+
+    /* header — Hearth glass + brand type */
+    header{ background:rgba(33,21,11,0.55) !important; }
+    h1{ font-family:var(--sans); font-weight:700; letter-spacing:-.01em; color:var(--gold); }
+    .sub{ color:var(--muted2); }
+
+    /* mono micro-typography (uppercase labels, badges, numerals, timers) */
+    .card h2, .tv-title, .clock, .src-badge, .live-badge, .pill, .chip,
+    .legend, .tsum .lab, .fn .pct, .action .ts, .action code, .cdev .cval,
+    .kpi .delta, .conv-note, .ovr-note{ font-family:var(--mono); }
+    .card h2{ letter-spacing:.12em; }
+
+    /* segmented control — translucent-white selected (matches the design hero tabs) */
+    .seg{ background:rgba(20,12,6,.50) !important; border-color:var(--line) !important; border-radius:14px; padding:3px; }
+    .seg button{ border-radius:10px; font-family:var(--sans); }
+    .seg button[aria-selected="true"]{ background:rgba(255,255,255,0.12); color:#F6EEE4; }
+    .seg.seg-sm button[aria-pressed="true"]{ background:rgba(255,255,255,0.14); color:#F6EEE4; }
+    .demo-btn{ border-radius:999px; }
+    .demo-btn[aria-pressed="true"]{ background:linear-gradient(180deg,var(--gold),#E8862A); color:#2a1a0d; }
+
+    /* KPI numerals: confident Hanken, tabular */
+    .kpi .big{ font-family:var(--sans); font-weight:700; letter-spacing:-.02em; }
+    .kpi .unit{ color:var(--muted2); }
+
+    /* stage + inner surfaces */
+    .stage-main{ border-radius:24px !important; border-color:var(--line) !important; }
+    .stage-main, #view-tables{ background:#1a1009 !important; }
+    #stream-img, #frame-img, #synth-canvas, #floor-canvas{ background:#1a1009; }
+    #floor3d-canvas{ background:radial-gradient(120% 100% at 50% 18%, #3a2410 0%, #241710 55%, #1a1009 100%); }
+    .cdev, .ttile, .clean-row{ background:rgba(255,255,255,0.03) !important; border-radius:16px !important; }
+    .feed .action{ background:rgba(255,255,255,0.03) !important; }
+    .ovr, .cbtn{ background:rgba(255,255,255,0.03) !important; border-radius:12px !important; }
+    .ovr:hover, .cbtn:hover{ border-color:var(--gold); background:rgba(255,154,45,.10) !important; }
+    .seg, .badge{ background:rgba(255,255,255,0.04) !important; }
+
+    /* accent fills carry the design's terracotta→amber sweep */
+    .bar-fill, .ctrack .cfill, .fn .meter > span{
+      background:linear-gradient(90deg,#D2643C,#FF9A2D) !important; }
+    .cm-scent-fill, #cm-scent-fill{ background:linear-gradient(90deg,#A9BDD6,#FF9A2D) !important; }
+    .live-badge{ background:rgba(40,18,14,.6); border-color:rgba(235,106,78,.5); }
+    .action{ border-radius:0 10px 10px 0; }
+    .cdev .cic{ background:rgba(255,154,45,.10); border-color:rgba(255,154,45,.22); color:var(--gold); border-radius:11px; }
+
+    @media (prefers-reduced-transparency: reduce){
+      header{ background:var(--glass-solid) !important; }
+    }
+
+    /* ===================================================================
+       FULLY DARK + LIVE GRADIENT  — final override, wins the cascade.
+       Near-black surfaces, brand gold kept, with a slow subtle aurora
+       drifting behind everything so empty space reads as designed.
+       =================================================================== */
+    :root{
+      --bg:#0a0b0d; --bg2:#101216; --bg3:#15181d;
+      --line:rgba(255,255,255,0.07); --line2:rgba(255,255,255,0.05);
+      --ink:#ECEAE6; --muted:#80828a; --muted2:#acaeb5;
+      --gold:#E6A24C; --gold-soft:#F2BE78;
+      --green:#5BC98C; --red:#E0876F; --red-hot:#E8674C; --blue:#6FB6E0; --violet:#B58FE0;
+      --glass:rgba(16,18,22,0.55); --glass-solid:#13151a;
+      --shadow:0 16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    body{ background:#0a0b0d !important; }
+    /* live, very subtle aurora drifting behind everything (fixed, full-viewport) */
+    body::before{
+      content:""; position:fixed; inset:-25%; z-index:-1; pointer-events:none;
+      background:
+        radial-gradient(34% 42% at 22% 20%, rgba(230,162,76,0.10), transparent 62%),
+        radial-gradient(30% 38% at 82% 32%, rgba(111,150,224,0.055), transparent 60%),
+        radial-gradient(44% 52% at 64% 90%, rgba(230,162,76,0.06), transparent 62%);
+      filter: blur(48px) saturate(1.05);
+      animation: gcAurora 30s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    @keyframes gcAurora{
+      0%   { transform: translate3d(-3%,-2%,0) scale(1.06); }
+      50%  { transform: translate3d(3%, 2%,0) scale(1.14); }
+      100% { transform: translate3d(-2%,3%,0) scale(1.08); }
+    }
+    @media (prefers-reduced-motion: reduce){ body::before{ animation:none; } }
+    /* header fully dark */
+    header{ background:linear-gradient(180deg, rgba(12,13,16,.95), rgba(12,13,16,.78)) !important; }
+    /* the empty main stage becomes transparent so the living aurora fills it,
+       while real feeds keep their own dark backdrop */
+    .stage-main, #view-tables{ background:transparent !important; }
+    #stream-img, #frame-img, #synth-canvas, #floor-canvas{ background:#0a0b0d !important; }
+    .stage-msg{ color:var(--muted2); }
   </style>
 </head>
 <body class="nodata">

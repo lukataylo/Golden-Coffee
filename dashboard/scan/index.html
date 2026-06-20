@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <title>Golden Coffee Floorplan Scanner</title>
+  <meta name="theme-color" content="#14110e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GC Scanner" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#14110e; --bg2:#1d1813; --bg3:#241d16;
+      --line:#332a20; --line2:#2a2219;
+      --ink:#f3ede3; --muted:#8c7d68; --muted2:#b6a88f;
+      --gold:#d9a441; --gold-soft:#e7c074;
+      --green:#7ed87e; --red:#e0876f; --blue:#6fb6e0; --violet:#b58fe0;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { height:100%; margin:0; }
+    body {
+      background:radial-gradient(120% 100% at 50% 0%, #241c14 0%, #140f0b 55%, #0a0706 100%) fixed;
+      color:var(--ink);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      display:flex; flex-direction:column;
+      min-height:100vh; min-height:100dvh;
+      overflow:hidden;
+    }
+    /* ---- Top toolbar / step flow ---- */
+    header {
+      padding:max(8px,env(safe-area-inset-top)) 12px 8px;
+      background:linear-gradient(180deg, rgba(29,24,19,.97), rgba(29,24,19,.82));
+      border-bottom:1px solid var(--line);
+      backdrop-filter:blur(8px);
+    }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand img { width:26px; height:26px; }
+    .brand h1 { font-size:15px; margin:0; font-weight:650; letter-spacing:.2px; }
+    .brand .sub { font-size:11px; color:var(--muted); margin-top:1px; }
+    .steps { display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+    .steps::-webkit-scrollbar { display:none; }
+    .step {
+      flex:0 0 auto; font-size:11.5px; color:var(--muted2);
+      background:var(--bg3); border:1px solid var(--line); border-radius:999px;
+      padding:5px 11px; display:flex; align-items:center; gap:6px; white-space:nowrap;
+    }
+    .step b { color:var(--gold); font-weight:700; }
+
+    main { flex:1; display:flex; flex-direction:column; min-height:0; }
+
+    /* ---- Capture row ---- */
+    .row { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px; }
+    .btn {
+      appearance:none; border:1px solid var(--line); color:var(--ink);
+      background:var(--bg2); border-radius:12px; padding:11px 14px;
+      font-size:13.5px; font-weight:600; cursor:pointer; min-height:44px;
+      display:inline-flex; align-items:center; gap:7px; transition:background .15s,border-color .15s;
+    }
+    .btn:hover { background:var(--bg3); }
+    .btn:active { transform:translateY(1px); }
+    .btn.gold { background:linear-gradient(180deg,var(--gold),#c8922f); color:#1a140c; border-color:transparent; }
+    .btn.ghost { background:transparent; }
+    .btn.sm { padding:9px 12px; font-size:12.5px; min-height:40px; }
+    .btn .ic { font-size:15px; }
+    label.btn { position:relative; overflow:hidden; }
+    label.btn input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+    /* ---- Stage / canvas ---- */
+    .stage-wrap { flex:1; position:relative; min-height:0; padding:0 12px 8px; display:flex; }
+    #stage {
+      flex:1; position:relative; border:1px solid var(--line); border-radius:16px;
+      background:#0b0907; overflow:hidden; display:flex; align-items:center; justify-content:center;
+      box-shadow:var(--shadow);
+    }
+    #stage.drop { border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.35); }
+    #editor { touch-action:none; display:block; cursor:crosshair; }
+    #status {
+      position:absolute; left:10px; bottom:10px; right:10px;
+      font-size:11.5px; color:var(--muted2); background:rgba(11,9,7,.6);
+      padding:6px 10px; border-radius:8px; border:1px solid var(--line2);
+      pointer-events:none; backdrop-filter:blur(4px);
+    }
+
+    /* ---- Slot bar ---- */
+    .slot-section { padding:0 12px; }
+    .slot-section .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:4px 2px; }
+    #slotbar { display:flex; gap:7px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none; }
+    #slotbar::-webkit-scrollbar { display:none; }
+    .slot {
+      flex:0 0 auto; display:flex; align-items:center; gap:7px;
+      background:var(--bg2); border:1px solid var(--line); border-radius:999px;
+      padding:8px 13px; font-size:12.5px; color:var(--ink); cursor:pointer; min-height:40px;
+      transition:border-color .15s, background .15s;
+    }
+    .slot .swatch { width:12px; height:12px; border-radius:4px; flex:0 0 auto; box-shadow:0 0 0 1px rgba(0,0,0,.4) inset; }
+    .slot .slot-check { color:var(--green); font-weight:800; opacity:0; transition:opacity .15s; }
+    .slot.done .slot-check { opacity:1; }
+    .slot[aria-selected="true"] { border-color:var(--gold); background:var(--bg3); box-shadow:0 0 0 1px rgba(217,164,65,.4); }
+
+    /* ---- Action rows ---- */
+    .actions { display:flex; gap:8px; overflow-x:auto; padding:2px 12px 8px; scrollbar-width:none; }
+    .actions::-webkit-scrollbar { display:none; }
+
+    /* ---- 3D preview panel ---- */
+    #preview {
+      border-top:1px solid var(--line);
+      background:linear-gradient(180deg, var(--bg2), #140f0b);
+    }
+    .preview-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px; cursor:pointer;
+    }
+    .preview-head .t { font-size:13px; font-weight:650; display:flex; align-items:center; gap:8px; }
+    .preview-head .chev { transition:transform .2s; color:var(--muted2); }
+    #preview.open .preview-head .chev { transform:rotate(180deg); }
+    .preview-body { height:0; overflow:hidden; transition:height .25s ease; }
+    #preview.open .preview-body { height:46vh; height:46dvh; }
+    #canvas3d { position:relative; width:100%; height:100%; }
+    #canvas3d canvas { display:block; width:100%; height:100%; }
+    #preview-msg {
+      position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+      text-align:center; padding:20px; color:var(--muted2); font-size:13px; line-height:1.5;
+    }
+
+    /* ---- Toast ---- */
+    .toast {
+      position:fixed; left:50%; bottom:calc(16px + env(safe-area-inset-bottom)); transform:translate(-50%,140%);
+      background:var(--bg3); color:var(--ink); border:1px solid var(--line);
+      padding:11px 16px; border-radius:12px; font-size:13px; box-shadow:var(--shadow);
+      max-width:88vw; text-align:center; transition:transform .25s ease; z-index:50;
+    }
+    .toast.show { transform:translate(-50%,0); }
+    .toast.err { border-color:var(--red); color:var(--red); }
+
+    @media (min-width:760px) {
+      .brand h1 { font-size:17px; }
+      #preview.open .preview-body { height:52vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="icon.svg" alt="" />
+      <div>
+        <h1>Floorplan Scanner</h1>
+        <div class="sub">Golden Coffee — photo + trace &rarr; 3D twin</div>
+      </div>
+    </div>
+    <div class="steps" aria-label="Step flow">
+      <span class="step"><b>1</b> Capture</span>
+      <span class="step"><b>2</b> Trace room</span>
+      <span class="step"><b>3</b> Place zones</span>
+      <span class="step"><b>4</b> 3D preview</span>
+      <span class="step"><b>5</b> Export</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Capture -->
+    <div class="row">
+      <label class="btn gold">
+        <span class="ic">&#128247;</span> Photo
+        <input id="fileInput" type="file" accept="image/*" capture="environment" />
+      </label>
+      <label class="btn">
+        <span class="ic">&#128193;</span> Choose image
+        <input id="galleryInput" type="file" accept="image/*" />
+      </label>
+      <button class="btn ghost" id="useBlank"><span class="ic">&#9633;</span> Blank / no photo</button>
+    </div>
+
+    <!-- 2 & 3. Stage -->
+    <div class="stage-wrap">
+      <div id="stage">
+        <canvas id="editor" width="320" height="240"></canvas>
+        <div id="status">Load a photo or pick Blank, then tap to trace.</div>
+      </div>
+    </div>
+
+    <!-- 3. Slot picker -->
+    <div class="slot-section">
+      <div class="lbl">Active slot &mdash; tap a chip, then tap the canvas</div>
+      <div id="slotbar"></div>
+    </div>
+
+    <!-- per-slot + global actions -->
+    <div class="actions">
+      <button class="btn sm" id="undo">&#8630; Undo point</button>
+      <button class="btn sm" id="close">&#10003; Close polygon</button>
+      <button class="btn sm" id="clearSlot">&#10005; Clear slot</button>
+      <button class="btn sm" id="addTable">&#43; Add table</button>
+      <button class="btn sm ghost" id="clearAll">Clear all</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn sm gold" id="download">&#11015; Download zones.json</button>
+      <button class="btn sm" id="push">&#9729; Push to live</button>
+    </div>
+
+    <!-- 4. 3D preview -->
+    <section id="preview">
+      <div class="preview-head" id="togglePreview" role="button" aria-expanded="false" tabindex="0">
+        <span class="t"><span>&#127956;</span> Live 3D twin</span>
+        <span class="chev">&#9650;</span>
+      </div>
+      <div class="preview-body">
+        <div id="canvas3d">
+          <div id="preview-msg">Tap to open the 3D preview.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../vendor/three.min.js"></script>
+  <script src="scan3d.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Allow keyboard toggle of the preview header.
+    document.getElementById('togglePreview').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+    });
+  </script>
+</body>
+</html>
