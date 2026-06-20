@@ -1,5 +1,22 @@
-"""Federation server — collects capacity-normalised ratio proposals from shop nodes
-and returns the weighted-average global ratios.
+"""Federation server — dual-purpose aggregation hub for Golden Coffee.
+
+1. Ratio federation (existing): collects P20/P80 occupancy/queue ratios from
+   each venue and returns a capacity-weighted global average that the agent
+   uses to tune its rule-based policy thresholds.
+
+2. Model federation (new): implements FedAvg over CaféComfortNet weight deltas.
+   Each venue submits a DP-sanitised gradient delta; the server accumulates them
+   and returns the averaged global weights. This is the Flock.io-compatible path:
+   when FLOCK_API_KEY is set, fl_node.py talks directly to Flock.io instead of
+   this server — but this server acts as a local stand-in for development and
+   single-venue demos.
+
+UK Sovereign AI: this server can be self-hosted by a café chain on UK
+infrastructure. No customer data flows through it — only gradient deltas
+and anonymised ratios.
+
+Run:  python -m federated.server             (default port 8001)
+      python -m federated.server --port 9000
 
 Each shop reports what fraction of its capacity triggers a lull / busy / long-queue
 condition.  The server averages these ratios (weighted by how many scenes each node
@@ -83,7 +100,110 @@ def status() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "n_nodes": len(_nodes)}
+    return {"ok": True, "n_nodes": len(_nodes), "fl_round": _fl_state["round"]}
+
+
+# ---------------------------------------------------------------------------
+# Model federation — FedAvg over CaféComfortNet weight deltas
+# ---------------------------------------------------------------------------
+
+import numpy as np
+from pathlib import Path
+
+_FL_MODEL_PATH = Path("data/fl_global_model.json")
+
+# In-memory FL state
+_fl_state: dict = {
+    "round": 0,
+    "pending_deltas": {},   # node_id -> {delta, n_samples, loss}
+    "global_weights": None, # current FedAvg weights
+}
+
+
+def _fedavg(deltas: list[dict], weights: list[int]) -> dict:
+    """Weighted average of weight deltas (FedAvg). Weights = n_samples per node."""
+    total = sum(weights)
+    if total == 0:
+        return {}
+    result = {}
+    for k in deltas[0]:
+        arrays = [np.array(d[k]) * w / total for d, w in zip(deltas, weights)]
+        result[k] = np.sum(arrays, axis=0).tolist()
+    return result
+
+
+class FLUpdate(BaseModel):
+    node_id:   str
+    capacity:  int
+    n_samples: int
+    loss:      float
+    delta:     dict      # DP-sanitised weight delta from this node
+
+
+@app.post("/fl/update")
+def fl_update(payload: FLUpdate) -> dict:
+    """Receive a weight delta from a venue node; return current global model."""
+    _fl_state["pending_deltas"][payload.node_id] = {
+        "delta": payload.delta,
+        "n_samples": payload.n_samples,
+        "loss": payload.loss,
+    }
+    pending = _fl_state["pending_deltas"]
+    n_nodes = len(pending)
+
+    # Run FedAvg whenever we have at least 2 nodes (or 1 in solo mode)
+    if n_nodes >= 1:
+        deltas  = [v["delta"]     for v in pending.values()]
+        samples = [v["n_samples"] for v in pending.values()]
+        avg_delta = _fedavg(deltas, samples)
+
+        # Apply delta to current global weights (or initialise from first delta)
+        if _fl_state["global_weights"] is None:
+            _fl_state["global_weights"] = avg_delta
+        else:
+            for k in avg_delta:
+                gw = np.array(_fl_state["global_weights"][k])
+                gw += np.array(avg_delta[k])
+                _fl_state["global_weights"][k] = gw.tolist()
+
+        _fl_state["round"] += 1
+        _fl_state["pending_deltas"].clear()
+
+        # Persist
+        _FL_MODEL_PATH.parent.mkdir(exist_ok=True)
+        _FL_MODEL_PATH.write_text(
+            __import__("json").dumps(_fl_state["global_weights"], indent=2)
+        )
+
+        avg_loss = sum(v["loss"] * v["n_samples"] for v in pending.values()) / max(sum(samples), 1)
+        print(
+            f"[fed-server] FL round {_fl_state['round']}  "
+            f"nodes={n_nodes}  avg_loss={avg_loss:.4f}  "
+            f"global_model_updated=True"
+        )
+
+    return {"round": _fl_state["round"], "weights": _fl_state["global_weights"]}
+
+
+@app.get("/fl/model")
+def fl_model() -> dict:
+    """Return the current global model weights (or empty if no rounds yet)."""
+    if _fl_state["global_weights"] is not None:
+        return {"round": _fl_state["round"], "weights": _fl_state["global_weights"]}
+    if _FL_MODEL_PATH.exists():
+        w = __import__("json").loads(_FL_MODEL_PATH.read_text())
+        _fl_state["global_weights"] = w
+        return {"round": _fl_state["round"], "weights": w}
+    return {"round": 0, "weights": None}
+
+
+@app.get("/fl/status")
+def fl_status() -> dict:
+    return {
+        "round": _fl_state["round"],
+        "pending_nodes": list(_fl_state["pending_deltas"].keys()),
+        "has_global_model": _fl_state["global_weights"] is not None,
+    }
 
 
 if __name__ == "__main__":

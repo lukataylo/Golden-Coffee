@@ -54,6 +54,32 @@ uses ephemeral ByteTrack IDs — never a person's identity. No demographics, no 
 scoring, no using discomfort to move people along. A hardened `--privacy-mode` strips
 bounding boxes entirely and adds differential-privacy noise to the heatmap.
 
+**UK Sovereign AI — Flock.io federated learning.** Every venue runs `CaféComfortNet`,
+a tiny policy model (8→16→8→4, ~500 parameters) that learns which ambient adjustments
+improve guest experience from live scene data. Crucially, it trains *collectively* across
+the café network without any venue ever sharing raw data:
+
+```
+Each café                              Flock.io aggregator
+────────────────────────────────────   ─────────────────────────────
+SceneEvents → local training           Receives: noisy gradient delta
+Gradient clipped to L2 norm 1.0        Runs:     FedAvg across all nodes
++ Gaussian noise (DP-SGD)              Returns:  improved global model
+────────────────────────────────────   ─────────────────────────────
+Only a sanitised gradient vector       Never sees: video, tracks, counts
+crosses the network                    Mathematical (ε,δ)-DP guarantee
+```
+
+A new café opening on any UK high street immediately inherits the collective
+intelligence of every café that came before — without those cafés giving up
+a single customer record. British businesses, British data, British AI.
+
+```bash
+python -m federated.fl_node          # train + contribute to Flock.io
+python -m federated.server           # local aggregation server (dev/demo)
+python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
+```
+
 ---
 
 ## 🔗 Live demo

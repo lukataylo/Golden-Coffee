@@ -203,6 +203,22 @@ class Agent:
     def __init__(self, use_claude: bool = USE_CLAUDE) -> None:
         self.state: dict = {}
         self.forecast = FootfallForecast()
+        # Federated ML model (CaféComfortNet) — loaded if available, silent if not.
+        self._fl_model = None
+        try:
+            from federated.fl_model import CafeComfortNet
+            import os as _os
+            mp = _os.environ.get("FL_MODEL_PATH", "data/fl_model.json")
+            m = CafeComfortNet(seed=42)
+            from pathlib import Path as _Path
+            if _Path(mp).exists():
+                m.load(mp)
+                print(f"[agent] CaféComfortNet loaded from {mp} — FL recommendations active")
+            else:
+                print("[agent] CaféComfortNet initialised (no saved weights yet — run fl_node to train)")
+            self._fl_model = m
+        except Exception as exc:
+            print(f"[agent] FL model unavailable ({exc})")
         self._forecast_debounce: float = 0.0
         # --- federated learning (Layer 1): this venue is a live node in a café
         # federation. Each round it estimates its own {lull,high,queue} capacity
@@ -384,7 +400,45 @@ class Agent:
             actions = [a.model_dump() for a in policy.decide(scene, self.state)]
         actions += self._forecast_actions(scene, now)
         actions += self._federation_actions(scene, now)
+        actions += self._fl_actions(scene, now)
         return actions
+
+    def _fl_actions(self, scene: dict, now: float) -> list[dict]:
+        """CaféComfortNet recommendations — the federally-trained ML layer.
+
+        Runs the local model on the current scene. Only fires if confidence
+        exceeds 0.65 AND the same action isn't already being triggered by the
+        rule engine (avoids duplicates). Debounced per-action via the same
+        policy state windows so the ML layer can't thrash devices.
+        """
+        if self._fl_model is None:
+            return []
+        try:
+            capacity = int(os.environ.get("SHOP_CAPACITY", "20"))
+            recs = self._fl_model.recommend_actions(scene, capacity, threshold=0.65)
+            out = []
+            debounce_map = {
+                "set_music_volume": "music",
+                "set_temperature":  "temperature",
+                "push_discount":    "discount_quiet",
+                "notify_staff":     "notify_queue",
+            }
+            for r in recs:
+                key = debounce_map.get(r["action"], r["action"])
+                if not policy._due(self.state, key, now):
+                    continue
+                policy._mark(self.state, key, now)
+                out.append({
+                    "type": "action", "ts": now,
+                    "action": r["action"],
+                    "params": r["params"],
+                    "rationale": r["rationale"] + " [CaféComfortNet · federated]",
+                    "reversible": True, "auto": True,
+                })
+            return out
+        except Exception as exc:
+            print(f"[agent] FL inference failed ({exc})")
+            return []
 
     def _music_context(self, scene: dict) -> str:
         """A compact read from the local music model, fed to Claude so its
