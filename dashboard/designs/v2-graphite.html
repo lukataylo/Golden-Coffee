@@ -41,21 +41,23 @@
   /* ===================== AMBIENT BACKDROP ===================== */
   .bg-layer{position:fixed;inset:0;z-index:-2;background:
     radial-gradient(120% 100% at 50% 0%, #14161B 0%, var(--canvas) 42%, var(--canvas-2) 100%);}
-  .aurora{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;}
-  .aurora::before{ /* warm ember aurora, top-right */
-    content:"";position:absolute;top:-22%;right:-12%;width:70vw;height:70vw;
-    background:radial-gradient(circle at 50% 50%, rgba(201,119,47,0.85) 0%, rgba(224,145,62,0.45) 28%, transparent 62%);
-    opacity:0.14;filter:blur(8px);
-    animation:drift 38s ease-in-out infinite alternate;
-  }
-  .aurora::after{ /* cool counter-glow, bottom-left */
-    content:"";position:absolute;bottom:-26%;left:-16%;width:62vw;height:62vw;
-    background:radial-gradient(circle at 50% 50%, rgba(120,150,190,0.7) 0%, transparent 60%);
-    opacity:0.06;filter:blur(10px);
-    animation:drift2 46s ease-in-out infinite alternate;
-  }
-  @keyframes drift{0%{transform:translate(0,0) scale(1);}100%{transform:translate(-4%,4%) scale(1.08);}}
-  @keyframes drift2{0%{transform:translate(0,0) scale(1);}100%{transform:translate(5%,-3%) scale(1.06);}}
+  /* animated warm-orange "backbone" — flowing ribbons of light behind the glass */
+  .aurora{position:fixed;inset:-12%;z-index:-1;pointer-events:none;overflow:hidden;
+    filter:blur(26px) saturate(140%);}
+  .aurora .rib{position:absolute;left:-32%;right:-32%;mix-blend-mode:screen;will-change:transform,opacity;}
+  .aurora .rib.r1{top:6%;height:36vh;
+    background:radial-gradient(58% 50% at 50% 50%, rgba(232,124,56,0.55), rgba(201,90,40,0.16) 54%, transparent 72%);
+    animation:flow1 26s ease-in-out infinite alternate, glow 9s ease-in-out infinite;}
+  .aurora .rib.r2{top:36%;height:32vh; /* the bright central spine */
+    background:radial-gradient(56% 46% at 50% 50%, rgba(232,103,76,0.58), rgba(224,145,62,0.18) 52%, transparent 70%);
+    animation:flow2 32s ease-in-out infinite alternate, glow 11s ease-in-out infinite .9s;}
+  .aurora .rib.r3{top:62%;height:30vh;
+    background:radial-gradient(60% 50% at 50% 50%, rgba(224,145,62,0.42), rgba(201,119,47,0.13) 55%, transparent 72%);
+    animation:flow3 30s ease-in-out infinite alternate, glow 10s ease-in-out infinite .5s;}
+  @keyframes flow1{0%{transform:translate(-9%,0) rotate(-4deg);}100%{transform:translate(8%,-4%) rotate(-9deg);}}
+  @keyframes flow2{0%{transform:translate(7%,2%) rotate(3deg);}100%{transform:translate(-8%,-2%) rotate(8deg);}}
+  @keyframes flow3{0%{transform:translate(-6%,1%) rotate(-2deg);}100%{transform:translate(8%,-3%) rotate(3deg);}}
+  @keyframes glow{0%,100%{opacity:0.5;}50%{opacity:0.92;}}
   .noise{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.07;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
 
@@ -118,19 +120,24 @@
   @keyframes rise{to{opacity:1;transform:translateY(0);}}
 
   /* ===================== REVENUE AT RISK ===================== */
-  .rev{position:relative;padding:20px 24px;margin-bottom:24px;overflow:hidden;
-    background:linear-gradient(100deg, rgba(232,103,76,0.10), rgba(22,24,30,0.55) 46%);}
-  .rev::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;
-    background:linear-gradient(180deg,var(--danger),var(--ember));}
-  .rev .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.12em;
-    color:var(--ink-muted);}
-  .rev .amt{display:flex;align-items:baseline;gap:10px;margin-top:6px;}
-  #rev-amount{font-size:40px;font-weight:600;letter-spacing:-0.025em;color:var(--danger);
-    font-variant-numeric:tabular-nums;line-height:1;}
-  #rev-tag{font-family:var(--mono);font-size:11px;color:var(--ink-muted);text-transform:uppercase;
-    letter-spacing:0.08em;padding:2px 7px;border:1px solid var(--hair);border-radius:6px;}
-  .rev .word{font-size:15px;color:var(--ink);font-weight:500;}
-  #rev-sub{font-size:13px;color:var(--ink-muted);margin-top:6px;}
+  /* the whole money row, warmed into the orange material */
+  .rev{position:relative;padding:22px 26px;margin-bottom:24px;overflow:hidden;
+    background:linear-gradient(105deg,#E0913E 0%, #D2643C 50%, #BB4329 100%);
+    border:1px solid rgba(255,255,255,0.20);
+    box-shadow:0 18px 50px rgba(201,90,40,0.40), inset 0 1px 0 rgba(255,255,255,0.30);}
+  .rev::before{content:"";position:absolute;inset:0;pointer-events:none; /* slow light sweep */
+    background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.16) 48%, transparent 64%);
+    transform:translateX(-100%);animation:moneysheen 9s ease-in-out infinite;}
+  @keyframes moneysheen{0%,100%{transform:translateX(-100%);}55%,70%{transform:translateX(100%);}}
+  .rev .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.14em;
+    color:rgba(255,255,255,0.85);position:relative;}
+  .rev .amt{display:flex;align-items:baseline;gap:10px;margin-top:6px;position:relative;}
+  #rev-amount{font-size:44px;font-weight:600;letter-spacing:-0.025em;color:#FFF6EE;
+    font-variant-numeric:tabular-nums;line-height:1;text-shadow:0 1px 14px rgba(120,40,20,0.35);}
+  #rev-tag{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.92);text-transform:uppercase;
+    letter-spacing:0.08em;padding:2px 7px;border:1px solid rgba(255,255,255,0.38);border-radius:6px;}
+  .rev .word{font-size:15px;color:#fff;font-weight:500;position:relative;}
+  #rev-sub{font-size:13px;color:rgba(255,255,255,0.92);margin-top:6px;position:relative;}
 
   /* ===================== KPI ROW ===================== */
   .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
@@ -338,7 +345,7 @@
 </head>
 <body>
   <div class="bg-layer"></div>
-  <div class="aurora"></div>
+  <div class="aurora"><span class="rib r1"></span><span class="rib r2"></span><span class="rib r3"></span></div>
   <div class="noise"></div>
 
   <div class="shell">
