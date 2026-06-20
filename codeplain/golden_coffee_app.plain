@@ -1,0 +1,30 @@
+---
+import:
+  - typescript-react-app-template
+---
+
+***definitions***
+
+- :Comfort-score: is an integer from 0 to 100 describing how pleasant the room currently feels.
+
+- :Comfort-band: is derived from a :Comfort-score:: 0 to 39 is "Quiet", 40 to 74 is "Balanced", and 75 to 100 is "Buzzing".
+
+- :Sample-reading: is a built-in object used when no live data is available, with the fields: comfort (a :Comfort-score: equal to 62), occupancy (an integer equal to 18), and queue (an integer equal to 3).
+
+- :Sample-alerts: is a built-in list of exactly three alert objects, newest first, each with the fields time (a string such as "14:32"), level (either "info" or "warn"), and message (a string). At least one alert has level "warn".
+
+***functional specs***
+
+- Implement the entry point for :App:.
+
+- :App: should present a mobile-first layout: a single column centered on the page with a maximum width of 480 pixels and a warm off-white background. It has a fixed top header showing the title "Golden Coffee", and a fixed bottom navigation bar with three tabs labelled "Room", "Alerts", and "Settings". Tapping a tab switches the visible screen. The "Room" screen is shown by default.
+
+- The Room screen should display the current :Comfort-score: as a large number shown as "<score> / 100" together with its :Comfort-band: label underneath, and below that a row of two stats: "In room" showing the occupancy and "In queue" showing the queue. When the app first loads, these values come from the :Sample-reading:.
+
+- :App: should store a café backend base URL in browser localStorage under the key "gc_backend". The Settings screen should show a labelled text input pre-filled with the stored value, defaulting to "https://golden-coffee-production.up.railway.app" when nothing is stored, and a "Save" button that writes the current input value to localStorage and shows a brief "Saved" confirmation.
+
+- While the Room screen is visible, :App: should refresh the reading by sending an HTTP GET to "<base>/comfort" (where <base> is the stored backend base URL) once when the screen is shown and then every 5 seconds. A successful JSON response of the shape { comfort, occupancy, queue } replaces the displayed values. Any network error, non-OK response, or malformed body leaves the previously displayed values unchanged (starting from the :Sample-reading:).
+
+- The Alerts screen should show a vertically scrollable list of alerts, newest first. Each row shows the alert's time, a small coloured dot for its level (grey for "info", amber for "warn"), and its message. The list initially shows :Sample-alerts:.
+
+- :App: should be installable to an iPhone home screen as a PWA: its HTML head must link a web app manifest declaring the name "Golden Coffee", "standalone" display, a theme colour and a background colour, and at least one icon; and must include the meta tags apple-mobile-web-app-capable set to "yes" and apple-mobile-web-app-title set to "Golden Coffee", plus an apple-touch-icon link. A service worker should be registered that caches the app shell so the app still loads when offline.
