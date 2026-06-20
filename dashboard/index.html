@@ -407,7 +407,8 @@
     var p = a.params || {};
     switch (a.action) {
       case "set_temperature":
-        if (typeof p.delta_c === "number") comfort.setpoint = clamp(comfort.setpoint + p.delta_c, 16, 26);
+        if (typeof p.target_c === "number") comfort.setpoint = clamp(p.target_c, 16, 26);
+        else if (typeof p.delta_c === "number") comfort.setpoint = clamp(comfort.setpoint + p.delta_c, 16, 26);
         else if (typeof p.celsius === "number") comfort.setpoint = clamp(p.celsius, 16, 26);
         comfort.tempOn = true; break;
       case "set_lighting":
@@ -469,7 +470,7 @@
       case "set_music": return { type:"music", title:"Set the playlist" };
       case "set_lighting": return { type:"light", title:((params.brightness <= 50) ? "Dimmed to a warm glow" : "Brightened the room") };
       case "set_scent": return { type:"scent", title:"Freshened the air" };
-      case "set_temperature": return { type:"temp", title:(((params.delta_c || 0) < 0) ? "Cooled the room" : "Warmed things up") };
+      case "set_temperature": return { type:"temp", title:(typeof params.target_c === "number" ? (params.target_c <= 21 ? "Cooled the room" : params.target_c >= 23 ? "Warmed things up" : "Adjusted the temperature") : ((params.delta_c || 0) < 0 ? "Cooled the room" : "Warmed things up")) };
       case "push_discount": return { type:"discount", title:"Shared a little treat" };
       case "notify_staff": return { type:"staff", title:(/till|queue|second/.test(String(params.text || "").toLowerCase()) ? "Opened a second till" : "Sent a hand to a table") };
       default: return { type:"staff", title:String(action).replace(/_/g, " ") };
