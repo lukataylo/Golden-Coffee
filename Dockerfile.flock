@@ -1,0 +1,28 @@
+# FLock participant container — runs GoldenCoffeeModel via FlockSDK.
+# Separate from the main Dockerfile (backend hub) so the FLock image stays
+# lean: no FastAPI, no uvicorn, no torch — just flock-sdk + our federated code.
+#
+# Build:  docker build -f Dockerfile.flock -t golden-coffee-flock .
+# Run:    docker run -p 5000:5000 -v /path/to/dataset.json:/dataset.json golden-coffee-flock
+# FLock:  register the built image digest on-chain via the FLock platform.
+
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir flock-sdk
+
+# Only copy the modules the federated model depends on.
+COPY agent/__init__.py        agent/__init__.py
+COPY agent/music_model.py     agent/music_model.py
+COPY federated/               federated/
+COPY shared/__init__.py       shared/__init__.py
+COPY shared/schemas.py        shared/schemas.py
+
+EXPOSE 5000
+
+# FLock client mounts the venue's private dataset at /dataset.json.
+CMD ["python", "-m", "federated.flock_run"]

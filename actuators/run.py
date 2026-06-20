@@ -63,12 +63,32 @@ def dispatch(action: dict) -> None:
         elif name == "push_discount":
             discount.push_discount(p.get("text", ""))
         elif name == "notify_staff":
-            notify.notify_staff(p.get("text", ""))
+            channel = p.get("channel", "default")
+            text = p.get("text", "")
+            priority = p.get("priority", "low")
+            # Channel routing: wearables / pos_and_wearables get a prefix so
+            # the recipient knows which device should receive it.
+            if channel == "wearables":
+                text = f"[WEARABLE] {text}"
+            elif channel == "pos_and_wearables":
+                text = f"[POS + WEARABLE] {text}"
+            print(f"[actuators] notify → ch={channel} priority={priority}: {text}")
+            notify.notify_staff(text)
+        elif name == "update_menu_price":
+            item = p.get("item_id", "?")
+            new_p = p.get("display_price", "?")
+            base_p = p.get("base_price", "?")
+            pct = p.get("discount_pct", "?")
+            print(
+                f"[actuators] menu board: {item} £{base_p} → £{new_p} "
+                f"({pct}% off) [never_surge={p.get('never_surge', True)}]"
+            )
+            notify.notify_staff(
+                f"Menu updated: {item} now £{new_p} ({pct}% quiet-period discount)"
+            )
         elif name == "suggest_layout":
             print(f"[actuators] layout suggestion: {p.get('text', '')}")
         elif name == "tune_policy":
-            # Not a device — a federated-learning threshold update. Nothing to
-            # actuate; the agent already patched its own policy. Log for the demo.
             print(f"[actuators] policy tuned by federation: lull={p.get('lull')} "
                   f"high={p.get('high')} queue={p.get('queue')} ({p.get('n_nodes')} cafés)")
         else:
