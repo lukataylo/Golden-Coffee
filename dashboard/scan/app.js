@@ -368,6 +368,12 @@
       window.GCScan3D.ensure();
       notify3d();
       window.GCScan3D.resize && window.GCScan3D.resize();
+      // After the open transition, resize again (height animates) and bring the
+      // panel into view on short screens where the page now scrolls.
+      setTimeout(() => {
+        window.GCScan3D.resize && window.GCScan3D.resize();
+        try { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { /* noop */ }
+      }, 280);
     }
   }
 

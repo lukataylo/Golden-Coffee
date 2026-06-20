@@ -29,7 +29,10 @@
       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
       display:flex; flex-direction:column;
       min-height:100vh; min-height:100dvh;
-      overflow:hidden;
+      /* Never allow horizontal scroll; allow vertical scroll so short phones
+         (and the open 3D panel) can reach every control instead of clipping. */
+      overflow-x:hidden; overflow-y:auto;
+      overscroll-behavior-y:none;
     }
     /* ---- Top toolbar / step flow ---- */
     header {
@@ -71,7 +74,9 @@
     label.btn input { position:absolute; inset:0; opacity:0; cursor:pointer; }
 
     /* ---- Stage / canvas ---- */
-    .stage-wrap { flex:1; position:relative; min-height:0; padding:0 12px 8px; display:flex; }
+    /* flex:1 lets the stage grow on tall screens; the min-height floor stops the
+       canvas from collapsing to nothing when space is tight (e.g. 3D panel open). */
+    .stage-wrap { flex:1 1 auto; position:relative; min-height:clamp(200px,34vh,460px); padding:0 12px 8px; display:flex; }
     #stage {
       flex:1; position:relative; border:1px solid var(--line); border-radius:16px;
       background:#0b0907; overflow:hidden; display:flex; align-items:center; justify-content:center;
