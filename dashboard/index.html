@@ -385,14 +385,11 @@
       air = Math.round((tScore + hScore) / 2);
     }
 
-    // SCENT — no consumer sensor exists. Always null.
-    var scent = null;
-
     // Overall CI = average of whatever real pillars we have. Null if none.
     var pillars = [sound, light, air].filter(function(v) { return v !== null; });
     var overall = pillars.length ? Math.round(pillars.reduce(function(a,b){return a+b;},0) / pillars.length) : null;
 
-    return { overall: overall, sound: sound, light: light, air: air, scent: scent,
+    return { overall: overall, sound: sound, light: light, air: air,
              tempC: tempC, soundDb: soundDb, stress: stress, lightLevel: lightLevel,
              daypart: evening ? "evening" : "day" };
   }
@@ -462,7 +459,6 @@
     setBarOrDash("ci-sound", c.sound);
     setBarOrDash("ci-light", c.light);
     setBarOrDash("ci-air",   c.air);
-    setBarOrDash("ci-scent", c.scent);
     // row labels with live sensor readings when available
     var sl = $("ci-sound-lab");
     if (sl) sl.textContent = c.soundDb != null
@@ -474,8 +470,6 @@
       : "Light · no sensor";
     var al = $("ci-air-lab");
     if (al) al.textContent = c.tempC != null ? "Temp " + c.tempC.toFixed(1) + "°C" : "Air · no sensor";
-    var stl = $("ci-scent-lab");
-    if (stl) stl.textContent = "Scent · no sensor";
     var overall = c.overall !== null ? c.overall : 50;
     var lab = comfortLabel(overall), pill = $("ci-pill");
     if (c.overall !== null) {
