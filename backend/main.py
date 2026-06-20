@@ -488,13 +488,17 @@ def _ask_keyword(q: str) -> Optional[dict]:
         return {"action": "set_temperature", "params": {"target_c": 22.5}, "rationale": "Warming the room."}
     if any(w in t for w in ("cooler", "cool down", "cool it", "too warm", "too hot", "hot", "stuffy")):
         return {"action": "set_temperature", "params": {"target_c": 19.5}, "rationale": "Cooling the room."}
-    if any(w in t for w in ("louder", "turn up", "more music")):
+    # Music word present => "up/down/lower/raise" refer to volume; otherwise those
+    # words belong to lights/temperature, so keep them out of the music branch.
+    has_music = any(w in t for w in ("music", "volume", "song", "track", "playlist", "tune"))
+    if any(w in t for w in ("louder", "turn up", "more music")) or (has_music and any(w in t for w in ("up", "raise", "pump"))):
         return {"action": "set_music_volume", "params": {"volume": 65}, "rationale": "Lifting the music."}
-    if any(w in t for w in ("quieter", "softer", "turn down")):
+    if any(w in t for w in ("quieter", "softer", "turn down")) or (has_music and any(w in t for w in ("down", "lower", "quiet"))):
         return {"action": "set_music_volume", "params": {"volume": 35}, "rationale": "Softening the music."}
-    if any(w in t for w in ("dim", "cosy", "cozy", "warm glow")):
+    has_light = any(w in t for w in ("light", "lamp", "lighting", "lights"))
+    if any(w in t for w in ("dim", "cosy", "cozy", "warm glow")) or (has_light and any(w in t for w in ("lower", "down", "darker", "dimmer"))):
         return {"action": "set_lighting", "params": {"brightness": 35, "warmth": "warm"}, "rationale": "Dimming to a warm glow."}
-    if "bright" in t:
+    if "bright" in t or (has_light and any(w in t for w in ("up", "raise", "lighter"))):
         return {"action": "set_lighting", "params": {"brightness": 85, "warmth": "neutral"}, "rationale": "Brightening the room."}
     if any(w in t for w in ("fresh", "scent", "air")):
         return {"action": "set_scent", "params": {"intensity": 60, "scent": "fresh citrus"}, "rationale": "Freshening the air."}

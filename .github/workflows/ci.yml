@@ -30,8 +30,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Unit tests (auth + FLock container packaging guard)
-        run: python -m pytest backend/test_auth.py federated/test_flock_packaging.py -q
+      - name: Unit tests (auth, command bar, FLock container packaging guard)
+        run: python -m pytest backend federated -q
 
       - name: Deep capabilities eval (policy, music model, agent, schemas, actuators, geometry, federated)
         run: python -m eval.capabilities_eval
