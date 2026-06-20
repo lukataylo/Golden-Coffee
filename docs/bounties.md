@@ -39,7 +39,7 @@ Vercel-hosted page can point at the Railway WebSocket backend:
 
 ## 🟡 FLock — federated learning, ported
 
-**Status: model ported and runnable locally; on-chain packaging documented, not executed.**
+**Status: model ported, runnable locally, and container-packaged (CI-verified); on-chain registration is the only remaining step.**
 
 Golden Coffee's federation is genuine federated learning with FLock's exact privacy guarantee — raw
 venue video never leaves the shop; nodes share only capacity-normalized policy ratios
@@ -57,9 +57,15 @@ onto FLock's `FlockModel` interface in **`federated/flock_model.py`**:
 **Run the proof:** `python -m federated.flock_model` — three simulated venues `train()` locally, the
 model `aggregate()`s a global, then `evaluate()`s per venue, printing the params and scores.
 
-**Remaining for the full on-chain claim** (documented in [federated/FLOCK.md](../federated/FLOCK.md),
-not done here): a thin `flock_run.py` entry point, a FLock Dockerfile, build/push the image, pin to
-IPFS (Pinata), and create + join the FlockTask on-chain.
+**Container packaging is done and verified.** The `flock_run.py` entry point and `Dockerfile.flock`
+exist, and `federated/test_flock_packaging.py` (in CI) rebuilds the Dockerfile's exact copy-set in an
+isolated dir and runs `train()`/`aggregate()`/`evaluate()` from it — proving the image will actually
+import and train on the FLock platform, not crash on a missing module. (It would have: the copy-set
+was missing `agent.policy`/`agent.discounts` until we caught it.)
+
+**Remaining for the full on-chain claim** (documented in [federated/FLOCK.md](../federated/FLOCK.md)):
+build/push the image, pin to IPFS (Pinata), and create + join the FlockTask on-chain — the platform
+steps that need FLock credentials, not code.
 
 ## 🟡 Codeplain — spec-first development
 

@@ -144,6 +144,19 @@ python -m actuators.run                  # drive real devices (Spotify / Hue / I
 
 📚 Full setup, devices, and the Telegram bot: **[docs/local-setup.md](docs/local-setup.md)**.
 
+### ✅ Verify it yourself (no GPU, camera, or keys)
+
+Everything offline is tested and runs in CI on every push ([.github/workflows/ci.yml](.github/workflows/ci.yml)):
+
+```bash
+pip install -r requirements-dev.txt        # lean test deps (every heavy CV import is lazy)
+python -m pytest backend federated -q       # auth + FLock container packaging guard
+python -m eval.capabilities_eval            # 106 deep behavioural checks — policy, music model,
+                                            # agent, schemas, actuators, geometry, federation
+python -m agent.policy                       # offline policy self-test over synthetic scenes
+python -m federated.flock_model             # the FLock port: 3 venues train → aggregate → evaluate
+```
+
 ---
 
 ## 🧠 How it works
@@ -224,7 +237,7 @@ We benchmarked the perception pipeline against a vision-LLM judge on 24 frames a
 |---|---|---|
 | **Sui / Walrus** | 🟢 **Live** | `onchain/walrus.py` + `POST /onchain/snapshot` anchor anonymized metrics + the agent's action audit trail to the Walrus testnet over pure HTTP — returns a public, verifiable blob URL. No wallet needed. |
 | **Vercel** | 🟢 **Live-ready** | A separate production Next.js 14 + Clerk app in `web/` (marketing, auth, multi-venue onboarding) deploys independently to Vercel; the static dashboard is also Vercel-deployable and `?ws=`-aware. See [VERCEL.md](VERCEL.md). |
-| **FLock** | 🟡 **Model ported; demo runs** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally. On-chain packaging (Docker/IPFS/FlockTask) is documented but not executed — see [federated/FLOCK.md](federated/FLOCK.md). |
+| **FLock** | 🟡 **Model ported; container CI-verified** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally, and `Dockerfile.flock` is packaging-tested in CI (`federated/test_flock_packaging.py` rebuilds the image's copy-set and trains from it). Only the on-chain registration (IPFS/FlockTask, needs platform creds) remains — see [federated/FLOCK.md](federated/FLOCK.md). |
 | **Codeplain** | 🟡 **Spec written; render blocked on key** | The daily ops-report module is specified spec-first in `codeplain/ops_report.plain`; rendering to code is blocked on a Codeplain API key. Plan in [codeplain/README.md](codeplain/README.md). |
 
 🔎 Full per-bounty write-up: **[docs/bounties.md](docs/bounties.md)**.

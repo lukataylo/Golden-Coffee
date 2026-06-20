@@ -24,8 +24,11 @@ occupancy, queue, the conversion funnel, the **Comfort Index** ("Feels great"). 
 come from a single camera feed, with faces blurred on-device.
 
 **0:50 — 🌟 THE HERO MOMENT (40s).** Drive the room into a **rush**. As the queue crosses the
-threshold, watch the **action feed** fire live, each with a plain-English rationale:
-> *"Queue at 6 — open a second till."* → a **Telegram alert** lands on the staff phone.
+threshold, the **"£ walked away today"** hero chip starts climbing in real time — the running cost
+of every customer who gave up on the queue — and the **action feed** fires live, each with a
+plain-English rationale:
+> *"Walk-offs rising — open a second till. (~£120 walked away today)"* → a **Telegram alert** lands
+> on the staff phone.
 > Then the ambient stack reacts: **music softens**, **lights brighten to neutral**, **scent
 > freshens**, **AC cools** — and on the 3D floor twin the lights visibly warm/dim and the music
 > ring pulses.
