@@ -151,7 +151,8 @@ Everything offline is tested and runs in CI on every push ([.github/workflows/ci
 
 ```bash
 pip install -r requirements-dev.txt        # lean test deps (every heavy CV import is lazy)
-python -m pytest backend federated -q       # auth + FLock container packaging guard
+python -m pytest backend federated shared agent -q   # 49 unit tests: auth, command bar,
+                                            # comfort index, forecast, discounts, FLock packaging
 python -m eval.capabilities_eval            # 106 deep behavioural checks — policy, music model,
                                             # agent, schemas, actuators, geometry, federation
 python -m agent.policy                       # offline policy self-test over synthetic scenes
