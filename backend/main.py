@@ -39,6 +39,9 @@ DASHBOARD_DIR = REPO_ROOT / "dashboard"
 INGEST_TOKEN = os.environ.get("INGEST_TOKEN", "")
 # Append-only metrics history (for Track B's footfall/labour forecasting).
 METRICS_PATH = REPO_ROOT / "data" / "metrics.jsonl"
+# Active floorplan geometry (zones.json shape) scanned by the PWA — perception
+# (--zones) and the dashboard read this to use real venue geometry.
+GEOMETRY_PATH = REPO_ROOT / "data" / "geometry.json"
 
 
 def _require_token(x_token: Optional[str]) -> None:
@@ -94,6 +97,7 @@ class Hub:
         # new frames without an explicit event/condition.
         self.last_frame: Optional[bytes] = None
         self.frame_version: int = 0
+        self.geometry: Optional[dict] = None  # active floorplan geometry (zones.json)
 
     def set_frame(self, data: bytes) -> None:
         self.last_frame = data
@@ -264,6 +268,45 @@ async def onchain_snapshot(limit: int = 500) -> dict:
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Walrus store failed: {exc}")
     return {"ok": True, "walrus": res, "anchored": snapshot["summary"]}
+
+
+@app.post("/geometry")
+async def set_geometry(request: Request) -> dict:
+    """Store the active floorplan geometry (zones.json shape) scanned by the PWA.
+    perception (--zones) and the dashboard read this to use the REAL venue layout.
+    Open like /override (browser/PWA writes it)."""
+    try:
+        geo = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid JSON")
+    if not isinstance(geo, dict) or not any(k in geo for k in ("zones", "tables", "cleaning")):
+        raise HTTPException(status_code=422, detail="expected zones.json shape (zones/tables/cleaning)")
+    try:
+        GEOMETRY_PATH.parent.mkdir(exist_ok=True)
+        GEOMETRY_PATH.write_text(json.dumps(geo))
+    except Exception:
+        pass
+    hub.geometry = geo
+    await hub.broadcast({"type": "geometry", "geometry": geo})  # live dashboards can re-render
+    return {
+        "ok": True,
+        "zones": list((geo.get("zones") or {}).keys()),
+        "tables": list((geo.get("tables") or {}).keys()),
+        "cleaning": list((geo.get("cleaning") or {}).keys()),
+    }
+
+
+@app.get("/geometry")
+async def get_geometry() -> dict:
+    """Return the active floorplan geometry (or {} if none scanned yet)."""
+    if hub.geometry is not None:
+        return hub.geometry
+    if GEOMETRY_PATH.exists():
+        try:
+            return json.loads(GEOMETRY_PATH.read_text())
+        except Exception:
+            pass
+    return {}
 
 
 @app.post("/action")
