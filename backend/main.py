@@ -231,6 +231,41 @@ async def metrics(limit: int = 200) -> dict:
     return {"summary": summary, "recent": rows}
 
 
+@app.post("/onchain/snapshot")
+async def onchain_snapshot(limit: int = 500) -> dict:
+    """Anchor the anonymized metrics history + agent ACTION audit trail to Walrus
+    (Sui ecosystem) — a tamper-proof, independently-verifiable record of what the
+    café AI did, privacy-first (aggregate numbers only, no faces). Returns the
+    Walrus blobId + a public read URL anyone can verify."""
+    from onchain.walrus import store_blob
+
+    rows: list[dict] = []
+    if METRICS_PATH.exists():
+        for ln in METRICS_PATH.read_text().splitlines()[-limit:]:
+            try:
+                rows.append(json.loads(ln))
+            except Exception:
+                continue
+    snapshot = {
+        "kind": "golden-coffee-ops-snapshot",
+        "ts": time.time(),
+        "metrics": rows,
+        "actions": list(hub.action_log),  # the agent's action audit trail + rationales
+        "summary": {
+            "metric_samples": len(rows),
+            "actions_logged": len(hub.action_log),
+            "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
+        },
+    }
+    try:
+        res = await asyncio.to_thread(
+            store_blob, json.dumps(snapshot).encode(), 5
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Walrus store failed: {exc}")
+    return {"ok": True, "walrus": res, "anchored": snapshot["summary"]}
+
+
 @app.post("/action")
 async def action(act: AgentAction, x_token: Optional[str] = Header(None)) -> dict:
     """The agent pushes decisions here. The actuator executor (actuators/run.py)

@@ -1,0 +1,39 @@
+***Definitions:***
+
+- [Metrics file] is a JSONL file where each line is one tick: an object with
+  integer fields `occupancy`, `queue_len`, `entered`, `ordered`, `abandoned`,
+  `tables_waiting`, `cleaning_overdue`, and a float `ts` (unix seconds).
+- [Avg ticket] is the constant 4.50 (GBP).
+
+***Non-Functional Requirements:***
+
+- The implementation language is Python.
+- Use only the Python standard library (no third-party packages).
+- Reference template: python-console-app-template.
+
+***Specification:***
+
+Build a command-line tool `ops_report.py` that turns a café's [Metrics file] into a
+one-page operations report.
+
+- It reads a [Metrics file] path as the first CLI argument and prints a JSON object
+  to stdout with these keys:
+  - `samples`: number of valid ticks read.
+  - `peak_occupancy`: the maximum `occupancy` seen.
+  - `total_walkoffs`: the maximum `abandoned` seen (it is cumulative).
+  - `revenue_at_risk_gbp`: `total_walkoffs` multiplied by [Avg ticket], rounded to 2 dp.
+  - `busiest_hour`: the hour-of-day (0–23, from `ts`) with the highest average
+    `occupancy`; null if there are no samples.
+  - `conversion_pct`: `ordered` / `entered` of the last tick as a percentage rounded
+    to a whole number; 0 if `entered` is 0.
+  - `cleaning_alerts`: the number of ticks where `cleaning_overdue` is greater than 0.
+- Lines that are not valid JSON are skipped, not fatal.
+- If the file is missing or empty, it prints a JSON object with `samples` 0 and all
+  numeric fields 0 (and `busiest_hour` null), and exits 0.
+
+***Acceptance Tests:***
+
+- Running it on a file with three valid ticks prints valid JSON with `samples` 3.
+- `revenue_at_risk_gbp` equals `total_walkoffs * 4.50`.
+- A file containing one malformed line and two valid lines yields `samples` 2.
+- A missing file path yields `samples` 0 and exit code 0.
