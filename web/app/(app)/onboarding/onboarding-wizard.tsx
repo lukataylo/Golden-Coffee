@@ -82,13 +82,26 @@ export function OnboardingWizard() {
 
   return (
     <div className="animate-fade-up space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-cream">
-          Let&apos;s set up your café
-        </h1>
-        <p className="mt-1.5 text-sm text-cream-muted">
-          A few quick steps and Golden Coffee starts running the room.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-cream">
+            Let&apos;s set up your café
+          </h1>
+          <p className="mt-1.5 text-sm text-cream-muted">
+            A few quick steps and Golden Coffee starts running the room.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard")}
+          aria-label="Skip onboarding and close"
+          title="Skip for now"
+          className="-mr-1 -mt-1 grid h-9 w-9 flex-none place-items-center rounded-full border border-cream/15 text-cream-muted transition hover:border-amber/50 hover:text-cream"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       <Stepper steps={[...STEPS]} current={step} />
