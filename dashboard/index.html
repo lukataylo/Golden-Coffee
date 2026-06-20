@@ -636,20 +636,62 @@
   }
 
   // ---------- hero chips (avg wait + mood) ----------
+  function roomMood(s) {
+    var occ      = s.occupancy  || 0;
+    var queue    = s.queue_len  || 0;
+    var db       = (typeof s.indoor_sound_db === "number") ? s.indoor_sound_db
+                 : (typeof s.sound_db        === "number") ? s.sound_db : null;
+    var tables   = s.tables || [];
+    var dwellSum = 0, dwellN = 0;
+    for (var i = 0; i < tables.length; i++) {
+      var t = tables[i];
+      if (t.occupied) { dwellSum += (Number(t.occupied_s) || 0); dwellN++; }
+    }
+    var avgDwell = dwellN ? dwellSum / dwellN : 0;  // seconds
+
+    // Hectic: queue backing up AND noisy
+    if (queue >= 4 && (db === null || db >= 68))
+      return { text:"Hectic",  color:"#EB6A4E" };
+    // Buzzing: full room, queue under control, energetic sound
+    if (occ >= 8 && queue < 4 && (db === null || db >= 58))
+      return { text:"Buzzing", color:"#FF9A2D" };
+    // Relaxed: moderate crowd, people lingering (long dwell), quiet-ish
+    if (occ >= 3 && avgDwell >= 900 && (db === null || db < 62))
+      return { text:"Relaxed", color:"#6FCF97" };
+    // Flowing: mid occupancy, short dwell, queue clear — steady turnover
+    if (occ >= 4 && queue < 3 && avgDwell < 900)
+      return { text:"Flowing", color:"#6FCF97" };
+    // Quiet: low occupancy
+    if (occ <= 2)
+      return { text:"Quiet",   color:"#A9BDD6" };
+    return   { text:"Calm",    color:"#6FCF97" };
+  }
+
   function updateChips(s) {
     s = s || {};
+    // Avg Wait — real table dwell data only. No fake queue × 35s fallback.
     var tables = s.tables || [], sum = 0, n = 0;
     for (var i = 0; i < tables.length; i++) {
       var t = tables[i] || {};
-      var active = t.occupied || t.status === "seated" || t.status === "waiting" || t.status === "overdue";
-      if (active) { sum += (Number(t.wait_s) || 0); n++; }
+      if (t.occupied || t.status === "seated" || t.status === "waiting" || t.status === "overdue") {
+        sum += (Number(t.wait_s) || 0); n++;
+      }
     }
-    var avg = n ? sum / n : ((s.queue_len || 0) * 35);
-    $("chip-wait").textContent = fmtClock(avg);
-    var ww = $("chip-wait-word"), calm = avg < 150;
-    ww.textContent = calm ? "calm" : "busy"; ww.style.color = calm ? "#6FCF97" : "#F2C14E";
-    var o = s.occupancy || 0;
-    $("chip-mood").textContent = o <= 2 ? "Cosy" : o <= 6 ? "Calm" : o <= 10 ? "Buzzy" : "Lively";
+    var ww = $("chip-wait-word");
+    if (n > 0) {
+      var avg = sum / n;
+      $("chip-wait").textContent = fmtClock(avg);
+      var calm = avg < 150;
+      ww.textContent = calm ? "calm" : "busy";
+      ww.style.color = calm ? "#6FCF97" : "#F2C14E";
+    } else {
+      $("chip-wait").textContent = "—";
+      ww.textContent = "";
+    }
+    // Mood — multi-signal: occupancy + queue + sound + dwell
+    var mood = roomMood(s);
+    $("chip-mood").textContent = mood.text;
+    $("chip-mood").style.color = mood.color;
   }
 
   // ====================================================================
