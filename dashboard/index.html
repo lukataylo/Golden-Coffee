@@ -229,6 +229,7 @@
           <input id="cmd-input" class="gc-input" type="text" autocomplete="off" placeholder="Ask the room or run a command…" aria-label="Ask the room or run a command">
         </form>
         <div style="display:flex;align-items:center;gap:10px;flex:none;">
+          <button id="integrations-btn" class="gc-ghost gc-ico" title="Device integrations" aria-label="Device integrations" onclick="igShow(true);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0V8ZM12 16v6"/></svg></button>
           <button id="reconfig-zones-btn" class="gc-ghost gc-ico" title="Reconfigure venue zones" aria-label="Reconfigure venue zones" onclick="wzShow(true);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17 14v7"/></svg></button>
           <button id="demo-btn" class="gc-ghost gc-ico" aria-pressed="false" aria-label="Demo" title="Run a self-contained synthetic café — no backend or camera needed"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg></button>
           <span id="conn" role="status" aria-live="polite" title="connecting…"><span class="dot"></span></span>
@@ -312,24 +313,56 @@
                   <span id="music-pct" style="font:600 14px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:42px;text-align:right;">40%</span>
                 </div>
               </div>
-              <!-- CUSTOM PANEL: Spotify Web Playback SDK -->
+              <!-- CUSTOM PANEL: hosted library (Tier-1 default) + Spotify fallback -->
               <div id="music-custom-panel" style="display:none;">
-                <!-- Now playing -->
-                <div style="margin-bottom:12px;min-height:34px;">
-                  <div id="sp-track" style="font-size:13px;font-weight:500;color:#F6EEE4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Not connected</div>
-                  <div id="sp-artist" style="font-size:11px;color:#9b8c7b;margin-top:2px;"></div>
+                <!-- Source dropdown (toggle library ⇄ Spotify) -->
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px;">
+                  <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9b8c7b;flex:none;">Source</span>
+                  <div style="position:relative;flex:1;">
+                    <select id="music-source" aria-label="Music source" style="appearance:none;-webkit-appearance:none;width:100%;padding:7px 28px 7px 11px;border-radius:10px;background:rgba(28,18,10,.6);border:1px solid rgba(255,236,214,.14);color:#F6EEE4;font:600 12px/1 'Hanken Grotesk',sans-serif;cursor:pointer;outline:none;">
+                      <option value="library">Coffee Steve Library</option>
+                      <option value="spotify">Spotify (optional)</option>
+                    </select>
+                    <span style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9b8c7b;font-size:9px;">▼</span>
+                  </div>
                 </div>
-                <!-- Transport + volume -->
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-                  <button onclick="spPrev()" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏮</button>
-                  <button id="sp-play" onclick="spPlayPause()" style="appearance:none;width:40px;height:40px;border-radius:12px;cursor:pointer;background:#FF9A2D;border:none;color:#1a0f06;font-size:18px;display:grid;place-items:center;font-weight:700;">▶</button>
-                  <button onclick="spNext()" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏭</button>
-                  <input id="sp-vol" type="range" min="0" max="100" value="50" style="flex:1;height:14px;" aria-label="Spotify volume">
-                  <span id="sp-vol-pct" style="font:600 12px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:36px;text-align:right;">50%</span>
+
+                <!-- LIBRARY player (self-hosted, royalty-free, zero setup) -->
+                <div id="lib-panel">
+                  <div style="margin-bottom:12px;min-height:34px;">
+                    <div id="lib-track" style="font-size:13px;font-weight:500;color:#F6EEE4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pick a vibe to start</div>
+                    <div id="lib-meta" style="font-size:11px;color:#9b8c7b;margin-top:2px;">Coffee Steve Library · royalty-free, no account</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                    <button onclick="libPrev()" aria-label="Previous track" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏮</button>
+                    <button id="lib-play" onclick="libPlayPause()" aria-label="Play or pause" style="appearance:none;width:40px;height:40px;border-radius:12px;cursor:pointer;background:#FF9A2D;border:none;color:#1a0f06;font-size:18px;display:grid;place-items:center;font-weight:700;">▶</button>
+                    <button onclick="libNext()" aria-label="Next track" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏭</button>
+                    <input id="lib-vol" type="range" min="0" max="100" value="55" style="flex:1;height:14px;" aria-label="Library volume">
+                    <span id="lib-vol-pct" style="font:600 12px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:36px;text-align:right;">55%</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="lib-presets"></div>
+                  <div id="lib-status" style="font-size:10px;color:#9b8c7b;">Music by Kevin MacLeod · CC-BY 4.0</div>
                 </div>
-                <!-- Playlist presets -->
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="sp-presets"></div>
-                <div id="sp-status" style="font-size:10px;color:#9b8c7b;">Connecting to Spotify…</div>
+
+                <!-- SPOTIFY player (optional fallback) -->
+                <div id="sp-panel" style="display:none;">
+                  <!-- Now playing -->
+                  <div style="margin-bottom:12px;min-height:34px;">
+                    <div id="sp-track" style="font-size:13px;font-weight:500;color:#F6EEE4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Not connected</div>
+                    <div id="sp-artist" style="font-size:11px;color:#9b8c7b;margin-top:2px;"></div>
+                  </div>
+                  <!-- Transport + volume -->
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                    <button onclick="spPrev()" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏮</button>
+                    <button id="sp-play" onclick="spPlayPause()" style="appearance:none;width:40px;height:40px;border-radius:12px;cursor:pointer;background:#FF9A2D;border:none;color:#1a0f06;font-size:18px;display:grid;place-items:center;font-weight:700;">▶</button>
+                    <button onclick="spNext()" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.5);border:1px solid rgba(255,236,214,.12);color:#F6EEE4;font-size:14px;display:grid;place-items:center;">⏭</button>
+                    <input id="sp-vol" type="range" min="0" max="100" value="50" style="flex:1;height:14px;" aria-label="Spotify volume">
+                    <span id="sp-vol-pct" style="font:600 12px/1 'JetBrains Mono',monospace;color:#FF9A2D;min-width:36px;text-align:right;">50%</span>
+                  </div>
+                  <!-- Playlist presets -->
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="sp-presets"></div>
+                  <div id="sp-status" style="font-size:10px;color:#9b8c7b;">Connecting to Spotify…</div>
+                </div>
               </div>
             </div>
             <!-- Climate -->
@@ -1282,8 +1315,129 @@
   fetch(EP.http + "/music/mode").then(function(r) { return r.json(); }).then(function(d) {
     applyMusicModeUI(d.mode || "auto");
   }).catch(function() {});
+})();
+</script>
 
-  // ── SPOTIFY WEB PLAYBACK SDK ──────────────────────────────────────────────
+<!-- MUSIC PLAYER ─ separate <script> so an unrelated dashboard error can never
+     take down music streaming (a throw in one script can't abort another). -->
+<script>
+(function() {
+  var $ = function(id) { return document.getElementById(id); };
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  var EP = { http: (function() {
+    var p = new URLSearchParams(location.search);
+    if (p.get('http')) return p.get('http').replace(/\/$/, '');
+    if (location.protocol === 'file:') return 'http://127.0.0.1:8000';
+    return location.origin;
+  })() };
+
+  // ── COFFEE STEVE SOUND LIBRARY (Tier-1 player, self-hosted) ───────────────
+  // Plays royalty-free tracks in-browser with zero setup. Spotify is an optional
+  // fallback selected from the Source dropdown. The two never play at once.
+  var LIB = { tracks: [], idx: -1, started: false };
+  var libAudio = new Audio();
+  libAudio.loop = true;
+  libAudio.preload = "none";
+  libAudio.volume = 0.55;
+  libAudio.id = "lib-audio";
+  libAudio.style.display = "none";
+  (document.body || document.documentElement).appendChild(libAudio);
+
+  function libStatus(msg) { var s = $("lib-status"); if (s) s.textContent = msg; }
+  function libRenderNowPlaying() {
+    var t = LIB.tracks[LIB.idx];
+    var tt = $("lib-track"), mt = $("lib-meta");
+    if (!t) { if (tt) tt.textContent = "Pick a vibe to start"; if (mt) mt.textContent = "Coffee Steve Library · royalty-free, no account"; return; }
+    if (tt) tt.textContent = t.label + " · " + t.title;
+    if (mt) mt.textContent = (t.blurb || "") + " — " + t.artist;
+  }
+  function libHighlight() {
+    var wrap = $("lib-presets"); if (!wrap) return;
+    Array.prototype.forEach.call(wrap.children, function (b, i) {
+      var on = (i === LIB.idx);
+      b.style.background = on ? "rgba(255,154,45,.28)" : "rgba(28,18,10,.5)";
+      b.style.color = on ? "#F6EEE4" : "#cdbfae";
+      b.style.borderColor = on ? "rgba(255,154,45,.5)" : "rgba(255,236,214,.12)";
+    });
+  }
+  function libLoad(i, autoplay) {
+    if (!LIB.tracks.length) return;
+    LIB.idx = (i + LIB.tracks.length) % LIB.tracks.length;
+    var t = LIB.tracks[LIB.idx];
+    libAudio.src = EP.http + t.url;   // url is "/audio/<file>" from /music/library
+    libRenderNowPlaying();
+    libHighlight();
+    if (autoplay) libPlay();
+  }
+  function libPlay() {
+    if (LIB.idx < 0) { libLoad(0, false); }
+    var p = libAudio.play();
+    if (p && p.catch) p.catch(function () { libStatus("Tap ▶ to start sound (browser blocked autoplay)"); });
+    LIB.started = true;
+  }
+  function libPlayPause() {
+    if (LIB.idx < 0) { libLoad(0, true); return; }
+    if (libAudio.paused) libPlay(); else libAudio.pause();
+  }
+  function libNext() { libLoad(LIB.idx + 1, true); }
+  function libPrev() { libLoad(LIB.idx - 1, true); }
+  window.libPlayPause = libPlayPause; window.libNext = libNext; window.libPrev = libPrev;
+
+  libAudio.addEventListener("play",  function () { var p = $("lib-play"); if (p) p.textContent = "⏸"; libStatus("Now playing · Kevin MacLeod · CC-BY 4.0"); });
+  libAudio.addEventListener("pause", function () { var p = $("lib-play"); if (p) p.textContent = "▶"; });
+  libAudio.addEventListener("error", function () { libStatus("Couldn't load that track — try another."); });
+
+  // volume slider → audio
+  (function () {
+    var vol = $("lib-vol"), pct = $("lib-vol-pct");
+    if (!vol) return;
+    function apply(v) { libAudio.volume = clamp(+v, 0, 100) / 100; if (pct) pct.textContent = Math.round(+v) + "%"; }
+    vol.addEventListener("input", function () { apply(this.value); });
+    apply(vol.value);
+  })();
+
+  // Load the catalogue + build mood preset buttons
+  fetch(EP.http + "/music/library")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      LIB.tracks = (data && data.tracks) || [];
+      var wrap = $("lib-presets");
+      if (wrap) {
+        wrap.innerHTML = "";
+        LIB.tracks.forEach(function (t, i) {
+          var btn = document.createElement("button");
+          btn.textContent = t.label;
+          btn.title = t.title + " — " + t.artist;
+          btn.style.cssText = "appearance:none;border:1px solid rgba(255,236,214,.12);border-radius:9px;padding:6px 4px;font-size:10.5px;font-weight:600;cursor:pointer;background:rgba(28,18,10,.5);color:#cdbfae;transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+          btn.onclick = function () { libLoad(i, true); };
+          wrap.appendChild(btn);
+        });
+      }
+      if (!LIB.tracks.length) libStatus("Library unavailable — switch Source to Spotify.");
+    })
+    .catch(function () { libStatus("Library unavailable — switch Source to Spotify."); });
+
+  // ── SOURCE SWITCH (library ⇄ Spotify) ─────────────────────────────────────
+  var musicSource = "library";
+  try { musicSource = localStorage.getItem("gc_music_source") || "library"; } catch (e) {}
+
+  function applyMusicSource(src) {
+    musicSource = (src === "spotify") ? "spotify" : "library";
+    try { localStorage.setItem("gc_music_source", musicSource); } catch (e) {}
+    var libP = $("lib-panel"), spP = $("sp-panel"), sel = $("music-source");
+    if (sel) sel.value = musicSource;
+    if (libP) libP.style.display = (musicSource === "library") ? "block" : "none";
+    if (spP)  spP.style.display  = (musicSource === "spotify") ? "block" : "none";
+    if (musicSource === "spotify") { try { libAudio.pause(); } catch (e) {} spInit(); }
+    else { try { if (spPlayer) spPlayer.pause(); } catch (e) {} }
+  }
+  (function () {
+    var sel = $("music-source");
+    if (sel) { sel.value = musicSource; sel.addEventListener("change", function () { applyMusicSource(this.value); }); }
+    applyMusicSource(musicSource);
+  })();
+
+  // ── SPOTIFY WEB PLAYBACK SDK (optional fallback, lazy) ────────────────────
   var SP_MOODS = [
     { key:"morning_rush",     label:"Morning Rush",      uri:"spotify:playlist:0l0z9lLKk9lLzbP3IXHPiw" },
     { key:"midday_dwell",     label:"Midday Dwell",      uri:"spotify:playlist:2Al9G2jrWkwDlRFMZaw1GX" },
@@ -1307,9 +1461,15 @@
     });
   })();
 
-  var spToken = null, spPlayer = null, spDeviceId = null;
+  var spToken = null, spPlayer = null, spDeviceId = null, spSDKReady = false, spInited = false;
 
-  window.onSpotifyWebPlaybackSDKReady = function() {
+  // The SDK calls this when loaded; only actually connect if Spotify is the
+  // chosen source (so the default library player makes no Spotify calls).
+  window.onSpotifyWebPlaybackSDKReady = function() { spSDKReady = true; if (musicSource === "spotify") spInit(); };
+
+  function spInit() {
+    if (spInited || !spSDKReady) return;
+    spInited = true;
     fetch(EP.http + "/spotify/token")
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -1627,6 +1787,180 @@
 
 })();
 </script>
+<!-- ════════ INTEGRATIONS CONTROL SURFACE ════════ -->
+<div id="ig-modal" role="dialog" aria-modal="true" aria-label="Device integrations" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(12,7,3,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+  <div style="width:100%;max-width:560px;background:linear-gradient(180deg,#241910,#1c130a);border:1px solid rgba(255,236,214,.14);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.55);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,236,214,.1);">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <span style="color:#FF9A2D;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0V8ZM12 16v6"/></svg></span>
+        <div><div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;">Integrations</div><div style="font:500 11px/1.2 'JetBrains Mono',monospace;color:#9b8c7b;margin-top:2px;">device control surface</div></div>
+      </div>
+      <button onclick="igShow(false)" aria-label="Close" style="appearance:none;width:32px;height:32px;border-radius:9px;cursor:pointer;background:rgba(28,18,10,.6);border:1px solid rgba(255,236,214,.12);color:#cdbfae;font-size:16px;display:grid;place-items:center;">✕</button>
+    </div>
+    <div style="padding:18px 22px;max-height:72vh;overflow-y:auto;">
+      <!-- status list -->
+      <div id="ig-list" style="display:flex;flex-direction:column;gap:9px;margin-bottom:20px;"><div style="color:#9b8c7b;font-size:13px;">Loading integrations…</div></div>
+
+      <!-- Xiaomi control surface -->
+      <div style="font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#9b8c7b;margin:4px 0 12px;">Xiaomi / Mijia — direct control</div>
+      <div style="background:rgba(28,18,10,.45);border:1px solid rgba(255,236,214,.1);border-radius:16px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:13.5px;font-weight:600;">Lamp</span>
+          <span id="ig-lamp-pct" style="font:600 13px/1 'JetBrains Mono',monospace;color:#FF9A2D;">60%</span>
+        </div>
+        <input id="ig-lamp" type="range" min="0" max="100" value="60" style="width:100%;height:16px;" aria-label="Lamp brightness">
+        <div style="display:flex;gap:6px;margin-top:10px;" id="ig-warmth">
+          <button data-w="warm" style="flex:1;appearance:none;border:1px solid rgba(255,236,214,.14);border-radius:9px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;background:rgba(255,154,45,.22);color:#F6EEE4;">Warm</button>
+          <button data-w="neutral" style="flex:1;appearance:none;border:1px solid rgba(255,236,214,.14);border-radius:9px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;background:rgba(28,18,10,.5);color:#cdbfae;">Neutral</button>
+          <button data-w="cool" style="flex:1;appearance:none;border:1px solid rgba(255,236,214,.14);border-radius:9px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;background:rgba(28,18,10,.5);color:#cdbfae;">Cool</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 6px;">
+          <span style="font-size:13.5px;font-weight:600;">Scent diffuser</span>
+          <span id="ig-scent-pct" style="font:600 13px/1 'JetBrains Mono',monospace;color:#FF9A2D;">0%</span>
+        </div>
+        <input id="ig-scent" type="range" min="0" max="100" value="0" style="width:100%;height:16px;" aria-label="Diffuser intensity">
+        <div id="ig-xiaomi-note" style="font-size:10.5px;color:#9b8c7b;margin-top:10px;">Drives the real device over the Mi cloud · changes are logged in the activity feed.</div>
+      </div>
+
+      <!-- Voice assistants -->
+      <div style="font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#9b8c7b;margin:4px 0 12px;">Voice assistants</div>
+      <div style="background:rgba(28,18,10,.45);border:1px solid rgba(255,236,214,.1);border-radius:16px;padding:16px;">
+        <p style="font-size:12px;color:#9b8c7b;margin:0 0 12px;line-height:1.5;">Paste a routine webhook (IFTTT, Home Assistant, or Voice Monkey) so Coffee Steve can speak announcements on your speakers.</p>
+        <label style="font-size:12px;font-weight:600;color:#cdbfae;">Amazon Alexa webhook</label>
+        <div style="display:flex;gap:7px;margin:6px 0 12px;">
+          <input id="ig-alexa-url" type="url" placeholder="https://maker.ifttt.com/trigger/…" style="flex:1;min-width:0;padding:9px 11px;border-radius:9px;background:rgba(12,7,3,.6);border:1px solid rgba(255,236,214,.14);color:#F6EEE4;font-size:12px;outline:none;">
+          <button onclick="igSaveVoice('alexa')" style="appearance:none;border:none;border-radius:9px;padding:0 14px;font-size:12px;font-weight:600;cursor:pointer;background:rgba(255,154,45,.25);color:#F6EEE4;">Save</button>
+          <button onclick="igTestVoice('alexa')" style="appearance:none;border:1px solid rgba(255,236,214,.14);border-radius:9px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;background:rgba(28,18,10,.5);color:#cdbfae;">Test</button>
+        </div>
+        <label style="font-size:12px;font-weight:600;color:#cdbfae;">Google Home webhook</label>
+        <div style="display:flex;gap:7px;margin-top:6px;">
+          <input id="ig-google-url" type="url" placeholder="https://…/api/webhook/…" style="flex:1;min-width:0;padding:9px 11px;border-radius:9px;background:rgba(12,7,3,.6);border:1px solid rgba(255,236,214,.14);color:#F6EEE4;font-size:12px;outline:none;">
+          <button onclick="igSaveVoice('google_home')" style="appearance:none;border:none;border-radius:9px;padding:0 14px;font-size:12px;font-weight:600;cursor:pointer;background:rgba(255,154,45,.25);color:#F6EEE4;">Save</button>
+          <button onclick="igTestVoice('google_home')" style="appearance:none;border:1px solid rgba(255,236,214,.14);border-radius:9px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;background:rgba(28,18,10,.5);color:#cdbfae;">Test</button>
+        </div>
+        <div id="ig-voice-note" style="font-size:10.5px;color:#9b8c7b;margin-top:11px;">Saved to your venue config.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INTEGRATIONS ─ isolated <script> (immune to unrelated dashboard errors) -->
+<script>
+(function() {
+  var $ = function(id) { return document.getElementById(id); };
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  var EP = { http: (function() {
+    var p = new URLSearchParams(location.search);
+    if (p.get('http')) return p.get('http').replace(/\/$/, '');
+    if (location.protocol === 'file:') return 'http://127.0.0.1:8000';
+    return location.origin;
+  })() };
+
+  function badge(connected) {
+    return connected
+      ? '<span style="font:600 10px/1 \'JetBrains Mono\',monospace;letter-spacing:.04em;padding:4px 9px;border-radius:999px;background:rgba(74,193,116,.16);color:#6fdc9b;border:1px solid rgba(74,193,116,.3);">CONNECTED</span>'
+      : '<span style="font:600 10px/1 \'JetBrains Mono\',monospace;letter-spacing:.04em;padding:4px 9px;border-radius:999px;background:rgba(255,236,214,.07);color:#9b8c7b;border:1px solid rgba(255,236,214,.14);">NOT SET UP</span>';
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+
+  function renderList(items) {
+    var wrap = $("ig-list"); if (!wrap) return;
+    wrap.innerHTML = items.map(function(it) {
+      return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 13px;border-radius:12px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.08);">'
+        + '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;">' + esc(it.name) + '</div>'
+        + '<div style="font-size:11.5px;color:#9b8c7b;margin-top:2px;line-height:1.4;">' + esc(it.detail) + '</div></div>'
+        + badge(it.connected) + '</div>';
+    }).join("");
+  }
+
+  function loadStatus() {
+    fetch(EP.http + "/integrations").then(function(r){ return r.json(); }).then(function(d) {
+      renderList((d && d.integrations) || []);
+    }).catch(function() {
+      var w = $("ig-list"); if (w) w.innerHTML = '<div style="color:#c98;font-size:13px;">Couldn\'t reach the hub.</div>';
+    });
+    // prefill saved webhook URLs
+    fetch(EP.http + "/config").then(function(r){ return r.json(); }).then(function(c) {
+      if (c.alexa_webhook_url && $("ig-alexa-url")) $("ig-alexa-url").value = c.alexa_webhook_url;
+      if (c.google_home_webhook_url && $("ig-google-url")) $("ig-google-url").value = c.google_home_webhook_url;
+    }).catch(function(){});
+  }
+
+  function igShow(on) {
+    var m = $("ig-modal"); if (!m) return;
+    m.style.display = on ? "flex" : "none";
+    if (on) loadStatus();
+  }
+  window.igShow = igShow;
+  // close on backdrop click / Esc
+  (function(){ var m=$("ig-modal"); if(m) m.addEventListener("click",function(e){ if(e.target===m) igShow(false); });
+    document.addEventListener("keydown",function(e){ if(e.key==="Escape") igShow(false); }); })();
+
+  // ── Xiaomi direct control → /override (the actuator drives the real device) ──
+  function override(action, params, rationale) {
+    return fetch(EP.http + "/override", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "action", ts: Date.now()/1000, action: action, params: params, rationale: rationale, auto: false })
+    }).catch(function(e){ console.warn("[integrations]", e); });
+  }
+  var lampWarmth = "warm";
+  function fireLamp() {
+    var b = clamp(+($("ig-lamp").value), 0, 100);
+    $("ig-lamp-pct").textContent = Math.round(b) + "%";
+    override("set_lighting", { brightness: b, warmth: lampWarmth }, "Manual: Xiaomi lamp from Integrations");
+  }
+  (function(){
+    var s = $("ig-lamp"); if (s) {
+      s.addEventListener("input", function(){ $("ig-lamp-pct").textContent = Math.round(+this.value) + "%"; });
+      s.addEventListener("change", fireLamp);
+    }
+    var warmWrap = $("ig-warmth");
+    if (warmWrap) Array.prototype.forEach.call(warmWrap.children, function(btn){
+      btn.addEventListener("click", function(){
+        lampWarmth = btn.getAttribute("data-w");
+        Array.prototype.forEach.call(warmWrap.children, function(b){
+          var on = (b === btn);
+          b.style.background = on ? "rgba(255,154,45,.22)" : "rgba(28,18,10,.5)";
+          b.style.color = on ? "#F6EEE4" : "#cdbfae";
+        });
+        fireLamp();
+      });
+    });
+    var sc = $("ig-scent"); if (sc) {
+      sc.addEventListener("input", function(){ $("ig-scent-pct").textContent = Math.round(+this.value) + "%"; });
+      sc.addEventListener("change", function(){
+        var v = clamp(+this.value, 0, 100);
+        override("set_scent", { intensity: v, scent: "fresh citrus" }, "Manual: Xiaomi diffuser from Integrations");
+      });
+    }
+  })();
+
+  // ── Voice assistants ──
+  function igSaveVoice(target) {
+    var url = (target === "alexa" ? $("ig-alexa-url") : $("ig-google-url")).value.trim();
+    var key = (target === "alexa") ? "alexa_webhook_url" : "google_home_webhook_url";
+    var body = {}; body[key] = url;
+    var note = $("ig-voice-note");
+    fetch(EP.http + "/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function(){ if (note) note.textContent = "Saved ✓ — " + (target === "alexa" ? "Alexa" : "Google Home") + " webhook stored."; loadStatus(); })
+      .catch(function(){ if (note) note.textContent = "Couldn't save — try again."; });
+  }
+  function igTestVoice(target) {
+    var note = $("ig-voice-note");
+    if (note) note.textContent = "Sending test announcement…";
+    fetch(EP.http + "/integrations/announce", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: target, text: "Coffee Steve is connected and ready." })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(res){
+        if (note) note.textContent = res.ok ? "Announcement sent ✓" : (res.d.detail || "Not configured — save a webhook first.");
+      }).catch(function(){ if (note) note.textContent = "Send failed — check the webhook URL."; });
+  }
+  window.igSaveVoice = igSaveVoice;
+  window.igTestVoice = igTestVoice;
+})();
+</script>
+
 <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
 </html>

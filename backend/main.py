@@ -354,6 +354,114 @@ async def set_config(request: Request) -> dict:
     return {"ok": True, **existing}
 
 
+# ---------------------------------------------------------------------------
+# Integrations — the user-facing control surface for the smart devices.
+# Status is introspected from env (the actuator runs in this container) + the
+# persisted config; controls reuse /override; voice assistants use a routine
+# webhook (the standard IFTTT / Home Assistant bridge).
+# ---------------------------------------------------------------------------
+def _read_config() -> dict:
+    if CONFIG_PATH.exists():
+        try:
+            return json.loads(CONFIG_PATH.read_text())
+        except Exception:
+            return {}
+    return {}
+
+
+def _integration_status() -> list[dict]:
+    cfg = _read_config()
+    env = os.environ.get
+
+    def any_env(*names: str) -> bool:
+        return any(env(n) for n in names)
+
+    return [
+        {
+            "id": "xiaomi", "name": "Xiaomi / Mijia", "kind": "light+scent",
+            "connected": any_env("XIAOMI_LAMP_TOKEN", "XIAOMI_LAMP_DID",
+                                  "XIAOMI_DIFFUSER_TOKEN", "XIAOMI_DIFFUSER_DID")
+                         or (any_env("XIAOMI_MI_USER") and any_env("XIAOMI_MI_PASS")),
+            "controls": ["lamp", "diffuser"],
+            "detail": "Lamp brightness & warmth + scent diffuser, over the Mi cloud.",
+        },
+        {
+            "id": "hue", "name": "Philips Hue", "kind": "light",
+            "connected": any_env("HUE_BRIDGE_IP"),
+            "controls": ["lamp"],
+            "detail": "Lighting via a local Hue bridge (used when Xiaomi is absent).",
+        },
+        {
+            "id": "climate", "name": "Climate (IR)", "kind": "climate",
+            "connected": any_env("BROADLINK_HOST"),
+            "controls": ["temperature"],
+            "detail": "AC / heating via a Broadlink IR blaster.",
+        },
+        {
+            "id": "spotify", "name": "Spotify", "kind": "music",
+            "connected": any_env("SPOTIPY_REFRESH_TOKEN")
+                         or (any_env("SPOTIPY_CLIENT_ID") and any_env("SPOTIPY_CLIENT_SECRET")),
+            "controls": [],
+            "detail": "Optional music source — the hosted library is the default.",
+        },
+        {
+            "id": "telegram", "name": "Staff alerts", "kind": "notify",
+            "connected": any_env("TELEGRAM_TOKEN") and any_env("TELEGRAM_CHAT_ID"),
+            "controls": [],
+            "detail": "Push staff nudges to a Telegram chat.",
+        },
+        {
+            "id": "alexa", "name": "Amazon Alexa", "kind": "voice",
+            "connected": bool(cfg.get("alexa_webhook_url") or env("ALEXA_WEBHOOK_URL")),
+            "controls": ["announce"],
+            "detail": "Announce to Alexa via a routine webhook (IFTTT / Home Assistant).",
+        },
+        {
+            "id": "google_home", "name": "Google Home", "kind": "voice",
+            "connected": bool(cfg.get("google_home_webhook_url") or env("GOOGLE_HOME_WEBHOOK_URL")),
+            "controls": ["announce"],
+            "detail": "Broadcast to Google Home speakers via a routine webhook.",
+        },
+    ]
+
+
+@app.get("/integrations")
+async def integrations() -> dict:
+    """Live status of every device integration for the dashboard control surface."""
+    return {"ok": True, "integrations": _integration_status()}
+
+
+@app.post("/integrations/announce")
+async def integrations_announce(request: Request) -> dict:
+    """Speak a message on Alexa / Google Home via the configured routine webhook.
+
+    This is the standard, real way to trigger a voice-assistant announcement
+    without a full cloud skill: an IFTTT / Home Assistant / Voice Monkey webhook.
+    Returns 503 (honest) when the webhook isn't configured."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    target = str(body.get("target", "")).lower()
+    text = (str(body.get("text", "") or "Hello from Coffee Steve").strip())[:200]
+    cfg = _read_config()
+    if target == "alexa":
+        url = cfg.get("alexa_webhook_url") or os.environ.get("ALEXA_WEBHOOK_URL", "")
+    elif target in ("google", "google_home"):
+        url = cfg.get("google_home_webhook_url") or os.environ.get("GOOGLE_HOME_WEBHOOK_URL", "")
+    else:
+        raise HTTPException(status_code=400, detail="target must be 'alexa' or 'google_home'")
+    if not url:
+        raise HTTPException(status_code=503, detail=f"{target} webhook not configured — add it in Integrations")
+    try:
+        async with _httpx.AsyncClient() as client:
+            # value1 mirrors IFTTT's ingredient convention; text is the generic key.
+            await client.post(url, json={"text": text, "value1": text}, timeout=5)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"webhook call failed: {exc}")
+    return {"ok": True, "target": target, "sent": text}
+
+
 _ASK_SYSTEM = (
     "You are the comfort copilot for a coffee shop. Map the staff's natural-language "
     "request to ONE action. Reply with ONLY a JSON object: "
@@ -572,6 +680,26 @@ async def spotify_token() -> dict:
         except Exception:
             pass
     return {"error": "not authenticated — visit /spotify/auth to connect Spotify"}
+
+
+@app.get("/music/library")
+async def music_library() -> dict:
+    """The self-hosted royalty-free sound library (Tier-1 player).
+
+    Returns the track catalogue from dashboard/audio/manifest.json with each
+    track's playable URL resolved to /audio/<file> (served by the static mount).
+    The dashboard plays these in-browser by default; Spotify is an optional
+    fallback. Track moods map 1:1 to agent/music_model.py so Auto mode can pick
+    the matching track. Degrades to an empty list if the manifest is missing."""
+    manifest_path = DASHBOARD_DIR / "audio" / "manifest.json"
+    try:
+        data = json.loads(manifest_path.read_text())
+    except Exception:
+        return {"library": "Coffee Steve Sound Library", "tracks": []}
+    for t in data.get("tracks", []):
+        if t.get("file"):
+            t["url"] = f"/audio/{t['file']}"
+    return data
 
 
 @app.get("/music/mode")

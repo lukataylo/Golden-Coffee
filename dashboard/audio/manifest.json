@@ -1,0 +1,73 @@
+{
+  "library": "Coffee Steve Sound Library",
+  "license": "CC BY 4.0",
+  "attribution": "Music by Kevin MacLeod (incompetech.com) — licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+  "tracks": [
+    {
+      "id": "sunrise_acoustic",
+      "label": "Sunrise Acoustic",
+      "file": "morning-acoustic.mp3",
+      "title": "Cattails",
+      "artist": "Kevin MacLeod",
+      "mood": "sunrise_acoustic",
+      "blurb": "Warm acoustic coffeehouse — gentle mornings",
+      "tags": ["acoustic", "warm", "morning", "calm"],
+      "bpm": 84
+    },
+    {
+      "id": "daytime_focus",
+      "label": "Daytime Focus",
+      "file": "daytime-focus.mp3",
+      "title": "Local Forecast – Elevator",
+      "artist": "Kevin MacLeod",
+      "mood": "daytime_focus",
+      "blurb": "Mellow, unobtrusive — steady working hours",
+      "tags": ["mellow", "lofi", "focus", "daytime"],
+      "bpm": 94
+    },
+    {
+      "id": "upbeat_lift",
+      "label": "Upbeat Lift",
+      "file": "upbeat-lift.mp3",
+      "title": "Carefree",
+      "artist": "Kevin MacLeod",
+      "mood": "upbeat_lift",
+      "blurb": "Bright and feel-good — lift a flat room",
+      "tags": ["upbeat", "bright", "happy"],
+      "bpm": 116
+    },
+    {
+      "id": "rush_flow",
+      "label": "Rush Flow",
+      "file": "rush-bossa.mp3",
+      "title": "Bossa Antigua",
+      "artist": "Kevin MacLeod",
+      "mood": "rush_flow",
+      "blurb": "Easy bossa groove — keeps the line moving",
+      "tags": ["bossa", "groove", "rush"],
+      "bpm": 104
+    },
+    {
+      "id": "busy_calm",
+      "label": "Busy & Calm",
+      "file": "busy-calm.mp3",
+      "title": "Wallpaper",
+      "artist": "Kevin MacLeod",
+      "mood": "busy_calm",
+      "blurb": "Soft downtempo — stays talkable when full",
+      "tags": ["downtempo", "soft", "ambient", "busy"],
+      "bpm": 80
+    },
+    {
+      "id": "evening_warm",
+      "label": "Evening Warm",
+      "file": "evening-jazz.mp3",
+      "title": "Hep Cats",
+      "artist": "Kevin MacLeod",
+      "mood": "evening_warm",
+      "blurb": "Warm swing & jazz — evening wind-down",
+      "tags": ["jazz", "swing", "warm", "evening"],
+      "bpm": 76
+    }
+  ]
+}
