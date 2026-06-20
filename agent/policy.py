@@ -43,6 +43,19 @@ MANY_LONG_DWELLERS = 2      # >= this many settled guests in a full room
 HIGH_QUEUE = 5              # queue at/over this => service is slipping (3 can still wait)
 ABANDON_DELTA = 1           # walk-offs rising by >= this since last scene => act
 AVG_TICKET_GBP = 4.80       # average spend per customer (for walkaway £ metric)
+LULL_SUSTAINED_S = 600      # lull must hold 10 min before markdown activates
+
+# Perishable items eligible for quiet-period markdown (never surge — prices only go down).
+# In production these come from the POS/inventory API; mocked here for demo.
+HIGH_DECAY_ITEMS = [
+    {"id": "pastry_daily",   "name": "Today's Pastry",    "base_price": 3.50, "category": "bakery"},
+    {"id": "sandwich_cblt",  "name": "Club Sandwich",      "base_price": 6.80, "category": "food"},
+    {"id": "salad_greek",    "name": "Greek Salad",         "base_price": 5.90, "category": "food"},
+    {"id": "quiche_slice",   "name": "Quiche Slice",        "base_price": 4.20, "category": "bakery"},
+]
+
+# Discount by occupancy — deeper the emptier the room. Minimum 10% at occ=3.
+_MARKDOWN_BY_OCC = {0: 0.20, 1: 0.15, 2: 0.12, 3: 0.10}
 
 # local music model — picks the *track/mood* (genre, BPM, playlist) from the data.
 # Volume rules below still apply; this chooses *what's playing*.
@@ -188,6 +201,7 @@ DEBOUNCE_S = {
     "music_mood": 120,  # switching the *track/mood* (vs. just volume) — a bit slower
     "discount_quiet": 600,
     "discount_togo": 600,
+    "menu_markdown": 900,   # 15 min between perishable repricing rounds
     "temperature": 300,
     "lighting": 300,
     "scent": 600,
@@ -243,6 +257,13 @@ def _unattended_guests(scene: dict) -> list[dict]:
         if t.get("dwell_s", 0.0) > UNATTENDED_DWELL_S
         and t.get("activity", 0.0) <= LOW_ACTIVITY
     ]
+
+
+def _quiet_price(base_price: float, occupancy: int) -> float:
+    """Return the markdown price for a perishable item during a quiet lull.
+    Discount scales with emptiness; never surges above base_price."""
+    pct = _MARKDOWN_BY_OCC.get(min(occupancy, 3), 0.10)
+    return round(base_price * (1 - pct), 2)
 
 
 # --------------------------------------------------------------------------
@@ -357,6 +378,15 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     # --- 3. AMBIENT: lull / flat energy -> lift the vibe with music ----------
     is_lull = occupancy <= LULL_OCCUPANCY
     low_energy = energy < LOW_ENERGY
+
+    # Track how long the room has been in a lull (for the sustained-gate rules below).
+    if is_lull:
+        if state.get("lull_since") is None:
+            state["lull_since"] = now
+        lull_sustained_s = now - state["lull_since"]
+    else:
+        state["lull_since"] = None
+        lull_sustained_s = 0.0
     if music_auto and (is_lull or low_energy) and not busy and _due(state, "music", now):
         if is_lull:
             vol, why = MUSIC_LULL_VOLUME, f"Only {occupancy} in — lift the vibe with brighter music."
@@ -399,6 +429,44 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             f"Quiet off-peak ({occupancy} in) — a small offer fills the dead time "
             f"and pulls walk-ins in.",
         ))
+
+    # --- 5b. QUIET MARKDOWN: reprice perishables after a 10-min sustained lull --
+    # Prices only go DOWN (never_surge=True enforced per item). Fires at most once
+    # every 15 min. One update_menu_price action per item + a single POS ping.
+    if is_lull and lull_sustained_s >= LULL_SUSTAINED_S and _due(state, "menu_markdown", now):
+        _mark(state, "menu_markdown", now)
+        discount_pct = int(_MARKDOWN_BY_OCC.get(min(occupancy, 3), 0.10) * 100)
+        marked: list[dict] = []
+        for item in HIGH_DECAY_ITEMS:
+            new_price = _quiet_price(item["base_price"], occupancy)
+            if new_price < item["base_price"]:
+                marked.append({**item, "display_price": new_price})
+                actions.append(_action(
+                    now, "update_menu_price",
+                    {
+                        "item_id": item["id"],
+                        "display_price": new_price,
+                        "base_price": item["base_price"],
+                        "discount_pct": discount_pct,
+                        "never_surge": True,
+                    },
+                    f"Quiet lull ({occupancy} in, {int(lull_sustained_s // 60)}+ min) — "
+                    f"{item['name']} marked to £{new_price:.2f} ({discount_pct}% off). "
+                    f"Resets to base price when the room fills again.",
+                ))
+        if marked:
+            names = ", ".join(i["name"] for i in marked[:2])
+            if len(marked) > 2:
+                names += f" +{len(marked) - 2} more"
+            actions.append(_action(
+                now, "notify_staff",
+                {
+                    "text": f"POS update: {names} marked down {discount_pct}% — quiet-period pricing active.",
+                    "priority": "low",
+                },
+                f"{len(marked)} perishable item(s) repriced on the menu board; "
+                f"POS synced so staff ring the correct price.",
+            ))
 
     # --- 6. HOSPITALITY: seated guest unattended a while -> offer service -----
     # Skip if the room is empty (a lone guest relaxing in a quiet café is fine).

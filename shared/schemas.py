@@ -98,13 +98,14 @@ class SceneEvent(BaseModel):
 ActionName = Literal[
     "set_music_volume",   # Spotify volume 0-100
     "set_music",          # local music model: switch mood/playlist {mood, playlist_uri, bpm, energy, volume}
-    "set_temperature",    # AC/heater via IR: {delta_c}
+    "set_temperature",    # AC/heater via IR: {target_c} absolute °C
     "set_lighting",       # smart lights: {brightness 0-100, warmth: warm|neutral|cool}
     "set_scent",          # scent diffuser: {intensity 0-100, scent}
     "push_discount",
     "notify_staff",
     "suggest_layout",
     "tune_policy",        # federated learning: cross-café threshold update {lull, high, queue, n_nodes}
+    "update_menu_price",  # quiet-period markdown: {item_id, display_price, base_price, discount_pct, never_surge}
 ]
 
 
