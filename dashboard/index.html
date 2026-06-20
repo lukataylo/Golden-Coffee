@@ -75,6 +75,18 @@
     .seg button[aria-selected="true"] { background:linear-gradient(180deg,var(--gold),#c8922f); color:#1a140c; }
     .seg button:hover:not([aria-selected="true"]) { color:var(--ink); }
     .seg button:focus-visible { outline:2px solid var(--gold-soft); outline-offset:2px; }
+    /* small segmented toggle (aria-pressed variant, e.g. floor 3D/2D) */
+    .seg.seg-sm { background:rgba(20,16,12,.78); border-color:var(--line); padding:2px; backdrop-filter:blur(4px); pointer-events:auto; }
+    .seg.seg-sm button { font-size:11px; padding:4px 12px; }
+    .seg.seg-sm button[aria-pressed="true"] { background:linear-gradient(180deg,var(--gold),#c8922f); color:#1a140c; }
+    .seg.seg-sm button:disabled { opacity:.4; cursor:not-allowed; }
+    /* demo-mode toggle */
+    .demo-btn { font:inherit; font-size:12px; font-weight:700; letter-spacing:.03em; cursor:pointer;
+                color:var(--gold); background:rgba(231,192,116,.08); border:1px solid var(--gold-soft);
+                padding:6px 12px; border-radius:999px; transition:background .15s ease, color .15s ease; }
+    .demo-btn:hover { background:rgba(231,192,116,.16); }
+    .demo-btn[aria-pressed="true"] { background:linear-gradient(180deg,var(--gold),#c8922f); color:#1a140c; border-color:transparent; }
+    .demo-btn:focus-visible { outline:2px solid var(--gold-soft); outline-offset:2px; }
 
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
             font-size:11px; font-weight:600; letter-spacing:.03em; }
@@ -122,6 +134,10 @@
     #stream-img, #frame-img { width:100%; height:100%; object-fit:contain; display:block; background:#0b0907; }
     #frame-img[hidden] { display:none; }
     #synth-canvas, #floor-canvas { display:block; width:100%; height:100%; }
+    #floor3d-canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab;
+      background:radial-gradient(120% 100% at 50% 18%, #241c14 0%, #140f0b 55%, #0a0706 100%); }
+    #floor3d-canvas:active { cursor:grabbing; }
+    #floor3d-canvas[hidden], #floor-canvas[hidden] { display:none; }
 
     /* overlays on the stage */
     .ov { position:absolute; z-index:5; pointer-events:none; }
@@ -432,6 +448,7 @@
     </div>
 
     <div class="head-right">
+      <button id="demo-btn" class="demo-btn" aria-pressed="false" title="Run a self-contained synthetic café — no backend or camera needed">▶ Demo</button>
       <span class="clock" id="clock" aria-label="Current time">--:--:--</span>
       <span id="conn" class="pill off" role="status" aria-live="polite"><span class="dot"></span>connecting…</span>
     </div>
@@ -480,10 +497,17 @@
             <div class="stage-msg" id="live-msg">Waiting for camera…</div>
           </div>
           <!-- FLOORPLAN view -->
-          <div class="view" id="view-floor" role="tabpanel" aria-label="Top-down floorplan" hidden>
-            <canvas id="floor-canvas" aria-label="Café floorplan heatmap"></canvas>
+          <div class="view" id="view-floor" role="tabpanel" aria-label="Floorplan" hidden>
+            <canvas id="floor3d-canvas" aria-label="Café 3D floor map"></canvas>
+            <canvas id="floor-canvas" aria-label="Café floorplan heatmap" hidden></canvas>
             <div class="floor-alert" id="floor-alert" hidden><span class="tag">Staff alert</span><span class="core"></span></div>
-            <div class="ov tr"><span class="src-badge">FLOORPLAN · dwell heatmap</span></div>
+            <div class="ov tl">
+              <div class="seg seg-sm" role="group" aria-label="Floorplan render mode">
+                <button id="fr-3d" aria-pressed="true">3D</button>
+                <button id="fr-2d" aria-pressed="false">2D</button>
+              </div>
+            </div>
+            <div class="ov tr"><span class="src-badge" id="floor-src">FLOOR · 3D twin</span></div>
             <div class="stage-msg" id="floor-msg">Waiting for data…</div>
           </div>
           <!-- TABLES view -->
@@ -674,6 +698,11 @@
     </section>
   </div>
 
+  <!-- 3D floor map: Three.js (vendored locally so it works offline / on venue wifi)
+       + our renderer. Both degrade to the 2D canvas if WebGL is unavailable, so the
+       dashboard never breaks. -->
+  <script src="vendor/three.min.js"></script>
+  <script src="floor3d.js"></script>
   <script>
   (function () {
     "use strict";
@@ -721,8 +750,8 @@
       $("view-floor").hidden = m !== "floor";
       $("view-tables").hidden = m !== "tables";
       if (live) startVideo(); else stopVideoTimers();
-      if (m === "floor") requestAnimationFrame(redrawFloor);
-      else if (m === "tables") renderTables(lastScene);
+      if (m === "floor") enterFloor();
+      else { if (window.Floor3D) Floor3D.setActive(false); if (m === "tables") renderTables(lastScene); }
     }
     $("tab-live").addEventListener("click", function () { setMode("live"); });
     $("tab-floor").addEventListener("click", function () { setMode("floor"); });
@@ -862,16 +891,64 @@
     }
 
     var lastScene = { ts: null, tracks: [] };
-    function redrawFloor() { if (mode === "floor") drawFloor($("floor-canvas"), lastScene); }
+
+    // ---------- 3D floor map (Three.js) wiring, with 2D fallback ----------
+    // floorRender: "3d" (isometric digital twin) or "2d" (the canvas heatmap).
+    var floor3dOK = !!(window.Floor3D && Floor3D.available());
+    var floorRender = floor3dOK ? "3d" : "2d";
+    var floor3dInited = false;
+    function ensureFloor3D() {
+      if (floor3dInited || !floor3dOK) return floor3dInited;
+      floor3dInited = Floor3D.init($("floor3d-canvas"), {
+        zones: ZONES, zoneColors: ZONE_COLORS, intensityFn: zoneIntensity, occColorFn: occColor
+      });
+      if (!floor3dInited) floor3dOK = false; // init failed -> fall back for good
+      return floor3dInited;
+    }
+    function applyFloorRenderUI() {
+      var use3d = floorRender === "3d" && floor3dOK;
+      $("floor3d-canvas").hidden = !use3d;
+      $("floor-canvas").hidden = use3d;
+      $("fr-3d").setAttribute("aria-pressed", use3d ? "true" : "false");
+      $("fr-2d").setAttribute("aria-pressed", use3d ? "false" : "true");
+      $("fr-3d").disabled = !floor3dOK;
+      $("floor-src").textContent = use3d ? "FLOOR · 3D twin" : "FLOOR · dwell heatmap";
+      $("floor-msg").hidden = !!lastScene.ts;
+    }
+    function enterFloor() {
+      applyFloorRenderUI();
+      if (floorRender === "3d" && ensureFloor3D()) {
+        Floor3D.resize();
+        Floor3D.update(lastScene, comfort);
+        Floor3D.setActive(true);
+      } else {
+        if (window.Floor3D) Floor3D.setActive(false);
+        requestAnimationFrame(redrawFloor);
+      }
+    }
+    function setFloorRender(which) {
+      floorRender = which;
+      if (mode === "floor") enterFloor();
+      else applyFloorRenderUI();
+    }
+    $("fr-3d").addEventListener("click", function () { if (floor3dOK) setFloorRender("3d"); });
+    $("fr-2d").addEventListener("click", function () { setFloorRender("2d"); });
+
+    function redrawFloor() {
+      if (mode !== "floor") return;
+      if (floorRender === "3d" && floor3dOK) Floor3D.update(lastScene, comfort);
+      else drawFloor($("floor-canvas"), lastScene);
+    }
 
     // ---------- floorplan alert marker (notify_staff) ----------
     var alertZone = null, alertTimer = null;
     function flashAlert(zoneName, text) {
       alertZone = zoneName || "queue";
+      if (window.Floor3D && floor3dOK) Floor3D.flashAlert(alertZone, text);
       var el = $("floor-alert");
       var tag = el.querySelector(".tag"); tag.textContent = text || "Staff alert";
-      el.hidden = false;
-      if (mode === "floor") drawFloor($("floor-canvas"), lastScene);
+      el.hidden = floorRender === "3d"; // 3D uses the in-scene beacon instead
+      if (mode === "floor" && floorRender === "2d") drawFloor($("floor-canvas"), lastScene);
       clearTimeout(alertTimer);
       alertTimer = setTimeout(function () { alertZone = null; $("floor-alert").hidden = true; }, 6000);
     }
@@ -1080,7 +1157,7 @@
       drawSpark("queue-spark", hist.queue, "#e0876f");
       drawSpark("conv-spark", hist.conv, "#7ed87e");
 
-      if (mode === "floor") drawFloor($("floor-canvas"), s);
+      if (mode === "floor") redrawFloor();
       else if (vState === "synthetic") drawSynth();
 
       renderTables(s); // updates Tables view + the always-visible summary
@@ -1216,6 +1293,7 @@
           if (typeof p.volume === "number") comfort.volume = Math.max(0, Math.min(100, p.volume));
           renderMusic(); break;
       }
+      if (window.Floor3D && floor3dOK) Floor3D.update(null, comfort); // light/music react on the twin
     }
 
     // ---------- consent toggle (visual only) ----------
@@ -1229,6 +1307,7 @@
     var sock, retry = 0;
     function setConn(state) {
       var el = $("conn");
+      if (demoActive) { document.body.classList.remove("disconnected"); el.className = "pill warn"; el.innerHTML = '<span class="dot pulse"></span>demo mode'; return; }
       document.body.classList.toggle("disconnected", state === "down");
       if (state === "live") { el.className = "pill ok"; el.innerHTML = '<span class="dot pulse"></span>connected'; }
       else if (state === "connecting") { el.className = "pill warn"; el.innerHTML = '<span class="dot"></span>connecting…'; }
@@ -1246,6 +1325,8 @@
         $("feed").innerHTML = ""; feedHasItems = false;
       };
       sock.onmessage = function (e) {
+        if (demoActive) return; // demo drives the UI; ignore the live socket while on
+        gotRealScene = true;
         var m; try { m = JSON.parse(e.data); } catch (err) { return; }
         if (m.type === "scene") renderScene(m);
         else if (m.type === "action") { renderAction(m); applyComfortAction(m); }
@@ -1258,22 +1339,151 @@
       setTimeout(connect, Math.min(1000 * Math.pow(1.5, retry), 8000));
     }
 
+    // ---------- demo mode ----------
+    // A self-contained synthetic café — no backend, perception, or camera needed.
+    // Mirrors shared/mock_events.py (same SceneEvent shape) and additionally fires
+    // believable AgentActions so the feed, comfort panel and 3D twin all come alive.
+    // Lets anyone "open dashboard/index.html" and see the whole product working.
+    var demoActive = false, gotRealScene = false, demoTimer = null, demoT = 0;
+    var DEMO_ZONES = ["queue", "counter", "seating", "seating", "entry"];
+
+    function demoScene(t) {
+      var wave = (Math.sin(t / 12) + 1) / 2;                 // slow lull<->rush oscillation
+      var occupancy = Math.round(2 + wave * 8);
+      var queue_len = Math.round(wave * 4);
+      var productivity = Math.round((0.4 + 0.5 * (1 - wave)) * 100) / 100;
+
+      var tracks = [];
+      for (var i = 0; i < occupancy; i++) {
+        var zone = DEMO_ZONES[i % DEMO_ZONES.length];
+        var role = i < 2 ? "staff" : "customer";
+        // scatter each track within its zone (stable per index) for both 2D + 3D
+        var cx = 0.2 + ((i * 0.137) % 0.6), cy = 0.25 + ((i * 0.291) % 0.55);
+        tracks.push({
+          id: 1000 + i, role: role, zone: zone,
+          dwell_s: (i * 37 + t) % 900,
+          activity: role === "staff" ? productivity : 0.1,
+          bbox: [cx - 0.03, cy - 0.05, cx + 0.03, cy + 0.05]
+        });
+      }
+
+      var funnel = {
+        entered: 10 + Math.floor(t / 5), approached: 8 + Math.floor(t / 6),
+        ordered: 6 + Math.floor(t / 8), seated: 5 + Math.floor(t / 9),
+        abandoned: Math.floor(t / 20)
+      };
+
+      var grid = [];
+      for (var r = 0; r < 8; r++) { var row = []; for (var c = 0; c < 8; c++) row.push(Math.round(wave * Math.exp(-(((r - 2) * (r - 2) + (c - 5) * (c - 5)) / 6)) * 1000) / 1000); grid.push(row); }
+
+      var tables = [];
+      ["T1", "T2", "T3"].forEach(function (tid, k) {
+        var wait = Math.max(0, ((t * 17 + k * 90) % 420) - 40);
+        var occupied = wait > 0;
+        var status = !occupied ? "empty" : wait >= 300 ? "overdue" : wait >= 120 ? "waiting" : "seated";
+        tables.push({
+          id: tid, occupied: occupied, party_size: occupied ? 2 : 0,
+          occupied_s: wait, wait_s: wait, status: status,
+          needs_cleaning: (!occupied && (t + k) % 5 === 0),
+          since_clean_s: (t * 11 + k * 50) % 2400, uses_since_clean: (t + k) % 12
+        });
+      });
+
+      var uses = Math.floor(t / 2) % 20;
+      var cleaning = [{ id: "restroom", uses_since_clean: uses, since_clean_s: (t * 30) % 4000,
+        status: uses >= 15 ? "overdue" : uses >= 8 ? "due" : "ok" }];
+
+      return {
+        type: "scene", ts: Date.now() / 1000, tracks: tracks, occupancy: occupancy,
+        queue_len: queue_len, funnel: funnel, cups_made: 6 + Math.floor(t / 8), heatmap_grid: grid,
+        staff_productivity: productivity, tables: tables, cleaning: cleaning,
+        source: "mock"
+      };
+    }
+
+    // Believable agent actions, gated on conditions so the comfort loop is legible.
+    function demoActions(scene, t) {
+      var out = [], wave = (Math.sin(t / 12) + 1) / 2, ts = scene.ts;
+      function busy() { return wave > 0.6; }
+      if (t % 8 === 0) {
+        if (busy()) {
+          out.push({ type: "action", ts: ts, action: "set_music_volume", auto: true,
+            params: { volume: 42 }, rationale: "Room's filling up — easing the music down so it stays calm." });
+          out.push({ type: "action", ts: ts, action: "set_lighting", auto: true,
+            params: { brightness: 64, warmth: "cool" }, rationale: "Brighter, cooler light keeps a busy room feeling fresh." });
+        } else {
+          out.push({ type: "action", ts: ts, action: "set_lighting", auto: true,
+            params: { brightness: 82, warmth: "warm" }, rationale: "Quiet spell — warming the lights to make it cosy." });
+          out.push({ type: "action", ts: ts, action: "set_music_volume", auto: true,
+            params: { volume: 60 }, rationale: "Lifting the vibe a touch to fill the lull." });
+        }
+      }
+      if (t % 14 === 6) {
+        out.push({ type: "action", ts: ts, action: busy() ? "set_temperature" : "set_scent", auto: true,
+          params: busy() ? { delta_c: -1 } : { intensity: 40, scent: "vanilla" },
+          rationale: busy() ? "Full room runs warm — nudging the AC a degree cooler for comfort."
+                            : "Off-peak — a light vanilla note to make the room inviting." });
+      }
+      if (scene.queue_len >= 3 && t % 6 === 0) {
+        out.push({ type: "action", ts: ts, action: "notify_staff", auto: true,
+          params: { zone: "queue", text: "Open a second till — queue building." },
+          rationale: scene.queue_len + " waiting and climbing — a second till protects the sale." });
+      }
+      return out;
+    }
+
+    function demoTick() {
+      var scene = demoScene(demoT);
+      renderScene(scene);
+      demoActions(scene, demoT).forEach(function (a) { renderAction(a); applyComfortAction(a); });
+      demoT++;
+    }
+
+    function setDemo(on) {
+      demoActive = on;
+      $("demo-btn").setAttribute("aria-pressed", on ? "true" : "false");
+      $("demo-btn").textContent = on ? "■ Stop demo" : "▶ Demo";
+      if (on) {
+        clearTimeout(alertTimer);
+        if (!demoTimer) { demoTick(); demoTimer = setInterval(demoTick, 1000); }
+        setConn("live");
+      } else {
+        clearInterval(demoTimer); demoTimer = null;
+        document.body.classList.add("nodata");
+        setConn(retry === 0 ? "connecting" : "down");
+        if (!sock || sock.readyState > 1) connect(); // resume live data
+      }
+    }
+    $("demo-btn").addEventListener("click", function () { setDemo(!demoActive); });
+
+    // Auto-start demo when there's clearly no backend: opened as a file, ?demo=1,
+    // or no real scene arrived shortly after load. Keeps the standalone file useful.
+    function maybeAutoDemo() {
+      if (demoActive || gotRealScene) return;
+      setDemo(true);
+    }
+
     // ---------- resize ----------
     var rt;
     window.addEventListener("resize", function () {
       clearTimeout(rt);
       rt = setTimeout(function () {
-        if (mode === "floor") drawFloor($("floor-canvas"), lastScene);
+        if (window.Floor3D && floor3dOK) Floor3D.resize();
+        if (mode === "floor") redrawFloor();
         else if (vState === "synthetic") drawSynth();
       }, 120);
     });
 
     // ---------- init ----------
     renderTemp(); renderLight(); renderScent(); renderMusic(); // comfort defaults ("—")
+    applyFloorRenderUI();
     setMode("live");
     drawFloor($("floor-canvas"), lastScene);
-    console.log("[Golden Coffee] ws=" + EP.ws + " http=" + EP.http);
-    connect();
+    console.log("[Golden Coffee] ws=" + EP.ws + " http=" + EP.http + " floor3d=" + floor3dOK);
+
+    var forceDemo = /[?&]demo=1\b/.test(location.search) || location.protocol === "file:";
+    if (forceDemo) { setDemo(true); }
+    else { connect(); setTimeout(maybeAutoDemo, 4000); } // fall back to demo if no backend
   })();
   </script>
 </body>

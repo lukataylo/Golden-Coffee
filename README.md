@@ -60,7 +60,16 @@ python -m shared.mock_events
 
 # 3) dashboard — open dashboard/index.html in a browser (live tiles + action feed)
 open dashboard/index.html
+# no backend handy? click "▶ Demo" (or open dashboard/index.html?demo=1) for a
+# self-contained synthetic café — drives the live tiles, action feed, comfort
+# panel, and the 3D floor map with zero setup.
 ```
+
+The **Floorplan** tab renders an isometric **3D digital twin** (Three.js, vendored locally —
+works offline) bound to live scene state: zone occupancy heat, anonymous track dots, table
+status, a staff-alert beacon, and the agent's comfort actions made visible (lights warm/dim,
+music ring pulses). Toggle **3D/2D** in the view; it falls back to the 2D heatmap if WebGL is
+unavailable. Design notes & the wider OSS landscape: [FLOORMAP_RESEARCH.md](FLOORMAP_RESEARCH.md).
 
 You should see occupancy/funnel/heatmap tiles updating live. That's the skeleton —
 each of the four tracks now builds independently:
