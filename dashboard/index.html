@@ -36,7 +36,9 @@
   #conn{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
         font:600 11px/1 'JetBrains Mono',monospace;border:1px solid rgba(255,236,214,.12);
         background:rgba(28,18,10,.4);color:#cdbfae;white-space:nowrap;}
-  #conn .dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+  #conn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);}
+  #conn .dot{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);}
+  .gc-ico{padding:8px !important;gap:0 !important;}
 
   /* ghost buttons + links (scan, demo, floor toggle) */
   .gc-ghost{appearance:none;cursor:pointer;font:600 12px/1 'Hanken Grotesk',system-ui,sans-serif;color:#cdbfae;
@@ -105,10 +107,9 @@
           <input id="cmd-input" class="gc-input" type="text" autocomplete="off" placeholder="Ask the room or run a command…" aria-label="Ask the room or run a command">
         </form>
         <div style="display:flex;align-items:center;gap:10px;flex:none;">
-          <a id="scan-link" class="gc-ghost" href="./scan/" title="Open the floor-scanning PWA"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>Scan</a>
-          <button id="demo-btn" class="gc-ghost" aria-pressed="false" title="Run a self-contained synthetic café — no backend or camera needed">▶ Demo</button>
-          <span id="conn" role="status" aria-live="polite"><span class="dot"></span>connecting…</span>
-          <div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF9A2D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v8a4 4 0 1 0 6 0V6a3 3 0 0 0-3-3Z"/></svg><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#F6EEE4;"><span class="js-temp">20.5</span>°C</span></div>
+          <a id="scan-link" class="gc-ghost gc-ico" href="./scan/" aria-label="Open the floor-scanning PWA" title="Open the floor-scanning PWA"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></a>
+          <button id="demo-btn" class="gc-ghost gc-ico" aria-pressed="false" aria-label="Demo" title="Run a self-contained synthetic café — no backend or camera needed"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg></button>
+          <span id="conn" role="status" aria-live="polite" title="connecting…"><span class="dot"></span></span>
           <div style="display:flex;align-items:center;gap:10px;padding:5px 6px 5px 5px;border-radius:999px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);"><div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 'Hanken Grotesk';color:#2a1a0d;background:linear-gradient(150deg,#FFB85C,#E8862A);">AL</div><div style="padding-right:6px;"><div style="font-size:12.5px;font-weight:600;line-height:1.1;">Aurora Lane</div><div style="font-size:10.5px;color:#9b8c7b;">Floor manager</div></div></div>
         </div>
       </div>
@@ -642,10 +643,25 @@
   }
 
   // ---------- command bar (keyword intent parser) ----------
-  // TODO(LLM): swap this keyword parser for an LLM intent endpoint, e.g.
-  //   POST `${EP.http}/ask` {q:text} -> {action, params, rationale}
-  // and fall back to this local parser when the endpoint is unavailable.
+  // Agentic command bar: POST to the backend /ask (LLM → Claude/Gemini, with a
+  // server-side keyword fallback). It broadcasts the chosen action over /ws, so
+  // the dashboard + actuators react automatically. Falls back to the local
+  // keyword parser when offline / in demo mode / on network error.
   function runCommand(text) {
+    var s = (text || "").trim(); if (!s) return;
+    if (demoActive || !EP.http) { localCommand(s); return; }
+    toast("Thinking…");
+    fetch(EP.http + "/ask", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ q:s }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.ok) {
+          var r = d.action && d.action.rationale ? d.action.rationale : "Done";
+          toast("✓ " + r + (d.provider && d.provider !== "keyword" ? " · " + d.provider : ""));
+        } else { localCommand(s); }   // server couldn't interpret — try locally
+      })
+      .catch(function () { localCommand(s); });
+  }
+  function localCommand(text) {
     var s = (text || "").trim(); if (!s) return;
     var t = s.toLowerCase(), act = null, params = null, rat = "", msg = "";
     if (/cosy|cozy|warm glow|dim/.test(t)) { act = "set_lighting"; params = { brightness:35, warmth:"warm" }; rat = "Asked for a cosier glow."; msg = "Dimming to a warm glow"; }
@@ -895,11 +911,12 @@
   var sock, retry = 0, gotRealScene = false;
   function setConn(state) {
     var el = $("conn");
-    if (demoActive) { document.body.classList.remove("disconnected"); el.style.color = "#FFB85C"; el.innerHTML = '<span class="dot" style="animation:gc-pulse 1.6s infinite;"></span>demo mode'; return; }
+    var dot = '<span class="dot"></span>', pulse = '<span class="dot" style="animation:gc-pulse 1.6s infinite;"></span>';
+    if (demoActive) { document.body.classList.remove("disconnected"); el.style.color = "#FFB85C"; el.title = "demo mode"; el.innerHTML = pulse; return; }
     document.body.classList.toggle("disconnected", state === "down");
-    if (state === "live") { el.style.color = "#6FCF97"; el.innerHTML = '<span class="dot" style="animation:gc-pulse 1.6s infinite;"></span>connected'; }
-    else if (state === "connecting") { el.style.color = "#FFB85C"; el.innerHTML = '<span class="dot"></span>connecting…'; }
-    else { el.style.color = "#EB6A4E"; el.innerHTML = '<span class="dot"></span>reconnecting…'; }
+    if (state === "live") { el.style.color = "#6FCF97"; el.title = "connected"; el.innerHTML = pulse; }
+    else if (state === "connecting") { el.style.color = "#FFB85C"; el.title = "connecting…"; el.innerHTML = dot; }
+    else { el.style.color = "#EB6A4E"; el.title = "reconnecting…"; el.innerHTML = dot; }
   }
   function connect() {
     setConn(retry === 0 ? "connecting" : "down");
@@ -989,7 +1006,10 @@
   function setDemo(on) {
     demoActive = on;
     $("demo-btn").setAttribute("aria-pressed", on ? "true" : "false");
-    $("demo-btn").textContent = on ? "■ Stop" : "▶ Demo";
+    $("demo-btn").title = on ? "Stop the demo" : "Run a self-contained synthetic café — no backend or camera needed";
+    $("demo-btn").innerHTML = on
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>';
     if (on) {
       if (!demoTimer) { demoTick(); demoTimer = setInterval(demoTick, 1000); }
       setConn("live");
