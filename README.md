@@ -13,6 +13,7 @@ stored. No surge pricing. Every action helps a guest or a staff member.
 </p>
 
 <p>
+<a href="../../actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lukataylo/golden-coffee/actions/workflows/ci.yml/badge.svg?branch=claude%2Fhackathon-loss-analysis-ah0prd"></a>
 <img alt="Built for Encode" src="https://img.shields.io/badge/Encode-Vibe_Coding_Hackathon-6fb6e0">
 <img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white">
 <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-WebSocket_hub-009688?logo=fastapi&logoColor=white">
