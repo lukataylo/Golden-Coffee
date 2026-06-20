@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golden Coffee — Ember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sand:#F3EADD;
+    --card:#FBF6EE;
+    --ink:#2A2018;
+    --muted:#8A7C6B;
+    --accent:#C8632F;
+    --success:#4E9A6B;
+    --warning:#C9911F;
+    --danger:#C2452E;
+    --border:rgba(120,80,40,0.10);
+    --shadow-sm:0 1px 2px rgba(120,80,40,.06);
+    --shadow-md:0 1px 2px rgba(120,80,40,.06), 0 12px 28px rgba(150,90,50,.10);
+    --shadow-lg:0 2px 4px rgba(120,80,40,.08), 0 22px 48px rgba(150,90,50,.16);
+    --serif:"Fraunces", Georgia, "Times New Roman", serif;
+    --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--sand);
+    background-image:
+      radial-gradient(720px 520px at 88% -8%, rgba(232,178,122,0.20), rgba(232,178,122,0) 60%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.06'/></svg>");
+    background-attachment:fixed;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  .wrap{max-width:1240px; margin:0 auto; padding:24px 24px 64px;}
+
+  /* numerals */
+  .num{font-family:var(--serif); font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-0.01em;}
+
+  /* labels */
+  .label{font-size:11.5px; color:var(--muted); letter-spacing:0.04em; font-weight:500;}
+
+  /* ===== HEADER ===== */
+  header.app{
+    display:flex; align-items:center; gap:16px;
+    padding:14px 18px; margin-bottom:24px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:24px; box-shadow:var(--shadow-sm);
+  }
+  .brand{display:flex; align-items:center; gap:12px; flex:1; min-width:0;}
+  .brand .mark{
+    width:42px; height:42px; flex:none;
+    display:grid; place-items:center;
+    background:linear-gradient(135deg,#E89B5C,#D2643C);
+    border-radius:14px; color:#FBF6EE;
+    box-shadow:var(--shadow-sm);
+  }
+  .brand .mark svg{display:block;}
+  .brand h1{margin:0; font-size:17px; font-weight:600; letter-spacing:-0.01em;}
+  .brand .sub{font-size:11.5px; color:var(--muted); margin-top:1px;}
+
+  .seg{
+    display:flex; gap:4px; padding:4px;
+    background:rgba(120,80,40,0.06);
+    border-radius:16px;
+  }
+  .seg button{
+    appearance:none; border:0; cursor:pointer;
+    font-family:var(--sans); font-size:13px; font-weight:500; color:var(--muted);
+    padding:8px 16px; border-radius:12px; background:transparent;
+    transition:all 170ms ease-out;
+  }
+  .seg button:hover{color:var(--ink);}
+  .seg button[aria-selected="true"]{
+    background:linear-gradient(135deg,#E89B5C,#D2643C);
+    color:#FBF6EE; box-shadow:var(--shadow-sm);
+  }
+  .seg button:active{transform:scale(0.96);}
+
+  .head-right{display:flex; align-items:center; gap:12px; flex:1; justify-content:flex-end;}
+  #clock{font-family:var(--serif); font-weight:500; font-variant-numeric:tabular-nums; font-size:18px; letter-spacing:0.01em;}
+  .conn{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:7px 12px; border-radius:999px;
+    background:rgba(78,154,107,0.12); color:#3a7a52;
+    font-size:12px; font-weight:600;
+  }
+  .conn .dot{width:8px; height:8px; border-radius:50%; background:var(--success); box-shadow:0 0 0 0 rgba(78,154,107,0.5); animation:pulse 2.4s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(78,154,107,0.45);}70%{box-shadow:0 0 0 6px rgba(78,154,107,0);}100%{box-shadow:0 0 0 0 rgba(78,154,107,0);}}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    background:linear-gradient(135deg,#E89B5C,#D2643C);
+    border-radius:28px; padding:28px 32px;
+    color:#FBF6EE; margin-bottom:24px;
+    box-shadow:var(--shadow-lg);
+  }
+  .hero::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(420px 280px at 92% 120%, rgba(120,40,20,0.30), transparent 60%),
+      radial-gradient(360px 240px at 8% -20%, rgba(255,230,200,0.28), transparent 60%);
+  }
+  .hero-inner{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  .hero .htag{font-size:12px; letter-spacing:0.05em; opacity:0.92; font-weight:600; text-transform:uppercase;}
+  .hero .amount{display:flex; align-items:baseline; gap:8px; margin:6px 0 4px;}
+  #rev-amount{font-family:var(--serif); font-weight:600; font-size:84px; line-height:0.9; letter-spacing:-0.02em;}
+  #rev-tag{font-size:15px; opacity:0.85; font-weight:500;}
+  .hero .walked{font-size:16px; font-weight:600; opacity:0.96;}
+  #rev-sub{font-size:13.5px; opacity:0.86; margin-top:4px; max-width:420px;}
+  .hero .hero-chip{
+    background:rgba(255,247,238,0.16); backdrop-filter:blur(2px);
+    border:1px solid rgba(255,247,238,0.22);
+    border-radius:18px; padding:14px 18px; min-width:150px;
+  }
+  .hero .hero-chip .label{color:rgba(255,247,238,0.78);}
+  .hero .hero-chip .v{font-family:var(--serif); font-weight:600; font-size:30px; margin-top:2px;}
+
+  /* ===== KPI ROW ===== */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;}
+  .kpi{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:24px; padding:18px 18px 14px;
+    box-shadow:var(--shadow-md);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .kpi .top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .kpi .val{display:flex; align-items:baseline; gap:5px;}
+  .kpi .val .n{font-family:var(--serif); font-weight:600; font-size:40px; line-height:1; letter-spacing:-0.01em;}
+  .kpi .val .u{font-size:13px; color:var(--muted); font-weight:500;}
+  .kpi .delta{font-size:12px; font-weight:600;}
+  .kpi .delta.up{color:var(--success);}
+  .kpi .delta.down{color:var(--danger);}
+  .kpi .delta.flat{color:var(--muted);}
+  .kpi .sub{font-size:11.5px; color:var(--muted);}
+  .spark{width:100%; height:34px; display:block;}
+  .bar{height:8px; border-radius:999px; background:rgba(120,80,40,0.10); overflow:hidden;}
+  .bar > i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#E89B5C,#D2643C);}
+
+  /* ===== STAGE ===== */
+  .stage{display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start;}
+  @media (max-width:1040px){.stage{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:24px; box-shadow:var(--shadow-md);
+  }
+  .panel .ph{display:flex; align-items:center; justify-content:space-between; padding:16px 18px 0;}
+  .panel h2{margin:0; font-size:14px; font-weight:600; letter-spacing:-0.005em;}
+  .panel .pbody{padding:16px 18px 18px;}
+
+  /* main stage canvas */
+  .view{display:none;}
+  .view.active{display:block;}
+  .floor-frame{position:relative; border-radius:20px; overflow:hidden; box-shadow:var(--shadow-sm);}
+  #floor-canvas{display:block; width:100%; height:auto; background:#F6ECDD;}
+  .badge{
+    position:absolute; top:12px; padding:6px 11px; border-radius:999px;
+    font-size:11px; font-weight:600; letter-spacing:0.03em;
+    backdrop-filter:blur(3px);
+  }
+  .badge.live{left:12px; background:rgba(194,69,46,0.92); color:#FBF6EE; display:inline-flex; align-items:center; gap:6px;}
+  .badge.live .d{width:7px; height:7px; border-radius:50%; background:#FBF6EE; animation:pulse 2s infinite;}
+  .badge.src{right:12px; background:rgba(42,32,24,0.55); color:#FBF6EE;}
+
+  .legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; align-items:center;}
+  .legend .li{display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted);}
+  .legend .sw{width:11px; height:11px; border-radius:50%;}
+  .sumstrip{display:flex; gap:24px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+  .sumstrip .item .n{font-family:var(--serif); font-weight:600; font-size:24px;}
+
+  /* tables */
+  #tbl-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  .tile{
+    border:1px solid var(--border); border-radius:18px; padding:14px;
+    background:#FFFBF4; box-shadow:var(--shadow-sm);
+    display:flex; flex-direction:column; gap:6px; min-height:96px;
+  }
+  .tile .tname{font-size:12px; font-weight:600; color:var(--muted);}
+  .tile .tstat{font-size:13px; font-weight:600;}
+  .tile .ttime{font-family:var(--serif); font-weight:600; font-size:26px; line-height:1;}
+  .tile.seated{border-color:rgba(78,154,107,0.30); background:linear-gradient(180deg,#F4FAF6,#FFFBF4);}
+  .tile.seated .tstat{color:var(--success);}
+  .tile.waiting .tstat{color:var(--warning);}
+  .tile.empty{opacity:0.6;}
+  .tile.empty .tstat{color:var(--muted);}
+  .tile.overdue{border-color:rgba(194,69,46,0.45); animation:warmpulse 2.2s ease-in-out infinite;}
+  .tile.overdue .tstat{color:var(--danger);}
+  @keyframes warmpulse{
+    0%,100%{box-shadow:0 1px 2px rgba(120,80,40,.06), 0 0 0 0 rgba(194,69,46,0);}
+    50%{box-shadow:0 1px 2px rgba(120,80,40,.06), 0 0 0 4px rgba(194,69,46,0.14);}
+  }
+  .needs-buss{align-self:flex-start; margin-top:2px; font-size:10.5px; font-weight:600; color:var(--accent); background:rgba(200,99,47,0.12); padding:3px 8px; border-radius:999px;}
+  #clean-list{margin-top:16px; padding-top:16px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:6px 11px; border-radius:999px;}
+  .chip.ok{background:rgba(78,154,107,0.12); color:#3a7a52;}
+  .chip.due{background:rgba(201,145,31,0.14); color:#9a6e12;}
+  .chip.over{background:rgba(194,69,46,0.13); color:var(--danger);}
+  .chip .cd{width:7px; height:7px; border-radius:50%; background:currentColor;}
+
+  /* right rail */
+  .rail{display:flex; flex-direction:column; gap:16px;}
+  .dev{display:flex; flex-direction:column; gap:8px; padding:13px 0;}
+  .dev + .dev{border-top:1px solid var(--border);}
+  .dev .drow{display:flex; align-items:center; gap:10px;}
+  .dev .dicon{color:var(--accent); flex:none; display:grid; place-items:center; width:30px; height:30px; background:rgba(200,99,47,0.10); border-radius:10px;}
+  .dev .dname{font-size:13px; font-weight:600; flex:1;}
+  .dev .dval{font-family:var(--serif); font-weight:600; font-size:18px; font-variant-numeric:tabular-nums;}
+  .track{position:relative; height:8px; border-radius:999px; background:rgba(120,80,40,0.10); overflow:hidden;}
+  .track > i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#E89B5C,#D2643C);}
+  .track.bipolar{background:linear-gradient(90deg,#9cc6e8,#E89B5C 50%,#D2643C);} /* cool->warm */
+  .track.bipolar > .mark{position:absolute; top:-3px; width:14px; height:14px; border-radius:50%; background:#FBF6EE; border:2px solid var(--accent); box-shadow:var(--shadow-sm); transform:translateX(-50%);}
+  .btns{display:flex; gap:8px; margin-top:2px;}
+  .pbtn{
+    appearance:none; cursor:pointer; flex:1;
+    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink);
+    background:#FFFBF4; border:1px solid var(--border); border-radius:12px;
+    padding:9px 10px; transition:all 160ms ease-out;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    box-shadow:var(--shadow-sm);
+  }
+  .pbtn:hover{border-color:rgba(200,99,47,0.4); color:var(--accent);}
+  .pbtn:active{transform:scale(0.95);}
+  .pbtn.flash{background:rgba(78,154,107,0.16); border-color:rgba(78,154,107,0.5); color:#3a7a52;}
+
+  .override-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .obtn{
+    appearance:none; cursor:pointer;
+    font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink);
+    background:#FFFBF4; border:1px solid var(--border); border-radius:16px;
+    padding:14px 12px; transition:all 160ms ease-out;
+    display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+    box-shadow:var(--shadow-sm);
+  }
+  .obtn svg{color:var(--accent);}
+  .obtn:hover{border-color:rgba(200,99,47,0.4); transform:translateY(-1px); box-shadow:var(--shadow-md);}
+  .obtn:active{transform:scale(0.97);}
+  .obtn.flash{background:rgba(78,154,107,0.16); border-color:rgba(78,154,107,0.5); color:#3a7a52;}
+  .obtn.flash svg{color:#3a7a52;}
+
+  /* feed */
+  #feed{display:flex; flex-direction:column; gap:0;}
+  .fitem{display:flex; gap:12px; padding:13px 0;}
+  .fitem + .fitem{border-top:1px solid var(--border);}
+  .fitem .rail-dot{flex:none; width:10px; height:10px; border-radius:50%; margin-top:5px;}
+  .fitem.auto .rail-dot{background:var(--accent);}
+  .fitem.manual .rail-dot{background:var(--success);}
+  .fitem .ftext{flex:1;}
+  .fitem .ftitle{font-size:13px; font-weight:600;}
+  .fitem .fdesc{font-size:12px; color:var(--muted); margin-top:2px;}
+  .fitem .fmeta{display:flex; gap:8px; margin-top:5px; align-items:center;}
+  .ftag{font-size:10px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:2px 7px; border-radius:999px;}
+  .ftag.auto{background:rgba(200,99,47,0.12); color:var(--accent);}
+  .ftag.manual{background:rgba(78,154,107,0.14); color:#3a7a52;}
+  .fitem .fwhen{font-size:11px; color:var(--muted);}
+
+  /* footer */
+  .footer{display:grid; grid-template-columns:1.3fr 1fr; gap:24px; margin-top:24px;}
+  @media (max-width:1040px){.footer{grid-template-columns:1fr;}}
+  .funnel-row{display:flex; align-items:center; gap:12px; margin:11px 0;}
+  .funnel-row .fl{width:96px; font-size:12.5px; font-weight:600; color:var(--ink); flex:none;}
+  .funnel-row .fmeter{flex:1; height:22px; border-radius:8px; background:rgba(120,80,40,0.07); overflow:hidden;}
+  .funnel-row .fmeter > i{display:block; height:100%; border-radius:8px; background:linear-gradient(90deg,#E89B5C,#D2643C);}
+  .funnel-row.abandon .fmeter > i{background:linear-gradient(90deg,#D86b54,#C2452E);}
+  .funnel-row .fn{width:42px; text-align:right; font-family:var(--serif); font-weight:600; font-size:16px; flex:none;}
+  .conv-rate{margin-top:6px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:baseline; gap:10px;}
+  .conv-rate .n{font-family:var(--serif); font-weight:600; font-size:34px;}
+
+  .ethic{display:flex; align-items:flex-start; gap:11px; padding:9px 0;}
+  .ethic .ck{flex:none; width:24px; height:24px; border-radius:8px; background:rgba(78,154,107,0.14); color:#3a7a52; display:grid; place-items:center;}
+  .ethic .et{font-size:13px; font-weight:600;}
+  .ethic .ed{font-size:11.5px; color:var(--muted);}
+  .consent{display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+  .consent .ct{font-size:13px; font-weight:600;}
+  .toggle{position:relative; width:46px; height:26px; flex:none;}
+  .toggle input{position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer;}
+  .toggle .slot{position:absolute; inset:0; border-radius:999px; background:rgba(120,80,40,0.18); transition:background 170ms ease-out;}
+  .toggle .knob{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#FBF6EE; box-shadow:var(--shadow-sm); transition:transform 170ms ease-out;}
+  .toggle input:checked + .slot{background:linear-gradient(135deg,#E89B5C,#D2643C);}
+  .toggle input:checked + .slot + .knob{transform:translateX(20px);}
+  .toggle input:focus-visible + .slot{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* focus rings */
+  button:focus-visible, a:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px;}
+
+  /* reveal cascade */
+  .reveal{opacity:0; transform:translateY(12px); animation:rise 560ms cubic-bezier(.22,.61,.36,1) forwards;}
+  @keyframes rise{to{opacity:1; transform:none;}}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+    .reveal{opacity:1; transform:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="app reveal" style="animation-delay:0ms">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9h12v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V9Z"/>
+          <path d="M16 10h2.5a2.5 2.5 0 0 1 0 5H16"/>
+          <path d="M7 5.5c0-1 1-1.2 1-2.5M11 5.5c0-1 1-1.2 1-2.5"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Golden Coffee</h1>
+        <div class="sub">Live monitoring · privacy-by-design</div>
+      </div>
+    </div>
+
+    <div class="seg" role="tablist" aria-label="View">
+      <button id="tab-live" role="tab" aria-selected="true" data-view="view-live">Live</button>
+      <button id="tab-floor" role="tab" aria-selected="false" data-view="view-floor">Floorplan</button>
+      <button id="tab-tables" role="tab" aria-selected="false" data-view="view-tables">Tables</button>
+    </div>
+
+    <div class="head-right">
+      <span id="clock">--:--:--</span>
+      <span class="conn" id="conn"><span class="dot"></span>Live</span>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero reveal" style="animation-delay:40ms" aria-label="Revenue at risk">
+    <div class="hero-inner">
+      <div>
+        <div class="htag">Revenue at risk</div>
+        <div class="amount">
+          <span id="rev-amount">£58</span>
+          <span id="rev-tag">est.</span>
+        </div>
+        <div class="walked">walked away today</div>
+        <div id="rev-sub">13 customers left the queue without ordering</div>
+      </div>
+      <div class="hero-chip">
+        <div class="label">Recoverable now</div>
+        <div class="v">~£22</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI ROW -->
+  <section class="kpis" aria-label="Key metrics">
+    <div class="kpi reveal" style="animation-delay:80ms">
+      <div class="top">
+        <div>
+          <div class="label">Occupancy</div>
+          <div class="val"><span class="num n" id="occ">34</span><span class="u">in</span></div>
+        </div>
+      </div>
+      <canvas class="spark" id="occ-spark" width="240" height="34"></canvas>
+      <div class="delta up" id="occ-d">▲ +3 vs last</div>
+    </div>
+
+    <div class="kpi reveal" style="animation-delay:120ms">
+      <div class="top">
+        <div>
+          <div class="label">Queue</div>
+          <div class="val"><span class="num n" id="queue">5</span><span class="u">waiting</span></div>
+        </div>
+      </div>
+      <canvas class="spark" id="queue-spark" width="240" height="34"></canvas>
+      <div class="delta up" id="queue-d">▲ +2 vs last</div>
+    </div>
+
+    <div class="kpi reveal" style="animation-delay:160ms">
+      <div class="top">
+        <div>
+          <div class="label">Conversion</div>
+          <div class="val"><span class="num n" id="conv">68</span><span class="u">%</span></div>
+        </div>
+      </div>
+      <canvas class="spark" id="conv-spark" width="240" height="34"></canvas>
+      <div class="sub">ordered / entered</div>
+      <div class="delta down" id="conv-d">▼ −4pp vs last</div>
+    </div>
+
+    <div class="kpi reveal" style="animation-delay:200ms">
+      <div class="top">
+        <div>
+          <div class="label">Room energy</div>
+          <div class="val"><span class="num n" id="prod">72</span><span class="u">%</span></div>
+        </div>
+      </div>
+      <div class="bar" style="margin-top:6px"><i id="prod-bar" style="width:0%"></i></div>
+      <div class="sub" style="margin-top:8px">buzz &amp; flow balance</div>
+    </div>
+  </section>
+
+  <!-- STAGE -->
+  <section class="stage">
+    <!-- MAIN -->
+    <div class="panel reveal" style="animation-delay:240ms">
+      <div class="ph">
+        <h2>Room view</h2>
+        <span class="label">no camera · synthetic</span>
+      </div>
+      <div class="pbody">
+
+        <!-- LIVE / FLOOR (shared canvas) -->
+        <div class="view active" id="view-live">
+          <div class="floor-frame">
+            <canvas id="floor-canvas" width="760" height="380"></canvas>
+            <span class="badge live"><span class="d"></span>LIVE</span>
+            <span class="badge src" id="live-src">synthetic map</span>
+          </div>
+          <div class="legend">
+            <span class="li"><span class="sw" style="background:#F4E2C8"></span>Entry</span>
+            <span class="li"><span class="sw" style="background:#ECC79A"></span>Queue</span>
+            <span class="li"><span class="sw" style="background:#E0A172"></span>Counter</span>
+            <span class="li"><span class="sw" style="background:#D2643C"></span>Seating (busy)</span>
+            <span class="li"><span class="sw" style="background:#F6ECDD; border:1px solid var(--accent)"></span>Customer</span>
+            <span class="li"><span class="sw" style="background:#C8632F"></span>Staff</span>
+          </div>
+          <div class="sumstrip">
+            <div class="item"><div class="label">Waiting in queue</div><div class="num n" id="sum-waiting">3</div></div>
+            <div class="item"><div class="label">Longest wait</div><div class="num n" id="sum-longest">8:12</div></div>
+          </div>
+        </div>
+
+        <div class="view" id="view-floor">
+          <div class="floor-frame">
+            <canvas id="floor-canvas-2" width="760" height="380"></canvas>
+            <span class="badge live"><span class="d"></span>FLOORPLAN</span>
+            <span class="badge src">zones · top-down</span>
+          </div>
+          <div class="legend">
+            <span class="li"><span class="sw" style="background:#F4E2C8"></span>Entry</span>
+            <span class="li"><span class="sw" style="background:#ECC79A"></span>Queue</span>
+            <span class="li"><span class="sw" style="background:#E0A172"></span>Counter</span>
+            <span class="li"><span class="sw" style="background:#D2643C"></span>Seating</span>
+          </div>
+        </div>
+
+        <!-- TABLES -->
+        <div class="view" id="view-tables">
+          <div id="tbl-grid">
+            <div class="tile seated"><div class="tname">T1</div><div class="tstat">Seated</div><div class="ttime">2:10</div></div>
+            <div class="tile waiting"><div class="tname">T2</div><div class="tstat">Waiting</div><div class="ttime">4:30</div></div>
+            <div class="tile overdue"><div class="tname">T3</div><div class="tstat">Overdue</div><div class="ttime">8:12</div></div>
+            <div class="tile empty"><div class="tname">T4</div><div class="tstat">Empty</div><div class="ttime">—</div></div>
+            <div class="tile seated"><div class="tname">T5</div><div class="tstat">Seated</div><div class="ttime">1:05</div></div>
+            <div class="tile waiting"><div class="tname">T6</div><div class="tstat">Waiting</div><div class="ttime">3:40</div><span class="needs-buss">needs bussing</span></div>
+          </div>
+          <div id="clean-list">
+            <span class="chip due"><span class="cd"></span>Restroom A · due</span>
+            <span class="chip ok"><span class="cd"></span>Restroom B · ok</span>
+            <span class="chip over"><span class="cd"></span>Counter · overdue</span>
+            <span class="chip ok"><span class="cd"></span>Patio · ok</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT RAIL -->
+    <div class="rail">
+
+      <!-- COMFORT AUTOPILOT -->
+      <div class="panel reveal" style="animation-delay:280ms">
+        <div class="ph"><h2>Comfort autopilot</h2><span class="label">auto</span></div>
+        <div class="pbody" style="padding-top:6px">
+
+          <div class="dev">
+            <div class="drow">
+              <span class="dicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3v10"/><circle cx="12" cy="17" r="3"/><path d="M12 14a3 3 0 0 0-3 3"/></svg></span>
+              <span class="dname">Temperature</span>
+              <span class="dval" id="cm-temp-val">20.5°C</span>
+            </div>
+            <div class="track bipolar"><span class="mark" id="cm-temp-mark" style="left:38%"></span></div>
+            <div class="btns">
+              <button class="pbtn" data-action="set_temperature" data-params='{"dir":"cool"}'>Cooler</button>
+              <button class="pbtn" data-action="set_temperature" data-params='{"dir":"warm"}'>Warmer</button>
+            </div>
+          </div>
+
+          <div class="dev">
+            <div class="drow">
+              <span class="dicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg></span>
+              <span class="dname">Lighting</span>
+              <span class="dval" id="cm-light-val">45%</span>
+            </div>
+            <div class="track"><i id="cm-light-fill" style="width:45%"></i></div>
+            <div class="btns">
+              <button class="pbtn" data-action="set_lighting" data-params='{"mode":"dim"}'>Dim &amp; cosy</button>
+              <button class="pbtn" data-action="set_lighting" data-params='{"mode":"bright"}'>Bright</button>
+            </div>
+          </div>
+
+          <div class="dev">
+            <div class="drow">
+              <span class="dicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3c2 2 1 4 0 5s-2 3 0 5 1 5-2 7"/><path d="M16 7c1.4 1.4.7 2.8 0 3.5s-1.4 2 0 3.5"/><path d="M8 8c1 1 .5 2 0 2.5s-1 1.5 0 2.5"/></svg></span>
+              <span class="dname">Scent</span>
+              <span class="dval" id="cm-scent-val">55%</span>
+            </div>
+            <div class="track"><i id="cm-scent-fill" style="width:55%"></i></div>
+            <div class="btns">
+              <button class="pbtn" data-action="set_scent" data-params='{"dir":"fresh"}'>Freshen</button>
+              <button class="pbtn" data-action="set_scent" data-params='{"dir":"cosy"}'>Cosy</button>
+            </div>
+          </div>
+
+          <div class="dev">
+            <div class="drow">
+              <span class="dicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg></span>
+              <span class="dname">Music</span>
+              <span class="dval" id="cm-music-val">40%</span>
+            </div>
+            <div class="track"><i id="cm-music-fill" style="width:40%"></i></div>
+            <div class="btns">
+              <button class="pbtn" data-action="set_music_volume" data-params='{"dir":"soften"}'>Soften</button>
+              <button class="pbtn" data-action="set_music_volume" data-params='{"dir":"lift"}'>Lift</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MANUAL OVERRIDE -->
+      <div class="panel reveal" style="animation-delay:320ms">
+        <div class="ph"><h2>Manual override</h2></div>
+        <div class="pbody">
+          <div class="override-grid">
+            <button class="obtn" data-action="set_music_volume" data-params='{"dir":"lift","boost":true}'>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 8a6 6 0 0 1 0 8M18.5 6a9 9 0 0 1 0 12"/></svg>
+              Boost music
+            </button>
+            <button class="obtn" data-action="set_temperature" data-params='{"dir":"cool","step":2}'>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4 7l8 5 8-5M4 17l8-5 8 5M12 2 8 6M12 2l4 4M12 22l-4-4M12 22l4-4"/></svg>
+              Cool room
+            </button>
+            <button class="obtn" data-action="push_discount" data-params='{"offer":"20pct_pastry"}'>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h.01M15 15h.01M16 8 8 16"/><path d="M3 11V5a2 2 0 0 1 2-2h6l10 10-8 8L3 11Z"/></svg>
+              Push discount
+            </button>
+            <button class="obtn" data-action="notify_staff" data-params='{"msg":"open_second_till"}'>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a5 5 0 0 1 5 5c0 5 2 6 2 6H5s2-1 2-6a5 5 0 0 1 5-5Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+              Alert staff
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGENT ACTIONS -->
+      <div class="panel reveal" style="animation-delay:360ms">
+        <div class="ph"><h2>Agent actions</h2><span class="label">newest first</span></div>
+        <div class="pbody" style="padding-top:6px">
+          <div id="feed">
+            <div class="fitem auto">
+              <span class="rail-dot"></span>
+              <div class="ftext">
+                <div class="ftitle">Soften music</div>
+                <div class="fdesc">Queue building; lowered volume to keep the counter calm.</div>
+                <div class="fmeta"><span class="ftag auto">auto</span><span class="fwhen">23s ago</span></div>
+              </div>
+            </div>
+            <div class="fitem auto">
+              <span class="rail-dot"></span>
+              <div class="ftext">
+                <div class="ftitle">Notify staff</div>
+                <div class="fdesc">Open a second till, 5 waiting.</div>
+                <div class="fmeta"><span class="ftag auto">auto</span><span class="fwhen">1m ago</span></div>
+              </div>
+            </div>
+            <div class="fitem manual">
+              <span class="rail-dot"></span>
+              <div class="ftext">
+                <div class="ftitle">Dim &amp; cosy lighting</div>
+                <div class="fdesc">Operator dimmed to a warm glow.</div>
+                <div class="fmeta"><span class="ftag manual">manual</span><span class="fwhen">3m ago</span></div>
+              </div>
+            </div>
+            <div class="fitem auto">
+              <span class="rail-dot"></span>
+              <div class="ftext">
+                <div class="ftitle">Push discount</div>
+                <div class="fdesc">Mid-afternoon lull; pushed 20% off pastries.</div>
+                <div class="fmeta"><span class="ftag auto">auto</span><span class="fwhen">6m ago</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <section class="footer">
+    <div class="panel reveal" style="animation-delay:400ms">
+      <div class="ph"><h2>Conversion funnel</h2><span class="label">today</span></div>
+      <div class="pbody" id="funnel">
+        <div class="funnel-row"><span class="fl">Entered</span><span class="fmeter"><i data-w="210"></i></span><span class="fn">210</span></div>
+        <div class="funnel-row"><span class="fl">Approached</span><span class="fmeter"><i data-w="168"></i></span><span class="fn">168</span></div>
+        <div class="funnel-row"><span class="fl">Ordered</span><span class="fmeter"><i data-w="143"></i></span><span class="fn">143</span></div>
+        <div class="funnel-row"><span class="fl">Seated</span><span class="fmeter"><i data-w="96"></i></span><span class="fn">96</span></div>
+        <div class="funnel-row abandon"><span class="fl">Abandoned</span><span class="fmeter"><i data-w="13"></i></span><span class="fn">13</span></div>
+        <div class="conv-rate"><span class="num n" id="conv-rate">68%</span><span class="label">ordered / entered conversion</span></div>
+      </div>
+    </div>
+
+    <div class="panel reveal" style="animation-delay:440ms">
+      <div class="ph"><h2>Ethics &amp; privacy</h2><span class="label">by design</span></div>
+      <div class="pbody">
+        <div class="ethic">
+          <span class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div><div class="et">No faces stored</div><div class="ed">Frames processed in-memory, never written to disk.</div></div>
+        </div>
+        <div class="ethic">
+          <span class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div><div class="et">Anonymous ephemeral track IDs</div><div class="ed">Identifiers expire when a person leaves frame.</div></div>
+        </div>
+        <div class="ethic">
+          <span class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div><div class="et">Aggregate metrics only</div><div class="ed">Dashboard shows counts &amp; rates, not individuals.</div></div>
+        </div>
+        <label class="consent" for="consent">
+          <span class="ct">Consent mode</span>
+          <span class="toggle">
+            <input type="checkbox" id="consent" checked>
+            <span class="slot"></span><span class="knob"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- CLOCK ---- */
+  var clock = document.getElementById('clock');
+  function tick(){
+    var d = new Date();
+    var p = function(n){return (n<10?'0':'')+n;};
+    clock.textContent = p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ---- FILL bars / tracks / funnel (animate to width) ---- */
+  function setW(el, pct){ if(el) el.style.width = pct + '%'; }
+  function fillLater(fn){ if(reduce){ fn(); } else { requestAnimationFrame(function(){ setTimeout(fn, 120); }); } }
+  fillLater(function(){
+    setW(document.getElementById('prod-bar'), 72);
+    // funnel meters scaled to entered=210
+    var max = 210;
+    document.querySelectorAll('#funnel .fmeter > i').forEach(function(i){
+      var w = parseFloat(i.getAttribute('data-w')) || 0;
+      i.style.transition = reduce ? 'none' : 'width 700ms cubic-bezier(.22,.61,.36,1)';
+      i.style.width = (w/max*100) + '%';
+    });
+  });
+  // tracks already have inline widths; ensure transition feel
+  document.querySelectorAll('.track > i, .bar > i').forEach(function(i){
+    if(!reduce) i.style.transition = 'width 600ms cubic-bezier(.22,.61,.36,1)';
+  });
+
+  /* ---- SPARKLINES ---- */
+  function drawSpark(id, data, color){
+    var c = document.getElementById(id);
+    if(!c) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = c.clientWidth || 240, cssH = c.clientHeight || 34;
+    c.width = cssW * dpr; c.height = cssH * dpr;
+    var ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var pad = 3;
+    var min = Math.min.apply(null, data), max = Math.max.apply(null, data);
+    var rng = (max - min) || 1;
+    var stepX = (cssW - pad*2) / (data.length - 1);
+    function x(i){ return pad + i*stepX; }
+    function y(v){ return pad + (cssH - pad*2) * (1 - (v - min)/rng); }
+
+    // area fill
+    var grad = ctx.createLinearGradient(0,0,0,cssH);
+    grad.addColorStop(0, 'rgba(210,100,60,0.22)');
+    grad.addColorStop(1, 'rgba(210,100,60,0.0)');
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(data[0]));
+    for(var i=1;i<data.length;i++){
+      var xc = (x(i-1)+x(i))/2;
+      ctx.quadraticCurveTo(x(i-1), y(data[i-1]), xc, (y(data[i-1])+y(data[i]))/2);
+      ctx.quadraticCurveTo(xc, (y(data[i-1])+y(data[i]))/2, x(i), y(data[i]));
+    }
+    ctx.lineTo(x(data.length-1), cssH);
+    ctx.lineTo(x(0), cssH);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    // line
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(data[0]));
+    for(i=1;i<data.length;i++){
+      var xc2 = (x(i-1)+x(i))/2;
+      ctx.quadraticCurveTo(x(i-1), y(data[i-1]), xc2, (y(data[i-1])+y(data[i]))/2);
+      ctx.quadraticCurveTo(xc2, (y(data[i-1])+y(data[i]))/2, x(i), y(data[i]));
+    }
+    ctx.lineWidth = 2; ctx.strokeStyle = color;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // end dot
+    ctx.beginPath();
+    ctx.arc(x(data.length-1), y(data[data.length-1]), 2.6, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
+  }
+  drawSpark('occ-spark',   [22,25,24,28,30,29,31,34], '#C8632F');
+  drawSpark('queue-spark', [2,1,3,2,4,3,5,5],         '#C9911F');
+  drawSpark('conv-spark',  [74,73,72,71,70,72,69,68], '#C2452E');
+
+  /* ---- FLOORPLAN CANVAS ---- */
+  function drawFloor(id){
+    var c = document.getElementById(id);
+    if(!c) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = c.clientWidth || 760, cssH = Math.round(cssW * 380/760);
+    c.width = cssW*dpr; c.height = cssH*dpr;
+    c.style.height = cssH + 'px';
+    var ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var W = cssW, H = cssH;
+
+    // base
+    ctx.fillStyle = '#F6ECDD';
+    ctx.fillRect(0,0,W,H);
+
+    // 4 zones L->R: Entry / Queue / Counter / Seating
+    var zones = [
+      {name:'Entry',   col:'#F4E2C8', occ:0.18},
+      {name:'Queue',   col:'#ECC79A', occ:0.55},
+      {name:'Counter', col:'#E0A172', occ:0.62},
+      {name:'Seating', col:'#D2643C', occ:0.80}
+    ];
+    var pad = 14, gap = 12;
+    var zw = (W - pad*2 - gap*3) / 4;
+    function rr(x,y,w,h,r){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.arcTo(x+w,y,x+w,y+h,r);
+      ctx.arcTo(x+w,y+h,x,y+h,r);
+      ctx.arcTo(x,y+h,x,y,r);
+      ctx.arcTo(x,y,x+w,y,r);
+      ctx.closePath();
+    }
+    var zx = [];
+    zones.forEach(function(z, i){
+      var x = pad + i*(zw+gap);
+      zx.push(x);
+      // warm occupancy wash: blend toward deeper terracotta with occ
+      var y = pad, h = H - pad*2;
+      rr(x, y, zw, h, 18);
+      var g = ctx.createLinearGradient(x, y, x, y+h);
+      g.addColorStop(0, z.col);
+      g.addColorStop(1, shade(z.col, z.occ));
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(120,80,40,0.12)'; ctx.stroke();
+      // label
+      ctx.fillStyle = 'rgba(42,32,24,0.62)';
+      ctx.font = '600 12px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(z.name.toUpperCase(), x+12, y+20);
+    });
+
+    function shade(hex, occ){
+      // mix base toward #C2452E by occ*0.5
+      var t = occ*0.5;
+      var b = hexToRgb(hex), d = {r:194,g:69,b:46};
+      return 'rgb('+Math.round(b.r+(d.r-b.r)*t)+','+Math.round(b.g+(d.g-b.g)*t)+','+Math.round(b.b+(d.b-b.b)*t)+')';
+    }
+    function hexToRgb(h){h=h.replace('#','');return{r:parseInt(h.substr(0,2),16),g:parseInt(h.substr(2,2),16),b:parseInt(h.substr(4,2),16)};}
+
+    function dot(x, y, r, fill, stroke){
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle = fill; ctx.fill();
+      if(stroke){ ctx.lineWidth=1.5; ctx.strokeStyle=stroke; ctx.stroke(); }
+    }
+    // customers (cream) per zone roughly proportional to occ
+    var seed = 7;
+    function rnd(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; }
+    var counts = [2, 5, 4, 9];
+    zones.forEach(function(z,i){
+      var x0 = zx[i]+14, x1 = zx[i]+zw-14, y0 = pad+34, y1 = H-pad-16;
+      for(var k=0;k<counts[i];k++){
+        var cx = x0 + rnd()*(x1-x0);
+        var cy = y0 + rnd()*(y1-y0);
+        dot(cx, cy, 6, '#F6ECDD', 'rgba(200,99,47,0.55)');
+      }
+    });
+    // staff (terracotta): 1 at counter, 1 at seating
+    dot(zx[2]+zw*0.5, H*0.62, 7, '#C8632F', '#FBF6EE');
+    dot(zx[3]+zw*0.35, H*0.40, 7, '#C8632F', '#FBF6EE');
+  }
+  drawFloor('floor-canvas');
+  // floor view canvas drawn on first toggle (and now if visible)
+  var floorDrawn = false;
+  function ensureFloor(){ if(!floorDrawn){ drawFloor('floor-canvas-2'); floorDrawn = true; } }
+
+  window.addEventListener('resize', (function(){
+    var t;
+    return function(){ clearTimeout(t); t = setTimeout(function(){
+      drawSpark('occ-spark',[22,25,24,28,30,29,31,34],'#C8632F');
+      drawSpark('queue-spark',[2,1,3,2,4,3,5,5],'#C9911F');
+      drawSpark('conv-spark',[74,73,72,71,70,72,69,68],'#C2452E');
+      drawFloor('floor-canvas');
+      if(floorDrawn) drawFloor('floor-canvas-2');
+    }, 150); };
+  })());
+
+  /* ---- SEGMENTED CONTROL ---- */
+  var tabs = document.querySelectorAll('.seg button');
+  var views = {
+    'view-live': document.getElementById('view-live'),
+    'view-floor': document.getElementById('view-floor'),
+    'view-tables': document.getElementById('view-tables')
+  };
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabs.forEach(function(b){ b.setAttribute('aria-selected','false'); });
+      btn.setAttribute('aria-selected','true');
+      var target = btn.getAttribute('data-view');
+      Object.keys(views).forEach(function(k){
+        if(views[k]) views[k].classList.toggle('active', k===target);
+      });
+      if(target==='view-floor') ensureFloor();
+    });
+  });
+
+  /* ---- PRESSABLE FLASH (comfort + override) ---- */
+  function flash(el){
+    el.classList.add('flash');
+    setTimeout(function(){ el.classList.remove('flash'); }, 600);
+  }
+  document.querySelectorAll('.pbtn, .obtn').forEach(function(b){
+    b.addEventListener('click', function(){ flash(b); });
+  });
+
+})();
+</script>
+</body>
+</html>

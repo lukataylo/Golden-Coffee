@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Golden Coffee — Dashboard Redesign · 4 Directions</title>
+<style>
+  :root{
+    --bg:#0e0f12; --panel:#16181d; --line:rgba(255,255,255,.08);
+    --ink:#ECEAE6; --muted:#9a988f; --accent:#E0913E;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(900px 500px at 85% -10%, rgba(224,145,62,.10), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font:15px/1.5 -apple-system,"SF Pro Text",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:14px 22px; border-bottom:1px solid var(--line);
+    background:rgba(14,15,18,.72); backdrop-filter:blur(14px) saturate(160%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
+  }
+  .brand{display:flex; align-items:center; gap:10px; min-width:0}
+  .brand svg{width:22px;height:22px;color:var(--accent);flex:none}
+  h1{font-size:16px; margin:0; font-weight:600; letter-spacing:-.01em; white-space:nowrap}
+  .brand .sub{color:var(--muted); font-size:12.5px; white-space:nowrap}
+  nav{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap}
+  nav button{
+    font:inherit; font-size:13px; font-weight:550; color:var(--muted);
+    background:transparent; border:1px solid transparent; border-radius:999px;
+    padding:7px 14px; cursor:pointer; transition:color .15s ease, background .15s ease, border-color .15s ease;
+    display:flex; align-items:center; gap:8px;
+  }
+  nav button .sw{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+  nav button:hover{color:var(--ink)}
+  nav button[aria-current="true"]{color:#1a140c; background:var(--accent); font-weight:650}
+  nav button[aria-current="true"] .sw{box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}
+  nav .ghost{border-color:var(--line); color:var(--muted)}
+  nav .ghost[aria-pressed="true"]{color:var(--ink); border-color:var(--accent)}
+
+  .meta{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:11px 22px; border-bottom:1px solid var(--line); color:var(--muted); font-size:13px;
+  }
+  .meta .name{color:var(--ink); font-weight:600}
+  .meta .ref{color:var(--muted)}
+  .meta .sig{display:flex; gap:8px; flex-wrap:wrap}
+  .meta .sig span{
+    font-size:11.5px; color:var(--muted); background:var(--panel);
+    border:1px solid var(--line); border-radius:999px; padding:3px 9px;
+  }
+  .open{margin-left:auto}
+  .open a{color:var(--accent); text-decoration:none; font-weight:600; font-size:13px}
+  .open a:hover{text-decoration:underline}
+
+  .stage{position:relative}
+  /* single full-bleed preview */
+  .single{height:calc(100vh - 112px)}
+  .single iframe{width:100%; height:100%; border:0; display:block; background:#fff}
+  .single iframe[hidden]{display:none}
+
+  /* 2x2 compare grid */
+  .grid{display:none; grid-template-columns:1fr 1fr; gap:14px; padding:14px}
+  body.compare .grid{display:grid}
+  body.compare .single{display:none}
+  .cell{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel)}
+  .cell .cap{display:flex; align-items:center; gap:9px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px}
+  .cell .cap .sw{width:11px;height:11px;border-radius:50%}
+  .cell .cap b{font-weight:600}
+  .cell .cap a{margin-left:auto; color:var(--accent); text-decoration:none; font-size:12px}
+  .cell .frame{position:relative; height:46vh; overflow:hidden}
+  /* scale the dashboards down so a whole view fits each compare cell */
+  .cell iframe{
+    border:0; background:#fff;
+    width:200%; height:200%;
+    transform:scale(.5); transform-origin:top left;
+  }
+  .hint{padding:0 22px 22px; color:var(--muted); font-size:12.5px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/>
+        <path d="M17 9h2.5a2.5 2.5 0 0 1 0 5H17"/>
+        <path d="M8 2.5c-.6.8-.6 1.7 0 2.5M12 2.5c-.6.8-.6 1.7 0 2.5"/>
+      </svg>
+      <h1>Golden Coffee</h1>
+      <span class="sub">Dashboard redesign · 4 directions</span>
+    </div>
+    <nav id="nav" aria-label="Choose a design version">
+      <button data-v="0" aria-current="true"><span class="sw" style="background:#F4F2EF"></span>Porcelain</button>
+      <button data-v="1"><span class="sw" style="background:#16181d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)"></span>Graphite</button>
+      <button data-v="2"><span class="sw" style="background:#F6F5F1"></span>Monograph</button>
+      <button data-v="3"><span class="sw" style="background:linear-gradient(135deg,#E89B5C,#D2643C)"></span>Ember</button>
+      <button id="cmp" class="ghost" aria-pressed="false">Compare all</button>
+    </nav>
+  </header>
+
+  <div class="meta" id="meta">
+    <span class="name" id="m-name">Porcelain</span>
+    <span class="ref" id="m-ref">— Apple visionOS / Health (light, frosted glass)</span>
+    <span class="sig" id="m-sig"></span>
+    <span class="open"><a id="m-open" href="v1-porcelain.html" target="_blank" rel="noopener">Open full ↗</a></span>
+  </div>
+
+  <div class="stage">
+    <div class="single" id="single">
+      <iframe data-v="0" src="v1-porcelain.html" title="Porcelain"></iframe>
+      <iframe data-v="1" src="v2-graphite.html" title="Graphite" hidden></iframe>
+      <iframe data-v="2" src="v3-monograph.html" title="Monograph" hidden></iframe>
+      <iframe data-v="3" src="v4-ember.html" title="Ember" hidden></iframe>
+    </div>
+
+    <div class="grid" id="grid">
+      <div class="cell">
+        <div class="cap"><span class="sw" style="background:#F4F2EF"></span><b>Porcelain</b> · light frosted glass <a href="v1-porcelain.html" target="_blank" rel="noopener">open ↗</a></div>
+        <div class="frame"><iframe src="v1-porcelain.html" title="Porcelain"></iframe></div>
+      </div>
+      <div class="cell">
+        <div class="cap"><span class="sw" style="background:#16181d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)"></span><b>Graphite</b> · dark liquid glass <a href="v2-graphite.html" target="_blank" rel="noopener">open ↗</a></div>
+        <div class="frame"><iframe src="v2-graphite.html" title="Graphite"></iframe></div>
+      </div>
+      <div class="cell">
+        <div class="cap"><span class="sw" style="background:#F6F5F1"></span><b>Monograph</b> · Swiss / Braun mono <a href="v3-monograph.html" target="_blank" rel="noopener">open ↗</a></div>
+        <div class="frame"><iframe src="v3-monograph.html" title="Monograph"></iframe></div>
+      </div>
+      <div class="cell">
+        <div class="cap"><span class="sw" style="background:linear-gradient(135deg,#E89B5C,#D2643C)"></span><b>Ember</b> · warm tactile <a href="v4-ember.html" target="_blank" rel="noopener">open ↗</a></div>
+        <div class="frame"><iframe src="v4-ember.html" title="Ember"></iframe></div>
+      </div>
+    </div>
+    <div class="hint">Tip: “Compare all” shows the four side by side (scaled). Click a name to view one full-size, or “Open full ↗” for its own tab. See <a href="DESIGN_BRIEF.md" style="color:var(--accent)">DESIGN_BRIEF.md</a> for the rationale.</div>
+  </div>
+
+<script>
+(function(){
+  var DATA = [
+    {name:"Porcelain", ref:"— Apple visionOS / Health (light, frosted glass)", file:"v1-porcelain.html",
+     sig:["frosted white glass tiles","clarity · deference · depth","SF Pro + whitespace"]},
+    {name:"Graphite", ref:"— Linear / ops console / visionOS (dark liquid glass)", file:"v2-graphite.html",
+     sig:["true backdrop-blur panels","one warm ember aurora","specular hairline borders"]},
+    {name:"Monograph", ref:"— Braun / Swiss International / Bloomberg density", file:"v3-monograph.html",
+     sig:["near-monochrome paper","oversized numerals + mono","hairline rules, no decoration"]},
+    {name:"Ember", ref:"— warm wellness-app / Teenage Engineering", file:"v4-ember.html",
+     sig:["amber→terracotta as material","soft concentric cards","Fraunces headline numerals"]},
+  ];
+  var nav=document.getElementById('nav');
+  var frames=[].slice.call(document.querySelectorAll('#single iframe'));
+  var mName=document.getElementById('m-name'), mRef=document.getElementById('m-ref'),
+      mSig=document.getElementById('m-sig'), mOpen=document.getElementById('m-open');
+  function select(v){
+    nav.querySelectorAll('button[data-v]').forEach(function(b){
+      b.setAttribute('aria-current', b.dataset.v==String(v) ? 'true':'false');
+    });
+    frames.forEach(function(f){ f.hidden = f.dataset.v != String(v); });
+    var d=DATA[v];
+    mName.textContent=d.name; mRef.textContent=d.ref; mOpen.href=d.file;
+    mSig.innerHTML=d.sig.map(function(s){return '<span>'+s+'</span>';}).join('');
+    document.body.classList.remove('compare');
+    document.getElementById('cmp').setAttribute('aria-pressed','false');
+  }
+  nav.addEventListener('click', function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    if(b.id==='cmp'){
+      var on=!document.body.classList.contains('compare');
+      document.body.classList.toggle('compare', on);
+      b.setAttribute('aria-pressed', on?'true':'false');
+      return;
+    }
+    select(+b.dataset.v);
+  });
+  select(0);
+})();
+</script>
+</body>
+</html>
