@@ -1005,6 +1005,10 @@ def main() -> None:
         from perception.audio import AudioMonitor
         audio = AudioMonitor(device=args.audio_device).start()
 
+    # AE-robust, temporally-smoothed light meter (see perception/light.py).
+    from perception.light import LightMeter
+    light_meter = LightMeter()
+
     # Fix 6: federated emit thread — posts aggregate ratios only (no tracks/bboxes)
     # to the federation server so cross-shop learning works without sharing raw data.
     if not args.dry_run:
@@ -1069,9 +1073,8 @@ def main() -> None:
 
         if video_t - last_emit_t >= EMIT_EVERY_S:
             # Measured ambient: light off the camera frame, loudness/stress off the mic.
-            from perception.light import measure_light
             from shared.comfort import comfort_index
-            lite = measure_light(frame)
+            lite = light_meter.update(frame)
             snd = audio.read() if audio is not None else {"sound_db": None, "sound_stress": None}
             hour = time.localtime().tm_hour
             ci = comfort_index(

@@ -22,6 +22,15 @@ from collections import deque
 from pathlib import Path
 from typing import Optional
 
+# Load .env so local runs see keys (Spotify, tokens, etc.). On Railway the real
+# env vars are injected and take precedence — load_dotenv never overrides them.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 from fastapi import FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
