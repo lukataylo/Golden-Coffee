@@ -349,10 +349,12 @@
     var hour = new Date().getHours();
     var evening = hour >= 18 || hour < 7;
 
-    // SOUND — measured loudness (dB) + acoustic stress when we have a mic,
-    // else estimated from the music volume set-point.
+    // SOUND — priority: hardware mic (indoor_sound_db) > camera (sound_db) > vol proxy
     var sound, soundDb = null, stress = null;
-    if (typeof s.sound_db === "number") {
+    if (typeof s.indoor_sound_db === "number") {
+      soundDb = s.indoor_sound_db;
+      sound = clamp(band(soundDb, 42, 50, 65, 78), 0, 100);
+    } else if (typeof s.sound_db === "number") {
       soundDb = s.sound_db; stress = (typeof s.sound_stress === "number") ? s.sound_stress : 0;
       sound = clamp(band(soundDb, 42, 52, 66, 80) - 0.45 * stress, 0, 100);
     } else {
@@ -360,9 +362,11 @@
       sound = clamp(100 - Math.abs(vol - 55) * 1.25 - Math.min(q * 5, 25), 0, 100);
     }
 
-    // LIGHT — measured camera brightness (daypart-aware), else from set-point.
+    // LIGHT — priority: hardware lux (indoor_lux) > camera brightness (light_level) > brightness proxy
     var light, lightLevel = null;
-    if (typeof s.light_level === "number") {
+    if (typeof s.indoor_lux === "number") {
+      light = clamp(band(s.indoor_lux, 80, 150, 300, 600), 0, 100);
+    } else if (typeof s.light_level === "number") {
       lightLevel = s.light_level;
       light = evening ? band(lightLevel, 10, 30, 52, 82) : band(lightLevel, 18, 44, 70, 92);
     } else {
@@ -370,15 +374,30 @@
       light = clamp(100 - Math.abs(bri - 52) * 1.1 + (comfort.warmth === "warm" ? 5 : 0), 0, 100);
     }
 
-    // TEMPERATURE — deviation of the room temperature we're holding from neutral
-    // (20.5°C): ±2°C ≈ 82, ±4°C ≈ 64.
-    var sp = (comfort.setpoint == null ? 20.5 : comfort.setpoint);
-    var air = clamp(100 - 9 * Math.abs(sp - 20.5), 0, 100);
+    // AIR — real sensors (indoor_temp_c + indoor_humidity_rh) when available, else setpoint proxy
+    var air, tempC = null;
+    if (typeof s.indoor_temp_c === "number") {
+      tempC = s.indoor_temp_c;
+      var tScore = clamp(100 - Math.abs(tempC - 21) * 20, 0, 100);
+      var hScore = typeof s.indoor_humidity_rh === "number"
+        ? clamp(100 - Math.max(0, s.indoor_humidity_rh - 60) * 2.5
+                    - Math.max(0, 40 - s.indoor_humidity_rh) * 2.5, 0, 100)
+        : 80;
+      air = Math.round((tScore + hScore) / 2);
+    } else {
+      var sp = (comfort.setpoint == null ? 20.5 : comfort.setpoint);
+      tempC = sp;
+      air = clamp(100 - 9 * Math.abs(sp - 20.5), 0, 100);
+    }
 
-    var overall = Math.round(sound * CI_W.sound + light * CI_W.light + air * CI_W.air);
-    return { overall:overall, sound:Math.round(sound), light:Math.round(light),
-             air:Math.round(air), tempC:sp,
-             soundDb:soundDb, stress:stress, lightLevel:lightLevel,
+    // SCENT — no sensor exists; proxy from the agent's last set_scent command intensity
+    var inten = comfort.intensity || 0;
+    var scent = clamp(100 - Math.abs(inten - 55) * 1.1, 0, 100);
+
+    var overall = Math.round(sound * CI_W.sound + light * CI_W.light + air * CI_W.air * 0.85 + scent * 0.05);
+    return { overall: overall, sound: Math.round(sound), light: Math.round(light),
+             air: Math.round(air), scent: Math.round(scent), tempC: tempC,
+             soundDb: soundDb, stress: stress, lightLevel: lightLevel,
              daypart: evening ? "evening" : "day" };
   }
   function comfortLabel(v) {
@@ -408,6 +427,12 @@
   }
   function tempSub() {
     if (!comfort.tempOn) return "Climate paused";
+    var sc = lastScene || {};
+    if (sc.indoor_temp_c != null) {
+      var t = sc.indoor_temp_c;
+      var label = t < 19 ? "Cool & crisp" : t > 23 ? "Warm & cosy" : "Fresh · comfortable";
+      return label + " · " + t.toFixed(1) + "°C";
+    }
     var d = comfort.setpoint - 20.5;
     if (d <= -1) return "Cool & crisp";
     if (d >= 1) return "Warm & cosy";

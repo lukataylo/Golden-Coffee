@@ -93,6 +93,7 @@ def _thermal_target(scene: dict, state: dict, now: float) -> tuple[float | None,
     Hysteresis prevents thrashing; recovery resets baseline when the room empties.
     """
     outdoor_temp = scene.get("outdoor_temp_c")
+    indoor_temp  = scene.get("indoor_temp_c")   # measured room temperature (sensor feedback)
     indoor_rh    = scene.get("indoor_humidity_rh")
     occupancy    = int(scene.get("occupancy", 0))
 
@@ -161,9 +162,16 @@ def _thermal_target(scene: dict, state: dict, now: float) -> tuple[float | None,
     if last is not None and abs(final_target - last) <= TEMP_HYSTERESIS:
         return None, ""
 
+    # Sensor feedback: if we have a real room measurement and the room is already
+    # within 0.5°C of the target, the AC has done its job — no need to re-command.
+    if indoor_temp is not None and abs(indoor_temp - final_target) <= TEMP_HYSTERESIS:
+        return None, ""
+
     # Build rationale
     parts: list[str] = []
-    if outdoor_temp is not None:
+    if indoor_temp is not None:
+        parts.append(f"room {indoor_temp:.1f}°C → target {final_target:.1f}°C")
+    elif outdoor_temp is not None:
         parts.append(f"outdoor {outdoor_temp:.0f}°C → baseline {baseline:.0f}°C")
     else:
         parts.append(f"baseline {baseline:.0f}°C")

@@ -87,14 +87,17 @@ class SceneEvent(BaseModel):
     cleaning: list[CleaningZone] = Field(default_factory=list)  # cleaning cadence by zone
     walkaway_gbp: Optional[float] = None   # cumulative revenue lost to queue walk-offs today
     forecast_next_hour: Optional[int] = None  # predicted occupancy for the next clock hour
-    outdoor_temp_c: Optional[float] = None   # outdoor thermometer (°C) — sets seasonal baseline
-    indoor_humidity_rh: Optional[float] = None  # indoor relative humidity % — humidity offset
-    # --- measured ambient (sensed, not set-point) -----------------------------
-    sound_db: Optional[float] = None        # measured loudness, approx dB SPL (from mic)
-    sound_stress: Optional[float] = None    # acoustic stress 0..100 (loudness/choppiness/harshness)
-    light_level: Optional[float] = None     # measured scene brightness 0..100 (from camera)
-    light_lux: Optional[float] = None       # rough perceptual lux estimate (uncalibrated)
-    comfort: Optional["ComfortIndex"] = None  # the full Comfort Index breakdown for this tick
+    outdoor_temp_c: Optional[float] = None     # outdoor thermometer (°C) — sets seasonal baseline
+    indoor_temp_c: Optional[float] = None      # measured room temperature (°C) — AC feedback
+    indoor_humidity_rh: Optional[float] = None # measured relative humidity % — humidity offset
+    indoor_sound_db: Optional[float] = None    # hardware mic: measured sound level (dB SPL)
+    indoor_lux: Optional[float] = None         # hardware lux sensor: measured illuminance (lux)
+    # camera / perception-derived ambient (Track A)
+    sound_db: Optional[float] = None           # perception-estimated loudness (dB SPL)
+    sound_stress: Optional[float] = None       # acoustic stress 0..100 (loudness/choppiness)
+    light_level: Optional[float] = None        # camera scene brightness 0..100
+    light_lux: Optional[float] = None          # camera perceptual lux estimate (uncalibrated)
+    comfort: Optional["ComfortIndex"] = None   # full Comfort Index breakdown for this tick
     source: Literal["mock", "perception"] = "mock"
 
 
