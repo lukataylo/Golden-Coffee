@@ -45,6 +45,12 @@ ABANDON_DELTA = 1           # walk-offs rising by >= this since last scene => ac
 AVG_TICKET_GBP = 4.80       # average spend per customer (for walkaway £ metric)
 LULL_SUSTAINED_S = 600      # lull must hold 10 min before markdown activates
 
+# Table service SLA thresholds (sustained time before alert fires)
+TABLE_DIRTY_SLA_S   = 180   # 7b: guest sitting with dirty table ≥ 3 min
+TABLE_ORDER_SLA_S   = 360   # 7c: waiting_to_order ≥ 6 min
+TABLE_BILL_SLA_S    = 240   # 7d: requested_bill ≥ 4 min
+TABLE_SLA_COOLDOWN  = 300   # 5 min repeat-alert cooldown per table per rule
+
 # Perishable items eligible for quiet-period markdown (never surge — prices only go down).
 # In production these come from the POS/inventory API; mocked here for demo.
 HIGH_DECAY_ITEMS = [
@@ -216,9 +222,9 @@ DEFAULT_DEBOUNCE_S = 120
 # --------------------------------------------------------------------------
 # debounce helpers — `state` is owned by the caller and persists across calls.
 # --------------------------------------------------------------------------
-def _due(state: dict, key: str, now: float) -> bool:
+def _due(state: dict, key: str, now: float, window_s: float | None = None) -> bool:
     last = state.get("_last_fired", {}).get(key)
-    window = DEBOUNCE_S.get(key, DEFAULT_DEBOUNCE_S)
+    window = window_s if window_s is not None else DEBOUNCE_S.get(key, DEFAULT_DEBOUNCE_S)
     return last is None or (now - last) >= window
 
 
@@ -482,8 +488,61 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
             f"hospitality and often prompts another order.",
         ))
 
-    # --- 7. TABLE SERVICE: a table waiting too long -> alert staff -----------
+    # --- 7. TABLE SERVICE SLAs (per-table, per-rule debounce) ----------------
     tables = scene.get("tables", []) or []
+    for t in tables:
+        tid        = t.get("id", "?")
+        occupied   = t.get("occupied", False)
+        status     = t.get("status", "empty")
+        occupied_s = float(t.get("occupied_s", 0.0))
+        wait_s     = float(t.get("wait_s", 0.0))
+        dirty      = t.get("needs_cleaning", False)
+
+        # 7b: Guest sitting at an uncleared table for ≥ 3 min — hygiene SLA
+        if (occupied and dirty and occupied_s >= TABLE_DIRTY_SLA_S
+                and _due(state, f"table_dirty_{tid}", now, TABLE_SLA_COOLDOWN)):
+            _mark(state, f"table_dirty_{tid}", now)
+            actions.append(_action(
+                now, "notify_staff",
+                {
+                    "text": f"URGENT: Clear Table {tid}. Guest is sitting with trash.",
+                    "priority": "high",
+                    "channel": "wearables",
+                },
+                f"Table {tid} occupied but not cleared; guest sitting with dirty dishes "
+                f"for {int(occupied_s // 60)}+ min.",
+            ))
+
+        # 7c: Order-taking SLA — waiting_to_order for ≥ 6 min
+        if (occupied and status == "waiting_to_order" and wait_s >= TABLE_ORDER_SLA_S
+                and _due(state, f"table_order_{tid}", now, TABLE_SLA_COOLDOWN)):
+            _mark(state, f"table_order_{tid}", now)
+            actions.append(_action(
+                now, "notify_staff",
+                {
+                    "text": f"ALERT: Table {tid} has been waiting {int(wait_s // 60)} mins to order!",
+                    "priority": "high",
+                    "channel": "wearables",
+                },
+                f"Table {tid} hasn't been served in {int(wait_s // 60)} min — order-taking SLA breach.",
+            ))
+
+        # 7d: Bill request SLA — requested_bill for ≥ 4 min
+        if (status == "requested_bill" and wait_s >= TABLE_BILL_SLA_S
+                and _due(state, f"table_bill_{tid}", now, TABLE_SLA_COOLDOWN)):
+            _mark(state, f"table_bill_{tid}", now)
+            actions.append(_action(
+                now, "notify_staff",
+                {
+                    "text": f"CRITICAL: Bring bill to Table {tid} immediately.",
+                    "priority": "urgent",
+                    "channel": "pos_and_wearables",
+                },
+                f"Table {tid} requested the bill {int(wait_s // 60)}+ min ago — "
+                f"guest is waiting to leave.",
+            ))
+
+    # 7-catch-all: "overdue" status (generic un-served table, from POS or mock)
     overdue_tables = [t for t in tables if t.get("status") == "overdue"]
     if overdue_tables and _due(state, "notify_table", now):
         worst = max(overdue_tables, key=lambda t: t.get("wait_s", 0.0))

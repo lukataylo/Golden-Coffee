@@ -57,7 +57,7 @@ class Table(BaseModel):
     party_size: int = 0             # customers currently at the table
     occupied_s: float = 0.0         # seconds the table has been occupied
     wait_s: float = 0.0             # seconds waiting (since seated / last staff visit)
-    status: Literal["empty", "seated", "waiting", "overdue"] = "empty"
+    status: Literal["empty", "seated", "waiting", "waiting_to_order", "overdue", "requested_bill"] = "empty"
     # cleaning / turnover
     needs_cleaning: bool = False    # vacated and not yet bussed
     since_clean_s: float = 0.0      # seconds since last cleaned/bussed
