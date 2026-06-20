@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Golden Coffee — Dashboard Redesign · 4 Directions</title>
+<title>Golden Coffee — Dashboard Redesign · 5 Directions</title>
 <style>
   :root{
     --bg:#0e0f12; --panel:#16181d; --line:rgba(255,255,255,.08);
@@ -93,13 +93,14 @@
         <path d="M8 2.5c-.6.8-.6 1.7 0 2.5M12 2.5c-.6.8-.6 1.7 0 2.5"/>
       </svg>
       <h1>Golden Coffee</h1>
-      <span class="sub">Dashboard redesign · 4 directions</span>
+      <span class="sub">Dashboard redesign · 5 directions</span>
     </div>
     <nav id="nav" aria-label="Choose a design version">
       <button data-v="0" aria-current="true"><span class="sw" style="background:#F4F2EF"></span>Porcelain</button>
       <button data-v="1"><span class="sw" style="background:#16181d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)"></span>Graphite</button>
       <button data-v="2"><span class="sw" style="background:#F6F5F1"></span>Monograph</button>
       <button data-v="3"><span class="sw" style="background:linear-gradient(135deg,#E89B5C,#D2643C)"></span>Ember</button>
+      <button data-v="4"><span class="sw" style="background:linear-gradient(135deg,#FF9A2D,#2a1a0d)"></span>Hearth</button>
       <button id="cmp" class="ghost" aria-pressed="false">Compare all</button>
     </nav>
   </header>
@@ -117,6 +118,7 @@
       <iframe data-v="1" src="v2-graphite.html" title="Graphite" hidden></iframe>
       <iframe data-v="2" src="v3-monograph.html" title="Monograph" hidden></iframe>
       <iframe data-v="3" src="v4-ember.html" title="Ember" hidden></iframe>
+      <iframe data-v="4" src="control-v2.html" title="Hearth" hidden></iframe>
     </div>
 
     <div class="grid" id="grid">
@@ -136,6 +138,10 @@
         <div class="cap"><span class="sw" style="background:linear-gradient(135deg,#E89B5C,#D2643C)"></span><b>Ember</b> · warm tactile <a href="v4-ember.html" target="_blank" rel="noopener">open ↗</a></div>
         <div class="frame"><iframe src="v4-ember.html" title="Ember"></iframe></div>
       </div>
+      <div class="cell">
+        <div class="cap"><span class="sw" style="background:linear-gradient(135deg,#FF9A2D,#2a1a0d)"></span><b>Hearth</b> · comfort index <a href="control-v2.html" target="_blank" rel="noopener">open ↗</a></div>
+        <div class="frame"><iframe src="control-v2.html" title="Hearth"></iframe></div>
+      </div>
     </div>
     <div class="hint">Tip: “Compare all” shows the four side by side (scaled). Click a name to view one full-size, or “Open full ↗” for its own tab. See <a href="DESIGN_BRIEF.md" style="color:var(--accent)">DESIGN_BRIEF.md</a> for the rationale.</div>
   </div>
@@ -151,6 +157,8 @@
      sig:["near-monochrome paper","oversized numerals + mono","hairline rules, no decoration"]},
     {name:"Ember", ref:"— warm wellness-app / Teenage Engineering", file:"v4-ember.html",
      sig:["amber→terracotta as material","soft concentric cards","Fraunces headline numerals"]},
+    {name:"Hearth", ref:"— guest-experience reframe (warm liquid glass)", file:"control-v2.html",
+     sig:["comfort index over revenue","Live / Floor / Tables frame","sensory device tiles"]},
   ];
   var nav=document.getElementById('nav');
   var frames=[].slice.call(document.querySelectorAll('#single iframe'));
