@@ -14,4 +14,20 @@ PORT="${PORT:-8000}"
 
 BACKEND_WS="ws://127.0.0.1:${PORT}/ws" python -m actuators.run &
 
+# Optional: replay a recorded live session so judges see a working model "in
+# progress" (live occupancy / comfort / £ walked away / action feed) even with no
+# camera attached. Gated on SAMPLE_REPLAY so local dev with a real camera is
+# unaffected. Like the actuator it retries the local backend until uvicorn is up.
+case "${SAMPLE_REPLAY:-}" in
+  1|true|TRUE|yes|on)
+    # The /app/data volume shadows any recording baked into the image there, and
+    # data/ is excluded from the `railway up` upload, so on Railway the recording
+    # ships under samples/ (outside the volume). Prefer an explicit REPLAY_FILE,
+    # then the local data/ copy, then the baked samples/ copy.
+    REPLAY_FILE="${REPLAY_FILE:-data/sample_session.jsonl}"
+    [ -s "$REPLAY_FILE" ] || REPLAY_FILE="samples/sample_session.jsonl"
+    BACKEND_URL="http://127.0.0.1:${PORT}" REPLAY_FILE="$REPLAY_FILE" python -m shared.replay &
+    ;;
+esac
+
 exec uvicorn backend.main:app --host 0.0.0.0 --port "${PORT}"
