@@ -6,10 +6,7 @@
 
 ### *Your venue, but it runs itself.*
 
-**One camera you already own → privacy-first computer vision → an AI agent that actually
-acts** — tuning the atmosphere (music, lighting, scent, temperature) and keeping the queue
-moving, with a live **Comfort Index**. No faces stored. No surge pricing. Every action
-helps a guest or a staff member.
+*OWhat it is: an ambient autopilot for independent venues — cafés, bars, restaurants, hotels, and boutiques. It reads the room from a single existing camera and takes real, gentle actions to make guests comfortable and keep service moving.
 
 <p>
 <a href="https://golden-coffee-production.up.railway.app"><img alt="Live dashboard" src="https://img.shields.io/badge/Live_Demo-Comfort_Dashboard-d9a441?style=for-the-badge"></a>
@@ -24,9 +21,6 @@ helps a guest or a staff member.
 <img alt="Privacy-first" src="https://img.shields.io/badge/Privacy-no_faces_stored-success">
 </p>
 
-> **What it is:** an *ambient autopilot* for independent venues — cafés, bars, restaurants,
-> hotels, and boutiques. It reads the room from a single existing camera and takes real,
-> gentle actions to make guests comfortable and keep service moving.
 >
 > **Why it matters:** venue owners already have cameras nobody watches and a vibe that drives
 > (or kills) dwell time. Caffe Steve turns that one camera into a teammate that handles the
@@ -55,31 +49,6 @@ uses ephemeral ByteTrack IDs — never a person's identity. No demographics, no 
 scoring, no using discomfort to move people along. A hardened `--privacy-mode` strips
 bounding boxes entirely and adds differential-privacy noise to the heatmap.
 
-**UK Sovereign AI — Flock.io federated learning.** Every venue runs `CaféComfortNet`,
-a tiny policy model (8→16→8→4, ~500 parameters) that learns which ambient adjustments
-improve guest experience from live scene data. Crucially, it trains *collectively* across
-the café network without any venue ever sharing raw data:
-
-```
-Each café                              Flock.io aggregator
-────────────────────────────────────   ─────────────────────────────
-SceneEvents → local training           Receives: noisy gradient delta
-Gradient clipped to L2 norm 1.0        Runs:     FedAvg across all nodes
-+ Gaussian noise (DP-SGD)              Returns:  improved global model
-────────────────────────────────────   ─────────────────────────────
-Only a sanitised gradient vector       Never sees: video, tracks, counts
-crosses the network                    Mathematical (ε,δ)-DP guarantee
-```
-
-A new café opening on any UK high street immediately inherits the collective
-intelligence of every café that came before — without those cafés giving up
-a single customer record. British businesses, British data, British AI.
-
-```bash
-python -m federated.fl_node          # train + contribute to Flock.io
-python -m federated.server           # local aggregation server (dev/demo)
-python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
-```
 
 ---
 
@@ -93,7 +62,7 @@ Comfort Index, and the agent action feed all updating — even with no camera at
 |---|---|
 | **Live comfort dashboard** (live tiles, action feed, Comfort Index, 3D twin) | <https://api.caffesteve.com> |
 | **Floorplan scanner PWA** (pick a layout or scan your own → 3D twin) | <https://api.caffesteve.com/scan/> |
-| **Marketing site + pricing + self-serve sign-up** | <https://landing-gamma-eight-53.vercel.app> |
+| **Marketing site + pricing + self-serve sign-up** | <https://caffesteve.com> |
 
 **🔑 Judge demo login** — on the marketing site, click **Sign in → "Sign in with the demo
 account"**, or enter **`demo@caffesteve.com`** / **`stevedemo24`**. This account is seeded on
@@ -155,6 +124,33 @@ python -m actuators.run                  # drive real devices (Spotify / Hue / I
 📚 Full setup, devices, and the Telegram bot: **[docs/local-setup.md](docs/local-setup.md)**.
 
 ---
+
+**UK Sovereign AI — Flock.io federated learning.** Every venue runs `CaféComfortNet`,
+a tiny policy model (8→16→8→4, ~500 parameters) that learns which ambient adjustments
+improve guest experience from live scene data. Crucially, it trains *collectively* across
+the café network without any venue ever sharing raw data:
+
+```
+Each café                              Flock.io aggregator
+────────────────────────────────────   ─────────────────────────────
+SceneEvents → local training           Receives: noisy gradient delta
+Gradient clipped to L2 norm 1.0        Runs:     FedAvg across all nodes
++ Gaussian noise (DP-SGD)              Returns:  improved global model
+────────────────────────────────────   ─────────────────────────────
+Only a sanitised gradient vector       Never sees: video, tracks, counts
+crosses the network                    Mathematical (ε,δ)-DP guarantee
+```
+
+A new café opening on any UK high street immediately inherits the collective
+intelligence of every café that came before — without those cafés giving up
+a single customer record. British businesses, British data, British AI.
+
+```bash
+python -m federated.fl_node          # train + contribute to Flock.io
+python -m federated.server           # local aggregation server (dev/demo)
+python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
+```
+
 
 ## 🧠 How it works
 
@@ -249,10 +245,10 @@ Full unit economics: **[docs/pricing.md](docs/pricing.md)** · Investor charts: 
 
 | Bounty | Status | How it's integrated |
 |---|---|---|
-| **Sui / Walrus** | 🟢 **Live** | `onchain/walrus.py` + `POST /onchain/snapshot` anchor anonymized metrics + the agent's action audit trail to the Walrus testnet over pure HTTP — returns a public, verifiable blob URL. No wallet needed. |
+| **Solvemon** | ✅ **Real business potential* | Spoke to real customers to validate the idea. Unique hardware software intergration with a data flywheel giving us definsbaility. Break even with 345 customers at one off £89 and sub price £59 per month.  |
 | **Vercel** | 🟢 **Live-ready** | A separate production Next.js 14 + Clerk app in `web/` (marketing, auth, multi-venue onboarding) deploys independently to Vercel; the static dashboard is also Vercel-deployable and `?ws=`-aware. See [VERCEL.md](VERCEL.md). |
 | **FLock** | 🟢 **Model ported; demo runs** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally. On-chain packaging (Docker/IPFS/FlockTask) is documented but not executed — see [federated/FLOCK.md](federated/FLOCK.md). |
-| **Codeplain** | ✅ **Spec→code PWA built** | A companion mobile PWA generated spec-first with Codeplain from [`codeplain/golden_coffee_app.plain`](codeplain/golden_coffee_app.plain) → [`codeplain/dist/`](codeplain/dist/) (TypeScript React — room comfort, controls, activity audit feed, Walrus verify). Plan + workflow in [codeplain/README.md](codeplain/README.md). |
+
 
 🔎 Full per-bounty write-up: **[docs/bounties.md](docs/bounties.md)**.
 
