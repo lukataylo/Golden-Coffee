@@ -281,6 +281,7 @@ docs/         📖 this project's wiki
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Data flow, the `SceneEvent` + `AgentAction` contracts, every endpoint. |
 | [docs/features.md](docs/features.md) | Every feature explained: comfort autopilot, rush copilot, tables/cleaning, scan PWA, federated. |
+| [PITCH.md](PITCH.md) | **The 3-minute pitch — single source of truth:** one-liner, the hero moment, proof points, run-of-show checklist, and the focus discipline. |
 | [docs/demo-guide.md](docs/demo-guide.md) | A tight 3-minute run-of-show for judges + the hero moment. |
 | [docs/privacy.md](docs/privacy.md) | The privacy-first stance — exactly what is and isn't stored. |
 | [docs/bounties.md](docs/bounties.md) | Each sponsor track and how we integrated it. |
