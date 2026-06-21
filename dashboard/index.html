@@ -1209,6 +1209,9 @@
     setConn(retry === 0 ? "connecting" : "down");
     try { sock = new WebSocket(EP.ws); } catch (e) { scheduleReconnect(); return; }
     sock.onopen = function () {
+      // Backend recovered — if we'd fallen back to the demo as insurance, exit it
+      // and resume the live feed.
+      if (_demoFallback) { _demoFallback = false; setDemo(false); }
       retry = 0; setConn("live");
       // backend replays its action log on (re)connect -> reset derived state so
       // delta-based nudges (temperature) stay idempotent and the feed doesn't dup.
@@ -1234,7 +1237,15 @@
     sock.onclose = function () { setConn("down"); scheduleReconnect(); };
     sock.onerror = function () { try { sock.close(); } catch (e) {} };
   }
-  function scheduleReconnect() { retry++; setTimeout(connect, Math.min(1000 * Math.pow(1.5, retry), 8000)); }
+  // Live-demo insurance: if the backend stays down for several seconds (laptop/wifi
+  // hiccup mid-pitch), fall back to the self-contained demo so the screen never
+  // freezes. onopen exits the fallback the moment the backend returns.
+  var _demoFallback = false;
+  function scheduleReconnect() {
+    retry++;
+    if (retry >= 3 && !demoActive) { _demoFallback = true; setDemo(true); }
+    setTimeout(connect, Math.min(1000 * Math.pow(1.5, retry), 8000));
+  }
 
   // ====================================================================
   //  DEMO MODE  (self-contained synthetic café — no backend needed)
