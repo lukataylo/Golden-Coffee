@@ -3,9 +3,9 @@
 ### *Your café, but it runs itself.*
 
 **One camera you already own → privacy-first computer vision → an AI agent that actually
-acts** — tuning the atmosphere (music, lighting, scent, temperature) and protecting
-speed-of-service (queue alerts, table service), with a live **Comfort Index**. No faces
-stored. No surge pricing. Every action helps a guest or a staff member.
+acts** — tuning the atmosphere (music, lighting, scent, temperature) and keeping the queue
+moving, with a live **Comfort Index**. No faces stored. No surge pricing. Every action
+helps a guest or a staff member.
 
 <p>
 <a href="https://golden-coffee-production.up.railway.app"><img alt="Live dashboard" src="https://img.shields.io/badge/Live_Demo-Comfort_Dashboard-d9a441?style=for-the-badge"></a>
@@ -20,7 +20,7 @@ stored. No surge pricing. Every action helps a guest or a staff member.
 <img alt="Privacy-first" src="https://img.shields.io/badge/Privacy-no_faces_stored-success">
 </p>
 
-> **What it is:** an *ambient autopilot + rush copilot* for cafés and restaurants. It reads
+> **What it is:** an *ambient autopilot* for cafés and restaurants. It reads
 > the room from a single existing camera and takes real, gentle actions to make guests
 > comfortable and keep service fast.
 >
@@ -38,16 +38,13 @@ harsh — decides whether people stay for a second coffee. Nobody is watching al
 the time.
 
 **What Caffe Steve does.** It plugs into the camera you already own and understands the
-room — occupancy, queue length, the conversion funnel, per-table wait times, cleaning
-cadence. Then an agent *acts*:
+room — occupancy, queue length, the vibe. Then an agent *acts*:
 
 - 🎶 **Softens the music** when the room is full so it stays talkable; **lifts the vibe**
   in a lull.
 - ❄️ **Cools a busy, warming room** for comfort; warms and dims it for a cosy evening.
 - 🌿 Freshens the air with **scent** when it gets stuffy.
 - 🚨 **Alerts staff** — "queue at 6, open a second till" — *before* you lose the sale.
-- 🍽️ Flags **tables waiting too long** to order, be cleared, or get the bill.
-- 🏷️ Marks down **perishables** in a sustained lull (prices only ever go *down* — never a surge).
 
 **The privacy stance.** Faces are blurred on-device before anything is processed. Tracking
 uses ephemeral ByteTrack IDs — never a person's identity. No demographics, no employee
@@ -182,10 +179,10 @@ flowchart LR
 | Component | Path | Role |
 |---|---|---|
 | **Perception** | `perception/` | YOLO11 + supervision (ByteTrack, polygon zones, dwell, funnel, heatmap, tables, cleaning). On-device face blur. Emits `SceneEvent`s. |
-| **Agent** | `agent/` | Deterministic comfort + rush + table/cleaning policy; on-device music model; footfall forecast; optional Claude tool-use. Emits `AgentAction`s. |
+| **Agent** | `agent/` | Deterministic comfort policy; on-device music model; optional Claude tool-use. Emits `AgentAction`s. |
 | **Backend hub** | `backend/` | FastAPI WebSocket fan-out + REST. Decouples producers from consumers; replays state to new clients; MJPEG stream. |
 | **Actuators** | `actuators/` | Subscribes to `/ws` and drives real devices: Spotify, Philips Hue, Broadlink IR (AC/heater), scent diffuser, Telegram. |
-| **Dashboard** | `dashboard/` | Single-file comfort dashboard — Live / Floorplan / Tables, action feed, Comfort Index, Three.js 3D twin. No build step. |
+| **Dashboard** | `dashboard/` | Single-file comfort dashboard — Live / Floorplan, action feed, Comfort Index, Three.js 3D twin. No build step. |
 | **Scan PWA** | `dashboard/scan/` | Installable PWA: pick a coffee-shop preset or trace your own floorplan → 3D twin → push geometry to live. |
 | **Federated** | `federated/` | Cross-café learning (occupancy thresholds + music model) that shares only ratios/weights, never video. FLock port. |
 | **On-chain** | `onchain/` | Anchors the anonymized metrics + agent action audit trail to Walrus (Sui ecosystem). |
@@ -205,14 +202,9 @@ flowchart LR
 | 🔊 **Hosted sound library** | A self-hosted, royalty-free café library (CC-BY, 6 moods) is the **default in-browser player** — zero setup, no account. Spotify is an optional fallback toggled from a Source dropdown. `GET /music/library`. |
 | 🔌 **Integrations control surface** | Dashboard → **Integrations**: live status for Xiaomi/Mijia, Philips Hue, Climate (IR), Spotify, Telegram, **Alexa** & **Google Home**; direct Xiaomi lamp + diffuser control; voice-assistant routine webhooks with a test button. `GET /integrations`. |
 | 🪪 **Self-serve sign-up + data capture** | Marketing site → a 6-step onboarding with a **5-question business profile** (type, ambiance, busiest period, goal, size) → real account (SQLite + PBKDF2 + bearer tokens) on the hub. `POST /auth/signup`. |
-| 🚨 **Rush copilot** | Queue over threshold → "open a second till." Escalates to **urgent** when walk-offs are rising, and surfaces the **£ walked away** today (avg ticket × abandons). |
-| 🍽️ **Table service SLAs** | Per-table waits: dirty-table hygiene (≥3 min), order-taking (≥6 min), bill request (≥4 min), plus a generic overdue catch-all. |
-| 🧽 **Cleaning cadence** | Tracks bussing + zone cleaning (e.g. restroom) by **usage *and* elapsed time**, alerting when overdue. |
-| 🏷️ **Quiet-period markdown** | After a sustained lull, marks down perishables on the menu board — `never_surge` enforced per item; resets when the room fills. |
-| 📈 **Footfall forecast** | Simple time-series over occupancy → a next-hour staffing heads-up. |
 | 📱 **Scan-to-3D** | PWA: pick one of five café layouts (Corner Café, Open Roastery, Grab & Go Kiosk, Bistro + Patio, Long Bar Espresso) or trace your own floorplan photo → live 3D twin → push geometry to the cameras. |
 | 🌐 **Federated learning** | Cafés tune each other's thresholds *and* music model without sharing a single frame — only capacity-normalized ratios and model weights leave a venue. |
-| 📲 **Telegram alerts** | Staff get the urgent stuff (queue, overdue tables) pushed to their phones. |
+| 📲 **Telegram alerts** | Staff get queue alerts pushed to their phones. |
 | ⛓️ **Tamper-proof audit** | One call anchors the anonymized metrics + the agent's action log to Walrus — an independently verifiable record of what the AI did. |
 
 ### 📊 Accuracy, honestly
@@ -259,7 +251,7 @@ We benchmarked the perception pipeline against a vision-LLM judge on 24 frames a
 ```
 backend/      FastAPI WebSocket hub + REST (deployed)
 perception/   YOLO11 + supervision → SceneEvents; zone/geometry tools
-agent/        policy + music model + forecast + Claude path
+agent/        policy + music model + Claude path
 actuators/    device executors (music/lights/IR/scent/telegram)
 dashboard/    comfort dashboard (+ 3D twin) and scan/ PWA
 federated/    cross-café learning + FLock port
@@ -277,7 +269,7 @@ docs/         📖 this project's wiki
 | Page | What's inside |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Data flow, the `SceneEvent` + `AgentAction` contracts, every endpoint. |
-| [docs/features.md](docs/features.md) | Every feature explained: comfort autopilot, rush copilot, tables/cleaning, scan PWA, federated. |
+| [docs/features.md](docs/features.md) | Every feature explained: comfort autopilot, scan PWA, federated learning. |
 | [docs/demo-guide.md](docs/demo-guide.md) | A tight 3-minute run-of-show for judges + the hero moment. |
 | [docs/privacy.md](docs/privacy.md) | The privacy-first stance — exactly what is and isn't stored. |
 | [docs/bounties.md](docs/bounties.md) | Each sponsor track and how we integrated it. |
