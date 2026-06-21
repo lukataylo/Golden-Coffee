@@ -88,10 +88,16 @@ python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
 | | Link |
 |---|---|
 | **Comfort dashboard** (live tiles, action feed, Comfort Index, 3D floor twin) | <https://golden-coffee-production.up.railway.app> |
+| **Zero-setup demo** (self-contained, runs in the browser — no backend) | <https://lukataylo.github.io/Golden-Coffee/?demo=1> |
 | **Floorplan scanner PWA** (pick a layout or scan your own → 3D twin) | <https://golden-coffee-production.up.railway.app/scan/> |
 
 No backend handy? The dashboard has a self-contained **▶ Demo** mode
-(`?demo=1`) that drives every tile from a synthetic café with zero setup.
+(`?demo=1`) that drives every tile from a synthetic café with zero setup — the
+£-at-risk chip climbs, conversion updates, the 3D twin retunes, the feed narrates.
+
+> **The GitHub Pages URL above** auto-publishes the demo from `.github/workflows/pages.yml`.
+> It needs Pages enabled once — **Settings → Pages → Source = "GitHub Actions"** (one click,
+> no token; the Actions token can't enable Pages itself) — then it deploys on every push to `main`.
 
 ### 🔑 Demo accounts (sample coffee shops)
 
