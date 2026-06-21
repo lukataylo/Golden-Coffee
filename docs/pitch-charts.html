@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caffe Steve — Pitch Charts</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0e0e10;
+    color: #f0ece4;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 40px 24px 80px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #d9a441;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 48px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #18181b;
+    border: 1px solid #2a2a2e;
+    border-radius: 14px;
+    padding: 28px 24px 20px;
+  }
+  .card.wide {
+    grid-column: 1 / -1;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #d9a441;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .card p {
+    font-size: 0.78rem;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .stat-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    flex: 1;
+    background: #111113;
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat .num {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #d9a441;
+  }
+  .stat .label {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  canvas { max-height: 300px; }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    .card.wide { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<h1>☕ Caffe Steve — Market & Revenue</h1>
+<p class="subtitle">Investor pitch overview · June 2026 · All prices ex-VAT · Tier 1 subscription model</p>
+
+<div class="grid">
+
+  <!-- CHART 1: Revenue / Profit curve -->
+  <div class="card wide">
+    <h2>Revenue &amp; Profit vs. Paying Sites (Tier 1)</h2>
+    <p>Based on £63/mo subscription · £13/mo variable COGS · £20k/mo fixed costs · contribution margin £50/site</p>
+    <div class="stat-row">
+      <div class="stat"><div class="num">400</div><div class="label">Sites to break even</div></div>
+      <div class="stat"><div class="num">952</div><div class="label">Sites for £60k MRR</div></div>
+      <div class="stat"><div class="num">79%</div><div class="label">Subscription gross margin</div></div>
+      <div class="stat"><div class="num">6%</div><div class="label">Of London cafés alone</div></div>
+    </div>
+    <canvas id="revenueChart"></canvas>
+  </div>
+
+  <!-- CHART 2: London venue market -->
+  <div class="card">
+    <h2>London Independent Venues</h2>
+    <p>Estimated independent (non-chain) venues in Greater London — all are potential Caffe Steve customers</p>
+    <canvas id="londonChart"></canvas>
+  </div>
+
+  <!-- CHART 3: UK broader market -->
+  <div class="card">
+    <h2>UK Broader Market</h2>
+    <p>London vs. rest of UK — independent venues by category. Total addressable market ~180k venues.</p>
+    <canvas id="ukChart"></canvas>
+  </div>
+
+  <!-- CHART 4: Path to £60k MRR mix -->
+  <div class="card wide">
+    <h2>Paths to £60k Monthly Recurring Revenue</h2>
+    <p>Different tier mixes that each hit ~£60k MRR. Real growth will be a blend — shown here to illustrate leverage of Tier 2 &amp; 3 upsells.</p>
+    <canvas id="pathChart"></canvas>
+  </div>
+
+</div>
+
+<script>
+const GOLD   = "#d9a441";
+const GOLD2  = "#e8b84b";
+const GREEN  = "#7ed87e";
+const BLUE   = "#6fb6e0";
+const ROSE   = "#e07a7a";
+const PURPLE = "#b07ae0";
+const GREY   = "#555";
+
+Chart.defaults.color = "#888";
+Chart.defaults.borderColor = "#2a2a2e";
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+/* ── 1. Revenue / Profit curve ── */
+const sites = [0,100,200,300,400,500,600,700,800,900,952,1000,1200];
+const revenue = sites.map(s => s * 63);
+const profit  = sites.map(s => s * 50 - 20000);
+const fixed   = sites.map(() => 20000);
+
+new Chart(document.getElementById("revenueChart"), {
+  type: "line",
+  data: {
+    labels: sites.map(s => s + " sites"),
+    datasets: [
+      {
+        label: "Monthly Revenue (£)",
+        data: revenue,
+        borderColor: GOLD,
+        backgroundColor: "rgba(217,164,65,0.08)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      },
+      {
+        label: "Monthly Profit (£)",
+        data: profit,
+        borderColor: GREEN,
+        backgroundColor: "rgba(126,216,126,0.06)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        borderDash: [],
+      },
+      {
+        label: "Fixed Cost (£20k)",
+        data: fixed,
+        borderColor: ROSE,
+        borderDash: [6,4],
+        pointRadius: 0,
+        tension: 0,
+        fill: false,
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { position: "top" },
+      tooltip: {
+        callbacks: {
+          label: ctx => " £" + ctx.parsed.y.toLocaleString()
+        }
+      },
+      annotation: {}
+    },
+    scales: {
+      y: {
+        ticks: { callback: v => "£" + (v/1000).toFixed(0) + "k" },
+        grid: { color: "#1e1e22" }
+      },
+      x: { grid: { color: "#1e1e22" } }
+    }
+  }
+});
+
+/* ── 2. London venues doughnut ── */
+const londonLabels = ["Independent Cafés", "Bars & Pubs", "Restaurants", "Hotels", "Barber Shops"];
+const londonData   = [4500, 7500, 17000, 1700, 3500];
+const londonTotal  = londonData.reduce((a,b) => a+b, 0);
+
+new Chart(document.getElementById("londonChart"), {
+  type: "doughnut",
+  data: {
+    labels: londonLabels,
+    datasets: [{
+      data: londonData,
+      backgroundColor: [GOLD, BLUE, GREEN, PURPLE, ROSE],
+      borderColor: "#18181b",
+      borderWidth: 3,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: "60%",
+    plugins: {
+      legend: { position: "right", labels: { boxWidth: 12, padding: 14 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => " " + ctx.label + ": ~" + ctx.parsed.toLocaleString() + " venues"
+        }
+      }
+    }
+  },
+  plugins: [{
+    id: "centerText",
+    beforeDraw(chart) {
+      const { width, height, ctx } = chart;
+      ctx.save();
+      ctx.font = "700 1.5rem -apple-system, sans-serif";
+      ctx.fillStyle = GOLD;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const cx = chart.getDatasetMeta(0).data[0]?.x ?? width/2;
+      const cy = chart.getDatasetMeta(0).data[0]?.y ?? height/2;
+      ctx.fillText("~" + (londonTotal/1000).toFixed(0) + "k", cx, cy - 10);
+      ctx.font = "0.65rem -apple-system, sans-serif";
+      ctx.fillStyle = "#666";
+      ctx.fillText("London venues", cx, cy + 12);
+      ctx.restore();
+    }
+  }]
+});
+
+/* ── 3. UK broader market stacked bar ── */
+new Chart(document.getElementById("ukChart"), {
+  type: "bar",
+  data: {
+    labels: ["Cafés", "Bars & Pubs", "Restaurants", "Hotels", "Barber Shops"],
+    datasets: [
+      {
+        label: "London",
+        data: [4500, 7500, 17000, 1700, 3500],
+        backgroundColor: GOLD,
+        borderRadius: 4,
+      },
+      {
+        label: "Rest of UK",
+        data: [50000-4500, 45000-7500, 65000-17000, 30000-1700, 18000-3500],
+        backgroundColor: BLUE,
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: { stacked: true, grid: { color: "#1e1e22" } },
+      y: {
+        stacked: true,
+        grid: { color: "#1e1e22" },
+        ticks: { callback: v => (v/1000).toFixed(0) + "k" }
+      }
+    },
+    plugins: {
+      legend: { position: "top" },
+      tooltip: {
+        callbacks: {
+          label: ctx => " " + ctx.dataset.label + ": ~" + ctx.parsed.y.toLocaleString()
+        }
+      }
+    }
+  }
+});
+
+/* ── 4. Paths to £60k MRR ── */
+new Chart(document.getElementById("pathChart"), {
+  type: "bar",
+  data: {
+    labels: [
+      "All Tier 1\n(£63/mo)",
+      "All Tier 2\n(£99/mo)",
+      "All Tier 3\n(£179/mo)",
+      "Mixed\n(50% T1, 30% T2, 20% T3)",
+    ],
+    datasets: [
+      {
+        label: "Sites needed for £60k MRR",
+        data: [
+          Math.ceil(60000 / 63),
+          Math.ceil(60000 / 99),
+          Math.ceil(60000 / 179),
+          Math.ceil(60000 / (0.5*63 + 0.3*99 + 0.2*179)),
+        ],
+        backgroundColor: [GOLD, BLUE, GREEN, PURPLE],
+        borderRadius: 6,
+        barThickness: 60,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => " " + ctx.parsed.y + " paying sites needed"
+        }
+      }
+    },
+    scales: {
+      y: {
+        grid: { color: "#1e1e22" },
+        ticks: { callback: v => v + " sites" }
+      },
+      x: { grid: { color: "#1e1e22" } }
+    }
+  }
+});
+</script>
+</body>
+</html>
