@@ -1,6 +1,6 @@
 # ☕ Caffe Steve
 
-### *Your café, but it runs itself.*
+### *Your venue, but it runs itself.*
 
 **One camera you already own → privacy-first computer vision → an AI agent that actually
 acts** — tuning the atmosphere (music, lighting, scent, temperature) and keeping the queue
@@ -20,13 +20,13 @@ helps a guest or a staff member.
 <img alt="Privacy-first" src="https://img.shields.io/badge/Privacy-no_faces_stored-success">
 </p>
 
-> **What it is:** an *ambient autopilot* for cafés and restaurants. It reads
-> the room from a single existing camera and takes real, gentle actions to make guests
-> comfortable and keep service fast.
+> **What it is:** an *ambient autopilot* for independent venues — cafés, bars, restaurants,
+> hotels, and boutiques. It reads the room from a single existing camera and takes real,
+> gentle actions to make guests comfortable and keep service moving.
 >
-> **Why it matters:** café owners already have cameras nobody watches, queues that quietly
-> lose sales, and a vibe that drives (or kills) dwell time. Caffe Steve turns that one
-> camera into a teammate that handles the room so the owner can run the shop.
+> **Why it matters:** venue owners already have cameras nobody watches and a vibe that drives
+> (or kills) dwell time. Caffe Steve turns that one camera into a teammate that handles the
+> atmosphere so the owner can run the business.
 
 ---
 
@@ -83,7 +83,7 @@ python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
 
 **It's all live right now.** The deployed backend is replaying a real recorded session
 (`SAMPLE_REPLAY=1`), so the dashboard shows a **working model in motion** — occupancy,
-Comfort Index, "£ walked away" and the agent action feed all updating — even with no camera attached.
+Comfort Index, and the agent action feed all updating — even with no camera attached.
 
 | What | Link |
 |---|---|
@@ -178,7 +178,7 @@ flowchart LR
 
 | Component | Path | Role |
 |---|---|---|
-| **Perception** | `perception/` | YOLO11 + supervision (ByteTrack, polygon zones, dwell, funnel, heatmap, tables, cleaning). On-device face blur. Emits `SceneEvent`s. |
+| **Perception** | `perception/` | YOLO11 + supervision (ByteTrack, polygon zones, occupancy, dwell, heatmap). On-device face blur. Emits `SceneEvent`s. |
 | **Agent** | `agent/` | Deterministic comfort policy; on-device music model; optional Claude tool-use. Emits `AgentAction`s. |
 | **Backend hub** | `backend/` | FastAPI WebSocket fan-out + REST. Decouples producers from consumers; replays state to new clients; MJPEG stream. |
 | **Actuators** | `actuators/` | Subscribes to `/ws` and drives real devices: Spotify, Philips Hue, Broadlink IR (AC/heater), scent diffuser, Telegram. |
@@ -219,6 +219,25 @@ We benchmarked the perception pipeline against a vision-LLM judge on 24 frames a
   (yolo11m/x, SAHI tiling, real zone geometry) is documented, not hidden.
 
 📋 Feature-by-feature detail: **[docs/features.md](docs/features.md)**.
+
+---
+
+## 💼 Business model
+
+**Steve** is a physical ceramic sensor (camera + environment module, China-sourced, UK landed) that sits in any venue and runs the room.
+
+| | |
+|---|---|
+| **Steve device** | £49.90 ex-VAT · includes 3 months free AI · acquisition anchor, ~10% hardware margin |
+| **Tier 1 subscription** | £59/month — AI ambience only |
+| **Tier 2 subscription** | £89/month — AI + lighting control (£899 setup) |
+| **Tier 3 subscription** | £159/month — full ecosystem: lighting + AC + scent (£1,999 setup) |
+| **Subscription gross margin** | ~67–78% across tiers |
+| **Blended variable COGS** | £18.50/site/month (70% T1 / 20% T2 / 10% T3 mix) |
+| **Break-even** | ~354 paying sites · London alone has ~34,000 independent venues |
+| **UK addressable market** | ~180,000 independent venues (cafés, bars, restaurants, hotels, barber shops) |
+
+Full unit economics: **[docs/pricing.md](docs/pricing.md)** · Investor charts: **[docs/pitch-charts.html](docs/pitch-charts.html)**
 
 ---
 
@@ -279,6 +298,6 @@ Reference docs: [TRACKS.md](TRACKS.md) · [RESEARCH.md](RESEARCH.md) · [FLOORMA
 
 ---
 
-<sub>Built at the **Encode Vibe Coding Hackathon**. Caffe Steve is an ambient + ops copilot,
+<sub>Built at the **Encode Vibe Coding Hackathon**. Caffe Steve is an ambient autopilot,
 not a surveillance tool — no employee scoring, no demographics, no surge pricing, no using
 discomfort to move people along.</sub>
