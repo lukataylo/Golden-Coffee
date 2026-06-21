@@ -1221,11 +1221,12 @@
     function busy() { return wave > 0.6; }
     if (t % 8 === 0) {
       if (busy()) {
-        out.push({ action:"set_music_volume", auto:true, ts:ts, params:{ volume:42 }, rationale:"Room's filling up — easing the music down so it stays calm." });
+        // Wider swing (matches the real policy's 38) so the softening is clearly audible.
+        out.push({ action:"set_music_volume", auto:true, ts:ts, params:{ volume:38 }, rationale:"Room's filling up — easing the music down so it stays calm." });
         out.push({ action:"set_lighting", auto:true, ts:ts, params:{ brightness:64, warmth:"cool" }, rationale:"Brighter, cooler light keeps a busy room feeling fresh." });
       } else {
         out.push({ action:"set_lighting", auto:true, ts:ts, params:{ brightness:48, warmth:"warm" }, rationale:"Quiet spell — warming the lights to make it cosy." });
-        out.push({ action:"set_music_volume", auto:true, ts:ts, params:{ volume:55 }, rationale:"Lifting the vibe a touch to fill the lull." });
+        out.push({ action:"set_music_volume", auto:true, ts:ts, params:{ volume:62 }, rationale:"Lifting the vibe a touch to fill the lull." });
       }
     }
     if (t % 14 === 6) {
