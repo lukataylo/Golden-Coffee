@@ -4,24 +4,24 @@
   "attribution": "Music by Kevin MacLeod (incompetech.com) — licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)",
   "tracks": [
     {
-      "id": "sunrise_acoustic",
-      "label": "Sunrise Acoustic",
+      "id": "morning_rush",
+      "label": "Morning Rush",
       "file": "morning-acoustic.mp3",
       "title": "Cattails",
       "artist": "Kevin MacLeod",
-      "mood": "sunrise_acoustic",
+      "mood": "morning_rush",
       "blurb": "Warm acoustic coffeehouse — gentle mornings",
       "tags": ["acoustic", "warm", "morning", "calm"],
       "bpm": 84
     },
     {
-      "id": "daytime_focus",
-      "label": "Daytime Focus",
+      "id": "midday_dwell",
+      "label": "Midday Dwell",
       "file": "daytime-focus.mp3",
       "title": "Local Forecast – Elevator",
       "artist": "Kevin MacLeod",
-      "mood": "daytime_focus",
-      "blurb": "Mellow, unobtrusive — steady working hours",
+      "mood": "midday_dwell",
+      "blurb": "Mellow neo-soul / lo-fi — steady working hours",
       "tags": ["mellow", "lofi", "focus", "daytime"],
       "bpm": 94
     },
@@ -59,13 +59,13 @@
       "bpm": 80
     },
     {
-      "id": "evening_warm",
-      "label": "Evening Warm",
+      "id": "afternoon_lounge",
+      "label": "Afternoon Lounge",
       "file": "evening-jazz.mp3",
       "title": "Hep Cats",
       "artist": "Kevin MacLeod",
-      "mood": "evening_warm",
-      "blurb": "Warm swing & jazz — evening wind-down",
+      "mood": "afternoon_lounge",
+      "blurb": "Warm bossa / jazz soul — premium wind-down",
       "tags": ["jazz", "swing", "warm", "evening"],
       "bpm": 76
     }

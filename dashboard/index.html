@@ -694,13 +694,25 @@
         if (typeof p.brightness === "number") comfort.brightness = clamp(p.brightness, 0, 100);
         if (p.warmth) comfort.warmth = p.warmth; break;
       case "set_music_volume":
-        if (typeof p.volume === "number") comfort.volume = clamp(p.volume, 0, 100); break;
+        if (typeof p.volume === "number") comfort.volume = clamp(p.volume, 0, 100);
+        applyAgentMusic(null); break;
       case "set_music":
         if (p.mood || p.label) comfort.mood = p.mood || p.label;
         if (typeof p.bpm === "number") comfort.bpm = p.bpm;
-        if (typeof p.volume === "number") comfort.volume = clamp(p.volume, 0, 100); break;
+        if (typeof p.volume === "number") comfort.volume = clamp(p.volume, 0, 100);
+        applyAgentMusic(p.mood || null); break;
     }
     renderComfort();
+  }
+
+  // Drive the REAL in-browser audio from the agent's music actions, so the music
+  // audibly softens/lifts and switches vibe when the room changes — a hardware-free
+  // "device reacts" moment. The hosted player lives in a separate script block, so
+  // we call across via the window.gcAgentMusic bridge it exposes.
+  function applyAgentMusic(mood) {
+    try {
+      if (window.gcAgentMusic) window.gcAgentMusic(comfort.volume, mood);
+    } catch (e) { /* never let audio wiring break the dashboard */ }
   }
 
   // ---------- hero chips (comfort + mood) ----------
@@ -1433,6 +1445,23 @@
   function libNext() { libLoad(LIB.idx + 1, true); }
   function libPrev() { libLoad(LIB.idx - 1, true); }
   window.libPlayPause = libPlayPause; window.libNext = libNext; window.libPrev = libPrev;
+
+  // Bridge: let the agent (in the main script block) drive the real hosted audio.
+  // Volume always tracks the agent's intent; a mood switches to the matching track
+  // (1:1 with agent/music_model moods) and plays it only if audio was already going
+  // (browsers block autoplay until a user gesture).
+  window.gcAgentMusic = function (volPct, mood) {
+    if (typeof volPct === "number") {
+      libAudio.volume = clamp(volPct, 0, 100) / 100;
+      var vol = $("lib-vol"), volPctEl = $("lib-vol-pct");
+      if (vol) vol.value = Math.round(volPct);
+      if (volPctEl) volPctEl.textContent = Math.round(volPct) + "%";
+    }
+    if (mood && LIB.tracks && LIB.tracks.length) {
+      var idx = LIB.tracks.findIndex(function (t) { return t.mood === mood; });
+      if (idx >= 0 && idx !== LIB.idx) libLoad(idx, LIB.started && !libAudio.paused);
+    }
+  };
 
   libAudio.addEventListener("play",  function () { var p = $("lib-play"); if (p) p.textContent = "⏸"; libStatus("Now playing · Kevin MacLeod · CC-BY 4.0"); });
   libAudio.addEventListener("pause", function () { var p = $("lib-play"); if (p) p.textContent = "▶"; });
