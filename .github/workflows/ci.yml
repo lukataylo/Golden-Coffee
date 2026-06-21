@@ -60,3 +60,31 @@ jobs:
               importlib.import_module(m)
               print("ok", m)
           PY
+
+  e2e:
+    # Real-browser smoke: renders the demo dashboard and asserts it loads with no
+    # JS errors and the hero chips (conversion + £-at-risk) + 3D canvas populate.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Playwright + Chromium
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Serve the dashboard
+        run: |
+          (cd dashboard && python3 -m http.server 8099 &)
+          for i in $(seq 1 20); do curl -sf http://127.0.0.1:8099/index.html >/dev/null && break; sleep 0.5; done
+      - name: Headless dashboard smoke (demo mode)
+        run: node scripts/smoke_dashboard.cjs
+      - name: Upload demo screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-demo-screenshot
+          path: /tmp/dashboard_demo.png
+          if-no-files-found: ignore
