@@ -422,6 +422,16 @@
           <!-- TODAY DIGEST (the owner's daily summary — also at GET /ops/report) -->
           <div style="padding:16px 18px;border-radius:20px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.12);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><h2 style="font-size:14px;font-weight:600;margin:0;">Today so far</h2><span style="font:600 10px/1 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;color:#9b8c7b;">digest</span></div>
+            <!-- CONVERSION FUNNEL — of everyone who walked in: ordered / waiting / walked away -->
+            <div style="margin-bottom:13px;">
+              <div style="display:flex;justify-content:space-between;font:500 9.5px/1 'JetBrains Mono',monospace;color:#9b8c7b;margin-bottom:5px;"><span id="fn-cap-in">— came in</span><span id="fn-cap-lost" style="color:#EB6A4E;">— walked</span></div>
+              <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.06);">
+                <div id="fn-ord" title="Ordered" style="width:0%;background:linear-gradient(90deg,#5BB873,#7ED87E);transition:width .5s;"></div>
+                <div id="fn-q" title="In the queue" style="width:0%;background:linear-gradient(90deg,#E0A341,#FFB85C);transition:width .5s;"></div>
+                <div id="fn-walk" title="Walked off" style="width:0%;background:linear-gradient(90deg,#C24A34,#EB6A4E);transition:width .5s;"></div>
+              </div>
+              <div style="display:flex;gap:12px;font:500 9.5px/1 'JetBrains Mono',monospace;color:#9b8c7b;margin-top:6px;"><span><span style="color:#7ED87E;">●</span> ordered</span><span><span style="color:#FFB85C;">●</span> queue</span><span><span style="color:#EB6A4E;">●</span> walked off</span></div>
+            </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
               <div><div id="dg-conv" style="font:700 19px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;color:#7ED87E;">—</div><div style="font:500 9.5px/1.2 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:#9b8c7b;margin-top:5px;">Conversion</div></div>
               <div><div id="dg-risk" style="font:700 19px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;color:#F2A48E;">£0</div><div style="font:500 9.5px/1.2 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:#9b8c7b;margin-top:5px;">At risk</div></div>
@@ -807,6 +817,15 @@
     setTxt("dg-risk", "£" + _lostGbpToday);
     setTxt("dg-peak", _digestPeak);
     setTxt("dg-walk", _digestWalk);
+    // Conversion funnel bar: split everyone who came in into ordered / queue / walked.
+    if (entered > 0) {
+      var inQ = Math.max(0, entered - ordered - ab);
+      var pO = 100 * ordered / entered, pQ = 100 * inQ / entered, pW = 100 * ab / entered;
+      var setW = function (id, w) { var e = $(id); if (e) e.style.width = w.toFixed(1) + "%"; };
+      setW("fn-ord", pO); setW("fn-q", pQ); setW("fn-walk", pW);
+      setTxt("fn-cap-in", entered + " came in");
+      setTxt("fn-cap-lost", _digestWalk + " walked · £" + _lostGbpToday);
+    }
   }
   var _digestWalk = 0, _digestPeak = 0;
 
