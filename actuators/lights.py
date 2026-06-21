@@ -33,19 +33,22 @@ HUE_GROUP = os.environ.get("HUE_GROUP", "")  # empty => all lights
 WARMTH_MIRED = {"warm": 450, "neutral": 320, "cool": 200}
 
 
-def set_lighting(brightness: int, warmth: str = "neutral") -> bool:
-    """Set brightness (0-100) and warmth (warm|neutral|cool) on the smart lights.
+def set_lighting(brightness: int, warmth: str = "neutral", ct: int | None = None) -> bool:
+    """Set brightness (0-100) and colour on the smart lights. `warmth` is the
+    warm|neutral|cool bucket; `ct` is an explicit colour temperature in Kelvin
+    (e.g. from a UI slider) and takes priority when provided.
 
-    A Xiaomi/Mijia lamp on the LAN takes priority when configured; otherwise we
-    fall through to a Philips Hue bridge."""
+    A Xiaomi/Mijia lamp takes priority when configured; otherwise we fall through
+    to a Philips Hue bridge."""
     brightness = max(0, min(100, int(brightness)))
-    mired = WARMTH_MIRED.get(warmth, 320)
+    # Hue uses mired (= 1e6 / Kelvin); derive it from ct when given, else the bucket.
+    mired = round(1_000_000 / int(ct)) if ct else WARMTH_MIRED.get(warmth, 320)
 
-    # Xiaomi/Mijia lamp first (local miIO) — see actuators/xiaomi.py.
+    # Xiaomi/Mijia lamp first — see actuators/xiaomi.py.
     from actuators import xiaomi
 
     if xiaomi.lamp_configured():
-        return xiaomi.lamp_set(brightness, warmth)
+        return xiaomi.lamp_set(brightness, warmth, ct=ct)
 
     if not HUE_BRIDGE_IP:
         print(f"[lights] (no HUE_BRIDGE_IP) would set brightness {brightness}% / {warmth}")

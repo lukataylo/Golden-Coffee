@@ -749,6 +749,7 @@ async def override(act: AgentAction) -> dict:
 # The landing page (Vercel) posts here; CORS is already open above.
 # ---------------------------------------------------------------------------
 auth.init_db()
+auth.seed_demo()  # always-present demo account for judges (idempotent)
 
 
 @app.post("/auth/signup")

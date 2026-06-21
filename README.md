@@ -82,16 +82,24 @@ python -m federated.sim              # offline simulation: 3 cafés, 5 rounds
 
 ---
 
-## 🔗 Live demo
+## 🔗 Live demo — for judges
 
-| | Link |
+**It's all live right now.** The deployed backend is replaying a real recorded session
+(`SAMPLE_REPLAY=1`), so the dashboard shows a **working model in motion** — occupancy,
+Comfort Index, "£ walked away" and the agent action feed all updating — even with no camera attached.
+
+| What | Link |
 |---|---|
-| **Marketing site + self-serve sign-up** (5-question onboarding → account) | <https://landing-gamma-eight-53.vercel.app> |
-| **Comfort dashboard** (live tiles, action feed, Comfort Index, 3D floor twin, music library, integrations) | <https://golden-coffee-production.up.railway.app> |
-| **Floorplan scanner PWA** (pick a layout or scan your own → 3D twin) | <https://golden-coffee-production.up.railway.app/scan/> |
+| **Live comfort dashboard** (live tiles, action feed, Comfort Index, 3D twin) | <https://api.caffesteve.com> |
+| **Floorplan scanner PWA** (pick a layout or scan your own → 3D twin) | <https://api.caffesteve.com/scan/> |
+| **Marketing site + pricing + self-serve sign-up** | <https://landing-gamma-eight-53.vercel.app> |
 
-No backend handy? The dashboard has a self-contained **▶ Demo** mode
-(`?demo=1`) that drives every tile from a synthetic café with zero setup.
+**🔑 Judge demo login** — on the marketing site, click **Sign in → "Sign in with the demo
+account"**, or enter **`demo@caffesteve.com`** / **`stevedemo24`**. This account is seeded on
+every backend boot, so it works even on a fresh deploy.
+
+The dashboard itself is **open — no login required**. No backend handy? It also has a
+self-contained **▶ Demo** mode (`?demo=1`) that drives every tile from a synthetic café.
 
 ### 🔑 Demo accounts (sample coffee shops)
 

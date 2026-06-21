@@ -57,7 +57,8 @@ def dispatch(action: dict) -> None:
                 delta_c=float(p["delta_c"]) if p.get("delta_c") is not None else None,
             )
         elif name == "set_lighting":
-            lights.set_lighting(int(p.get("brightness", 70)), str(p.get("warmth", "neutral")))
+            lights.set_lighting(int(p.get("brightness", 70)), str(p.get("warmth", "neutral")),
+                                ct=p.get("ct"))
         elif name == "set_scent":
             scent.set_scent(int(p.get("intensity", 50)), str(p.get("scent", "fresh")))
         elif name == "push_discount":

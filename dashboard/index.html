@@ -36,9 +36,13 @@
   #conn{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
         font:600 11px/1 'JetBrains Mono',monospace;border:1px solid rgba(255,236,214,.12);
         background:rgba(28,18,10,.4);color:#cdbfae;white-space:nowrap;}
-  #conn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);}
+  #conn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:transparent;border:1px solid transparent;}
   #conn .dot{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);}
   .gc-ico{padding:8px !important;gap:0 !important;}
+  /* icon-only buttons: no circular surround (idle) — keep the pressed/active fill */
+  .gc-ico:not([aria-pressed="true"]){background:transparent !important;border-color:transparent !important;box-shadow:none !important;}
+  /* command bar: minimal — only reveal its surface on hover / focus */
+  #cmd-form:hover, #cmd-form:focus-within{background:rgba(28,18,10,.4) !important;border-color:rgba(255,236,214,.1) !important;}
 
   /* ghost buttons + links (scan, demo, floor toggle) */
   .gc-ghost{appearance:none;cursor:pointer;font:600 12px/1 'Hanken Grotesk',system-ui,sans-serif;color:#cdbfae;
@@ -224,7 +228,7 @@
           <div style="display:grid;place-items:center;color:#FF9A2D;flex:none;"><svg width="38" height="30" viewBox="0 0 264 206" fill="currentColor" aria-hidden="true"><g transform="matrix(1,0,0,1,-1111.59949,-165.094777)"><g transform="matrix(1.632812,0,0,1.632812,0,0)"><path d="M801.494,190.068C794.53,190.36 798,194.16 795.047,203.367C786.152,231.1 764.344,226.818 736.501,226.833C711.165,226.848 687.349,231.658 681.328,194.522C680.803,191.288 680.35,103.817 681.541,102.532C682.908,101.056 683.353,101.79 749.5,101.603C791.846,101.483 791.996,100.455 795.421,101.784C799.695,103.443 794.504,118.933 799.523,119.08C804.522,119.227 825.803,115.791 838.043,137.73C847.966,155.518 840.078,190.663 803.498,190.055C802.472,190.038 802.574,190.061 801.494,190.068ZM738.854,173.472C739.348,194.192 739.711,195.074 741.446,195.014C742.035,194.994 753.318,189.641 754.342,189.155C759.388,186.761 755.277,184.716 746.926,176.066C744.601,173.659 738.764,166.608 738.742,170.544C738.736,171.521 738.859,172.495 738.854,173.472ZM766.431,136.852C765.966,136.801 758.591,134.999 752.572,140.582C751.753,141.342 746.274,146.424 747.309,153.525C750.757,177.182 780.164,164.942 772.676,162.177C759.301,157.239 765.152,144.846 771.401,142.304C777.077,139.994 766.997,137.019 766.431,136.852ZM706.328,140.285C691.223,154.814 709.275,176.139 726.127,165.011C731.519,161.451 717.453,162.68 718.203,151.487C718.845,141.906 730.677,142.197 725.196,138.957C716,133.52 707.568,139.418 706.328,140.285ZM797.224,164.5C797.235,167.818 796.175,175.548 799.488,175.634C803.339,175.734 816.546,177.248 824.074,166.235C832.522,153.878 825.118,133.66 806.5,133.495C805.772,133.488 797.886,133.419 797.455,134.48C797.208,135.09 797.225,135.077 797.224,164.5Z"/></g></g></svg></div>
           <div><div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;line-height:1.1;">Caffe Steve</div><div style="font:500 11px/1.2 'JetBrains Mono',monospace;color:#B8A794;letter-spacing:.04em;margin-top:2px;">guest experience · live</div></div>
         </div>
-        <form id="cmd-form" style="flex:1;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:13px;background:rgba(28,18,10,.4);border:1px solid rgba(255,236,214,.1);color:#9b8c7b;">
+        <form id="cmd-form" style="flex:1;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:13px;background:transparent;border:1px solid transparent;color:#9b8c7b;transition:background .15s,border-color .15s;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="cmd-input" class="gc-input" type="text" autocomplete="off" placeholder="Ask the room or run a command…" aria-label="Ask the room or run a command">
         </form>
@@ -374,6 +378,12 @@
             <div style="padding:16px;border-radius:18px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.12);">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;"><div style="display:flex;align-items:center;gap:11px;"><span style="color:#FF9A2D;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><div><div style="font-size:14px;font-weight:600;">Lighting</div><div id="sub-light" style="font-size:11.5px;color:#9b8c7b;">Dim &amp; cosy · 45%</div></div></div><div id="tg-light" role="switch" tabindex="0" aria-checked="true" style="width:40px;height:24px;border-radius:999px;background:#FF9A2D;position:relative;cursor:pointer;transition:background .2s;flex:none;border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 2px rgba(0,0,0,.3);"><span style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transform:translateX(16px);transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);"></span></div></div>
               <div id="light-track" role="slider" tabindex="0" aria-label="Lighting brightness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" style="height:10px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:16px;overflow:hidden;cursor:pointer;"><span id="light-fill" style="display:block;height:100%;width:45%;border-radius:5px;background:linear-gradient(90deg,#D2643C,#FF9A2D);pointer-events:none;"></span></div>
+              <div style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#9b8c7b;margin-bottom:6px;"><span>Warm</span><span id="ct-label" style="font:600 10.5px/1 'JetBrains Mono',monospace;color:#cdbfae;">2900K</span><span>Cool</span></div>
+                <div id="ct-track" role="slider" tabindex="0" aria-label="Light colour temperature, warm to cool" aria-valuemin="2700" aria-valuemax="6500" aria-valuenow="2900" style="position:relative;height:12px;border-radius:6px;cursor:pointer;touch-action:none;background:linear-gradient(90deg,#ff8a34 0%,#ffd9a8 36%,#fff6ec 52%,#d3e4ff 72%,#9bc2ff 100%);box-shadow:inset 0 1px 2px rgba(0,0,0,.3);">
+                  <span id="ct-thumb" style="position:absolute;top:50%;left:5%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid rgba(40,20,4,.3);box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;"></span>
+                </div>
+              </div>
             </div>
             <!-- Humidity -->
             <div style="padding:16px;border-radius:18px;background:rgba(52,36,22,.5);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%);border:1px solid rgba(255,236,214,.12);box-shadow:inset 0 1px 0 rgba(255,240,220,.12);">
@@ -400,7 +410,6 @@
             <div style="display:flex;flex-direction:column;gap:11px;margin-top:16px;">
               <div style="display:flex;align-items:center;gap:10px;"><span id="ci-sound-lab" style="width:88px;font-size:11.5px;color:#B8A794;">Sound</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-sound-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-sound-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
               <div style="display:flex;align-items:center;gap:10px;"><span id="ci-light-lab" style="width:88px;font-size:11.5px;color:#B8A794;">Light</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-light-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-light-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
-              <div style="display:flex;align-items:center;gap:10px;"><span id="ci-air-lab" style="width:88px;font-size:11.5px;color:#B8A794;">Temperature</span><span style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;"><span id="ci-air-fill" style="display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#D2643C,#FF9A2D);"></span></span><span id="ci-air-num" style="font:600 11px/1 'JetBrains Mono',monospace;color:#cdbfae;width:30px;text-align:right;">—</span></div>
             </div>
           </div>
 
@@ -488,7 +497,7 @@
   //  COMFORT STATE  (the live model behind the tiles + the comfort index)
   // ====================================================================
   function defaultComfort() {
-    return { volume:40, setpoint:20.5, brightness:45, warmth:"warm",
+    return { volume:40, setpoint:20.5, brightness:45, warmth:"warm", ct:2900,
              mood:null, bpm:null, tempOn:true };
   }
   var comfort = defaultComfort();
@@ -500,7 +509,7 @@
   // trapezoidal "comfort band": 100 across the ideal range, ramping to 0 at the
   // outer edges. All three read the ROOM: Sound = mic loudness/stress, Light =
   // camera brightness, Temperature = the temperature we're holding the room at.
-  var CI_W = { sound:0.40, light:0.30, air:0.30 };
+  var CI_W = { sound:0.57, light:0.43 };
   function band(x, lo, ilo, ihi, hi) {
     if (x >= ilo && x <= ihi) return 100;
     if (x < ilo) return x <= lo ? 0 : clamp(100 * (x - lo) / (ilo - lo), 0, 100);
@@ -533,25 +542,12 @@
       light = Math.round(evening ? band(lightLevel, 10, 30, 52, 82) : band(lightLevel, 18, 44, 70, 92));
     }
 
-    // AIR — real sensors only. Needs indoor_temp_c (+ optional indoor_humidity_rh).
-    // No proxy fallback: if no sensor, score is null.
-    var air = null, tempC = null;
-    if (typeof s.indoor_temp_c === "number") {
-      tempC = s.indoor_temp_c;
-      var tScore = clamp(100 - Math.abs(tempC - 21) * 20, 0, 100);
-      var hScore = typeof s.indoor_humidity_rh === "number"
-        ? clamp(100 - Math.max(0, s.indoor_humidity_rh - 60) * 2.5
-                    - Math.max(0, 40 - s.indoor_humidity_rh) * 2.5, 0, 100)
-        : tScore; // temp-only if no humidity sensor
-      air = Math.round((tScore + hScore) / 2);
-    }
-
     // Overall CI = average of whatever real pillars we have. Null if none.
-    var pillars = [sound, light, air].filter(function(v) { return v !== null; });
+    var pillars = [sound, light].filter(function(v) { return v !== null; });
     var overall = pillars.length ? Math.round(pillars.reduce(function(a,b){return a+b;},0) / pillars.length) : null;
 
-    return { overall: overall, sound: sound, light: light, air: air,
-             tempC: tempC, soundDb: soundDb, stress: stress, lightLevel: lightLevel,
+    return { overall: overall, sound: sound, light: light,
+             soundDb: soundDb, stress: stress, lightLevel: lightLevel,
              daypart: evening ? "evening" : "day" };
   }
   function comfortLabel(v) {
@@ -619,7 +615,6 @@
     }
     setBarOrDash("ci-sound", c.sound);
     setBarOrDash("ci-light", c.light);
-    setBarOrDash("ci-air",   c.air);
     // row labels with live sensor readings when available
     var sl = $("ci-sound-lab");
     if (sl) sl.textContent = c.soundDb != null
@@ -629,13 +624,6 @@
     if (ll) ll.textContent = c.light != null
       ? "Light" + (c.lightLevel != null ? " " + Math.round(c.lightLevel) : "")
       : "Light · no sensor";
-    var al = $("ci-air-lab");
-    var airLab = "Air · no sensor";
-    if (c.tempC != null && lastScene && typeof lastScene.indoor_humidity_rh === "number")
-      airLab = c.tempC.toFixed(1) + "°C · " + Math.round(lastScene.indoor_humidity_rh) + "%RH";
-    else if (c.tempC != null)
-      airLab = "Temp " + c.tempC.toFixed(1) + "°C";
-    if (al) al.textContent = airLab;
     var overall = c.overall !== null ? c.overall : 50;
     var lab = comfortLabel(overall), pill = $("ci-pill");
     if (c.overall !== null) {
@@ -690,7 +678,9 @@
         comfort.tempOn = true; break;
       case "set_lighting":
         if (typeof p.brightness === "number") comfort.brightness = clamp(p.brightness, 0, 100);
-        if (p.warmth) comfort.warmth = p.warmth; break;
+        if (typeof p.ct === "number") { comfort.ct = p.ct; comfort.warmth = p.ct < 3600 ? "warm" : p.ct > 5200 ? "cool" : "neutral"; }
+        else if (p.warmth) { comfort.warmth = p.warmth; comfort.ct = p.warmth === "cool" ? 6000 : p.warmth === "neutral" ? 4000 : 2900; }
+        if (typeof renderCT === "function") renderCT(); break;
       case "set_music_volume":
         if (typeof p.volume === "number") comfort.volume = clamp(p.volume, 0, 100); break;
       case "set_music":
@@ -907,7 +897,7 @@
     }
     return Math.max(byTracks, byHeat);
   }
-  function drawFloor(canvas, scene) {
+  function drawFloor(canvas, scene, hideZones) {
     if (!canvas) return;
     var dpr = window.devicePixelRatio || 1;
     var cw = canvas.clientWidth || canvas.parentNode.clientWidth || 800;
@@ -917,7 +907,10 @@
     var W = cw, H = ch; ctx.clearRect(0,0,W,H);
     ctx.fillStyle = "#1a1009"; ctx.fillRect(0,0,W,H);
     var tracks = scene.tracks || [];
-    for (var i = 0; i < ZONES.length; i++) {
+    // hideZones: drop the Entry/Queue/Counter/Seating band fills, borders, labels
+    // and per-zone counts (used for the clean live/video panel). The Floor tab
+    // still passes hideZones=false so it keeps the labelled zones.
+    if (!hideZones) for (var i = 0; i < ZONES.length; i++) {
       var z = ZONES[i], colr = ZONE_COLORS[z.z], x = z.x*W, w = z.w*W;
       var inten = scene.ts != null ? zoneIntensity(z, scene) : 0;
       ctx.fillStyle = hexA(colr, 0.06); ctx.fillRect(x, 0, w, H);
@@ -1015,7 +1008,7 @@
     $("live-msg").hidden = !!lastScene.ts; $("live-msg").textContent = "No video — showing synthetic track map";
     drawSynth();
   }
-  function drawSynth() { if (vState === "synthetic") drawFloor($("synth-canvas"), lastScene); }
+  function drawSynth() { if (vState === "synthetic") drawFloor($("synth-canvas"), lastScene, true); }
 
   // ====================================================================
   //  TABLES
@@ -1251,8 +1244,85 @@
     var x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
     return Math.round(clamp(x / rect.width, 0, 1) * 100);
   }
-  $("light-track").addEventListener("click", function (e) { doManual("set_lighting", { brightness: trackPct(this, e), warmth:"warm" }, "Set the lighting level."); });
-  $("light-track").addEventListener("keydown", function (e) { var d = e.key === "ArrowRight" ? 5 : e.key === "ArrowLeft" ? -5 : 0; if (d) { e.preventDefault(); doManual("set_lighting", { brightness: clamp(comfort.brightness + d, 0, 100), warmth:"warm" }, "Set the lighting level."); } });
+  $("light-track").addEventListener("click", function (e) { doManual("set_lighting", { brightness: trackPct(this, e), ct: comfort.ct, warmth: comfort.warmth || "warm" }, "Set the lighting level."); });
+  $("light-track").addEventListener("keydown", function (e) { var d = e.key === "ArrowRight" ? 5 : e.key === "ArrowLeft" ? -5 : 0; if (d) { e.preventDefault(); doManual("set_lighting", { brightness: clamp(comfort.brightness + d, 0, 100), ct: comfort.ct, warmth: comfort.warmth || "warm" }, "Set the lighting level."); } });
+
+  // ---------- light colour-temperature slider (warm 2700K ←→ cool 6500K) ----------
+  var CT_MIN = 2700, CT_MAX = 6500;
+  function clampCt(k) { return Math.round(clamp(k, CT_MIN, CT_MAX) / 50) * 50; }
+  function ctToPct(k) { return clamp((k - CT_MIN) / (CT_MAX - CT_MIN) * 100, 0, 100); }
+  function warmthFromCt(k) { return k < 3600 ? "warm" : k > 5200 ? "cool" : "neutral"; }
+  function ctFromWarmth(w) { return w === "cool" ? 6000 : w === "neutral" ? 4000 : 2900; }
+  function ctFromEvent(track, e) {
+    var r = track.getBoundingClientRect();
+    return clampCt(CT_MIN + clamp((e.clientX - r.left) / r.width, 0, 1) * (CT_MAX - CT_MIN));
+  }
+  function renderCT() {
+    if (typeof comfort.ct !== "number") comfort.ct = ctFromWarmth(comfort.warmth);
+    var tr = $("ct-track"); if (!tr) return;
+    $("ct-thumb").style.left = ctToPct(comfort.ct) + "%";
+    $("ct-label").textContent = comfort.ct + "K";
+    tr.setAttribute("aria-valuenow", comfort.ct);
+  }
+  function sendCT(k) {
+    comfort.ct = clampCt(k); comfort.warmth = warmthFromCt(comfort.ct); renderCT();
+    var bright = comfort.brightness > 0 ? comfort.brightness : (prevLevel.light || 60);
+    doManual("set_lighting", { brightness: bright, ct: comfort.ct, warmth: comfort.warmth },
+             "Set light colour to " + comfort.ct + "K.");
+  }
+  // Each café music vibe implies a light colour — warm acoustic mornings & jazzy
+  // evenings glow warm; focused daytime / bright sets run cool. Picking a vibe
+  // glides the colour slider to match (and drives the lamp once at the end).
+  var MOOD_CT = { sunrise_acoustic:2900, daytime_focus:6000, upbeat_lift:5200,
+                  rush_flow:4800, busy_calm:3600, evening_warm:2700 };
+  var ctAnim = null;
+  function animateCtTo(targetK, rationale) {
+    targetK = clampCt(targetK);
+    var startK = (typeof comfort.ct === "number") ? comfort.ct : ctFromWarmth(comfort.warmth);
+    if (startK === targetK) { sendCT(targetK); return; }
+    if (ctAnim) cancelAnimationFrame(ctAnim);
+    var t0 = null, dur = 750;
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var p = clamp((ts - t0) / dur, 0, 1);
+      var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;  // easeInOutQuad
+      comfort.ct = Math.round(startK + (targetK - startK) * e);
+      comfort.warmth = warmthFromCt(comfort.ct); renderCT();
+      if (p < 1) { ctAnim = requestAnimationFrame(step); }
+      else {
+        ctAnim = null;
+        var bright = comfort.brightness > 0 ? comfort.brightness : (prevLevel.light || 60);
+        doManual("set_lighting", { brightness: bright, ct: targetK, warmth: warmthFromCt(targetK) },
+                 rationale || ("Light follows the music — " + targetK + "K."));
+      }
+    }
+    ctAnim = requestAnimationFrame(step);
+  }
+  // Exposed so the (separately-scoped) music library player can ask the light to
+  // follow the chosen vibe — e.g. "Daytime Focus" sweeps the slider warm → cool.
+  window.gcLightForMood = function (moodKey, rationale) {
+    var k = MOOD_CT[moodKey];
+    if (typeof k === "number") animateCtTo(k, rationale);
+  };
+  (function wireCT() {
+    var tr = $("ct-track"); if (!tr) return;
+    var dragging = false;
+    tr.addEventListener("pointerdown", function (e) {
+      dragging = true; tr.setPointerCapture(e.pointerId);
+      comfort.ct = ctFromEvent(tr, e); renderCT();  // live preview, no send yet
+    });
+    tr.addEventListener("pointermove", function (e) {
+      if (!dragging) return; comfort.ct = ctFromEvent(tr, e); renderCT();
+    });
+    tr.addEventListener("pointerup", function (e) {
+      if (!dragging) return; dragging = false; sendCT(ctFromEvent(tr, e));  // commit on release
+    });
+    tr.addEventListener("keydown", function (e) {
+      var d = e.key === "ArrowRight" ? 150 : e.key === "ArrowLeft" ? -150 : 0;
+      if (d) { e.preventDefault(); sendCT((comfort.ct || ctFromWarmth(comfort.warmth)) + d); }
+    });
+    renderCT();
+  })();
 
   // command bar
   $("cmd-form").addEventListener("submit", function (e) { e.preventDefault(); var v = $("cmd-input").value; $("cmd-input").value = ""; runCommand(v); });
@@ -1367,7 +1437,12 @@
     libAudio.src = EP.http + t.url;   // url is "/audio/<file>" from /music/library
     libRenderNowPlaying();
     libHighlight();
-    if (autoplay) libPlay();
+    if (autoplay) {
+      libPlay();
+      // DEMO FLOW: changing the music vibe glides the light colour to match,
+      // e.g. "Daytime Focus" visibly sweeps the slider from warm to cool.
+      if (window.gcLightForMood) window.gcLightForMood(t.mood || t.id, "Light set to match " + t.label + ".");
+    }
   }
   function libPlay() {
     if (LIB.idx < 0) { libLoad(0, false); }

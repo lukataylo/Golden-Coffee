@@ -111,8 +111,10 @@ def diffuser_configured() -> bool:
     return _local_diffuser_configured() or xiaomi_cloud.diffuser_configured()
 
 
-def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
-    """Set a Mijia/Yeelight lamp's brightness (0-100) and warmth. >0 turns it on.
+def lamp_set(brightness: int, warmth: str = "neutral", ct: int | None = None) -> bool:
+    """Set a Mijia/Yeelight lamp's brightness (0-100) and colour. >0 turns it on.
+    `warmth` is the warm/neutral/cool bucket; `ct` is an explicit colour temperature
+    in Kelvin (a UI slider) and takes priority when given.
     Routes by XIAOMI_TRANSPORT: ble drives a BLE-only lamp over Bluetooth, cloud
     goes via the Mi cloud, otherwise local miIO on the LAN."""
     if XIAOMI_TRANSPORT == "ble":
@@ -122,14 +124,14 @@ def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
     if _use_cloud(_local_lamp_configured()):
         from actuators import xiaomi_cloud
 
-        return xiaomi_cloud.lamp_set(brightness, warmth)
-    return _local_lamp_set(brightness, warmth)
+        return xiaomi_cloud.lamp_set(brightness, warmth, ct=ct)
+    return _local_lamp_set(brightness, warmth, ct=ct)
 
 
-def _local_lamp_set(brightness: int, warmth: str = "neutral") -> bool:
+def _local_lamp_set(brightness: int, warmth: str = "neutral", ct: int | None = None) -> bool:
     """Drive the lamp locally over miIO (same-LAN)."""
     brightness = max(0, min(100, int(brightness)))
-    kelvin = WARMTH_KELVIN.get(warmth, 4000)
+    kelvin = int(ct) if ct else WARMTH_KELVIN.get(warmth, 4000)
     try:
         from miio import Yeelight
 

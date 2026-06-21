@@ -52,6 +52,10 @@
     <h1>Welcome back</h1>
     <p class="lead">Sign in to check on your room.</p>
 
+    <button type="button" id="demoBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:12px;border:none;background:linear-gradient(150deg,#FFC25E,#E8862A);color:#2a1607;font:700 15px/1 'Hanken Grotesk',sans-serif;cursor:pointer;box-shadow:0 8px 20px rgba(232,134,42,.34);margin-bottom:10px;">Sign in with the demo account →</button>
+    <div style="text-align:center;font:500 12.5px/1.5 'JetBrains Mono',monospace;color:var(--muted-2);margin-bottom:20px;">judge demo — <b style="color:var(--ink);">demo@caffesteve.com</b> · <b style="color:var(--ink);">stevedemo24</b></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--muted-2);font-size:12px;"><span style="flex:1;height:1px;background:var(--line);"></span>or sign in manually<span style="flex:1;height:1px;background:var(--line);"></span></div>
+
     <div class="auth-alert" id="alert" role="alert"></div>
 
     <form id="signinForm" novalidate>
@@ -98,6 +102,15 @@
     if(!val('password')){ showErr('password'); ok=false; }
     return ok;
   }
+
+  // One-click demo login for judges: fill the known demo creds and submit.
+  var demoBtn = document.getElementById('demoBtn');
+  if (demoBtn) demoBtn.addEventListener('click', function(){
+    document.getElementById('email').value = 'demo@caffesteve.com';
+    document.getElementById('password').value = 'stevedemo24';
+    if (form.requestSubmit) form.requestSubmit();
+    else form.dispatchEvent(new Event('submit', { cancelable:true }));
+  });
 
   var busy = false;
   form.addEventListener('submit', function(e){

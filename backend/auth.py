@@ -243,6 +243,35 @@ def signup(payload: dict) -> dict:
     return {"token": token, "user": _row_to_user(row)}
 
 
+# A fixed, always-present demo account so anyone (e.g. a hackathon judge) can sign
+# in on a fresh deploy — including Railway's ephemeral filesystem, where the DB is
+# rebuilt on every restart. The credentials are intentionally public and surfaced
+# on the sign-in page. Override via env for a private deploy.
+DEMO_EMAIL = os.environ.get("DEMO_EMAIL", "demo@caffesteve.com")
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "stevedemo24")
+
+
+def seed_demo() -> None:
+    """Idempotently create the demo account. No-op if it already exists."""
+    try:
+        signup({
+            "email": DEMO_EMAIL,
+            "password": DEMO_PASSWORD,
+            "name": "Demo Manager",
+            "venue": "Caffe Steve Demo Café",
+            "plan": "steve",
+            "profile": {
+                "business_type": "Café",
+                "ambiance": "Cosy & calm",
+                "busiest_period": "Lunch",
+                "primary_goal": "More comfort",
+                "room_size": "24",
+            },
+        })
+    except AuthError:
+        pass  # 409 already-exists (or a validation issue) — safe to ignore
+
+
 def login(payload: dict) -> dict:
     """Verify credentials and mint a session. Returns {token, user}.
 

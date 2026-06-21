@@ -174,7 +174,12 @@ class _Cloud:
         # failures so the actuator doesn't claim success on an unplugged device.
         if resp.get("code") not in (0, None):
             raise RuntimeError(f"cloud error {resp.get('code')}: {resp.get('message')}")
-        bad = [r for r in (resp.get("result") or []) if r.get("code") not in (0, None)]
+        # -704083036 is a benign quirk on some cn-cloud devices (e.g. the
+        # yeelink.light.lamp9 power property): the cloud returns it on the power
+        # prop yet the change still applies. Treat it as success so we don't
+        # falsely report failure when the lamp clearly actioned the command.
+        BENIGN = {0, None, -704083036}
+        bad = [r for r in (resp.get("result") or []) if r.get("code") not in BENIGN]
         if bad:
             codes = sorted({r.get("code") for r in bad})
             if -704042011 in codes:
@@ -350,10 +355,13 @@ def _need_session() -> _Cloud | None:
     return cloud
 
 
-def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
+def lamp_set(brightness: int, warmth: str = "neutral", ct: int | None = None) -> bool:
     brightness = max(0, min(100, int(brightness)))
+    # ct (colour temperature in Kelvin) wins when given — lets a UI slider express
+    # warmth continuously; otherwise fall back to the warm/neutral/cool buckets.
+    kelvin = int(ct) if ct else WARMTH_KELVIN.get(warmth, 4000)
     if not LAMP_DID:
-        print(f"[xiaomi-cloud] (lamp unconfigured) would set {brightness}% / {warmth}")
+        print(f"[xiaomi-cloud] (lamp unconfigured) would set {brightness}% / {kelvin}K")
         return False
     cloud = _need_session()
     if cloud is None:
@@ -368,10 +376,9 @@ def lamp_set(brightness: int, warmth: str = "neutral") -> bool:
             {"siid": LAMP_SIID, "piid": LAMP_PIID_BRIGHT, "value": brightness},
         ]
         if LAMP_PIID_CT:
-            props.append({"siid": LAMP_SIID, "piid": int(LAMP_PIID_CT),
-                          "value": WARMTH_KELVIN.get(warmth, 4000)})
+            props.append({"siid": LAMP_SIID, "piid": int(LAMP_PIID_CT), "value": kelvin})
         cloud.miot_set(LAMP_DID, props)
-        print(f"[xiaomi-cloud] lamp brightness {brightness}% / {warmth}")
+        print(f"[xiaomi-cloud] lamp brightness {brightness}% / {kelvin}K")
         return True
     except Exception as exc:
         print(f"[xiaomi-cloud] lamp failed: {exc}")
