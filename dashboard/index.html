@@ -966,8 +966,8 @@
   function localCommand(text) {
     var s = (text || "").trim(); if (!s) return;
     var t = s.toLowerCase(), act = null, params = null, rat = "", msg = "";
-    if (/cosy|cozy|warm glow|dim/.test(t)) { act = "set_lighting"; params = { brightness:35, warmth:"warm" }; rat = "Asked for a cosier glow."; msg = "Dimming to a warm glow"; }
-    else if (/bright/.test(t)) { act = "set_lighting"; params = { brightness:85, warmth:"warm" }; rat = "Asked to brighten the room."; msg = "Brightening the room"; }
+    if (/cosy|cozy|warm glow|dim|lower the light|light.* down|darker/.test(t)) { act = "set_lighting"; params = { brightness:35, warmth:"warm" }; rat = "Asked for a cosier glow."; msg = "Dimming to a warm glow"; }
+    else if (/bright|light.* up|lights up|lighter/.test(t)) { act = "set_lighting"; params = { brightness:85, warmth:"warm" }; rat = "Asked to brighten the room."; msg = "Brightening the room"; }
     else if (/warmer|warm up|heat|too cold/.test(t)) { act = "set_temperature"; params = { delta_c:1 }; rat = "Asked to warm things up."; msg = "Warming things up"; }
     else if (/cooler|cool|cold|too warm|too hot/.test(t)) { act = "set_temperature"; params = { delta_c:-1 }; rat = "Asked to cool the room."; msg = "Cooling the room"; }
     else if (/louder|turn up|more music|volume up/.test(t)) { act = "set_music_volume"; params = { volume: clamp(comfort.volume + 15, 0, 100) }; rat = "Asked to lift the music."; msg = "Lifting the music"; }
