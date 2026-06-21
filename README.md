@@ -1,5 +1,9 @@
 # ☕ Caffe Steve
 
+<p align="center">
+  <img src="docs/assets/steve-cup-render.png" alt="Steve — the smart ambient sensor" width="420">
+</p>
+
 ### *Your venue, but it runs itself.*
 
 **One camera you already own → privacy-first computer vision → an AI agent that actually
