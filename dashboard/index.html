@@ -1190,8 +1190,18 @@
     var abandons = Math.round(0.012 * queue_len * queue_len * t);  // walk-offs climb under queue pressure
     var entered = Math.round(2 + 0.9 * t);                          // cumulative arrivals today
     var ordered = Math.max(0, entered - abandons - queue_len);      // reached the counter
+    // Simulated room sensors so the Comfort Index populates in demo mode (mirrors
+    // shared/mock_events). On a real venue these come from hardware readings.
+    var hour = new Date().getHours();
+    var indoor_temp_c = Math.round((21 + occupancy * 0.25 + (hour >= 13 && hour <= 16 ? 1 : 0) + Math.sin(t * 0.17) * 0.3) * 10) / 10;
+    var indoor_humidity_rh = Math.round((45 + 20 * wave) * 10) / 10;
+    var indoor_sound_db = Math.round((45 + (occupancy / 2) * 2 + queue_len * 1.5 + Math.sin(t * 0.3) * 1.5) * 10) / 10;
+    var natural_lux = Math.max(0, 350 * Math.sin((hour - 6) * Math.PI / 14));
+    var indoor_lux = Math.round((natural_lux + 150 + Math.sin(t * 0.11) * 10) * 10) / 10;
     return { type:"scene", ts:Date.now()/1000, tracks:tracks, occupancy:occupancy, queue_len:queue_len,
              entered:entered, ordered:ordered, abandons:abandons, avg_ticket_gbp:5.5,
+             indoor_temp_c:indoor_temp_c, indoor_humidity_rh:indoor_humidity_rh,
+             indoor_sound_db:indoor_sound_db, indoor_lux:indoor_lux,
              heatmap_grid:grid, tables:tables, source:"mock" };
   }
   function demoActions(scene, t) {

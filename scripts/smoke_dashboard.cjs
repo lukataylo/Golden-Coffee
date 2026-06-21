@@ -27,6 +27,7 @@ const BASE = process.env.SMOKE_BASE || 'http://127.0.0.1:8099';
   await page.waitForTimeout(8000); // let the demo run so chips populate
 
   const state = await page.evaluate(() => ({
+    comfort: (document.getElementById('chip-comfort') || {}).textContent || '',
     conv: (document.getElementById('chip-conv') || {}).textContent || '',
     risk: (document.getElementById('chip-risk') || {}).textContent || '',
     mood: (document.getElementById('chip-mood') || {}).textContent || '',
@@ -40,6 +41,7 @@ const BASE = process.env.SMOKE_BASE || 'http://127.0.0.1:8099';
   if (!state.canvas) fail('3D canvas did not mount');
   if (!/%$/.test(state.conv)) fail(`conversion chip did not populate (got "${state.conv}")`);
   if (!/^£\d/.test(state.risk)) fail(`£-at-risk chip did not populate (got "${state.risk}")`);
+  if (!/^\d+$/.test(state.comfort)) fail(`comfort chip did not populate (got "${state.comfort}")`);
 
   console.log('SMOKE OK —', JSON.stringify(state));
 })().catch(e => { console.error('SMOKE FATAL', e); process.exit(1); });
