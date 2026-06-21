@@ -215,6 +215,8 @@ flowchart LR
 | 🎛️ **Ambient autopilot** | Tunes music **volume + mood**, **lighting** (brightness + warmth), **scent**, and **temperature** to the room and time of day. The thermal model layers seasonal baseline → occupancy load → humidity → a warm-ambiance psychological offset, with hysteresis so it never thrashes the AC. |
 | 🎵 **On-device music model** | A small softmax classifier picks the *mood/genre + BPM + playlist* from anonymized scene features — no API key, runs offline. Auto mode (model picks) or Custom mode (staff picks). See [MUSIC.md](MUSIC.md). |
 | 🚨 **Rush copilot** | Queue over threshold → "open a second till." Escalates to **urgent** when walk-offs are rising, and surfaces the **£ walked away** today (avg ticket × abandons). |
+| 💷 **Revenue-at-risk + funnel** | A live **"£ walked away today"** hero chip, a visual **conversion funnel** (came-in → ordered → walked-off), and a **"Today so far"** owner's digest — also served headless at `GET /ops/report`. |
+| 🔊 **Audible autopilot** | In Auto mode the agent drives the **real in-browser audio** — the hosted music *audibly* softens when the room fills and switches vibe on a mood change. No hardware needed. |
 | 🍽️ **Table service SLAs** | Per-table waits: dirty-table hygiene (≥3 min), order-taking (≥6 min), bill request (≥4 min), plus a generic overdue catch-all. |
 | 🧽 **Cleaning cadence** | Tracks bussing + zone cleaning (e.g. restroom) by **usage *and* elapsed time**, alerting when overdue. |
 | 🏷️ **Quiet-period markdown** | After a sustained lull, marks down perishables on the menu board — `never_surge` enforced per item; resets when the room fills. |
@@ -222,7 +224,7 @@ flowchart LR
 | 📱 **Scan-to-3D** | PWA: pick one of five café layouts (Corner Café, Open Roastery, Grab & Go Kiosk, Bistro + Patio, Long Bar Espresso) or trace your own floorplan photo → live 3D twin → push geometry to the cameras. |
 | 🌐 **Federated learning** | Cafés tune each other's thresholds *and* music model without sharing a single frame — only capacity-normalized ratios and model weights leave a venue. |
 | 📲 **Telegram alerts** | Staff get the urgent stuff (queue, overdue tables) pushed to their phones. |
-| ⛓️ **Tamper-proof audit** | One call anchors the anonymized metrics + the agent's action log to Walrus — an independently verifiable record of what the AI did. |
+| ⛓️ **Tamper-proof audit** | A one-click header button anchors the anonymized metrics + the agent's action log to **Walrus** and opens the **public, verifiable record** — an independently checkable log of what the AI did. |
 
 ### 📊 Accuracy, honestly
 
