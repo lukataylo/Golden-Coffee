@@ -1,0 +1,45 @@
+name: Deploy live demo to GitHub Pages
+
+# Publishes the static dashboard as a public, self-contained live demo. The
+# dashboard runs fully client-side in demo mode (open the URL with ?demo=1),
+# so no backend is needed — judges get a shareable URL of the whole experience
+# (£-at-risk chip, conversion, 3D floor twin, action feed) with zero setup.
+#
+# Uses configure-pages `enablement: true` so the workflow turns Pages on itself
+# (no manual settings change). Open: https://<owner>.github.io/<repo>/?demo=1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/hackathon-loss-analysis-ah0prd", "main"]
+    paths: ["dashboard/**", ".github/workflows/pages.yml"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; newer runs supersede in-progress ones.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Pages (self-enable)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload dashboard as the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
