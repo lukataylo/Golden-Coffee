@@ -24,9 +24,9 @@ Drive the room into a **rush** (live, or `?demo=1`). On screen, in order:
    as customers give up on the queue. *This is the hook. Pause on it.*
 2. An **urgent alert** fires in the feed — *"Walk-offs rising — open a second till
    (~£120 walked away today)"* — and lands on the **staff phone** (Telegram).
-3. The room **retunes itself**: on the 3D floor twin the **lights brighten**, the
-   **music ring softens**, the **AC cools** — each step narrated by the agent's own
-   plain-English reason.
+3. The room **retunes itself**: with the hosted player running, the **music audibly
+   softens** (the browser audio is the actuator — no hardware), on the 3D twin the
+   **lights brighten** and the **AC cools**, each step narrated by the agent's own reason.
 
 > *That's the whole product in ten seconds: it sees → it counts the cost → it acts.*
 
@@ -59,8 +59,9 @@ by catching the sales you're losing. Your café, but it runs itself."**
 - [ ] Dashboard open, **demo mode armed** (`?demo=1`) as the safety net.
 - [ ] If live: backend up, `shared.mock_events` + `agent.agent` running, WS connected.
 - [ ] Phone visible for the **Telegram** alert (or the feed if no bot).
-- [ ] One real device wired if at all possible (a single light dimming **beats every
-      tile** — this is the one upgrade that moves us from strong to winning).
+- [ ] **Tap ▶ on the hosted music player before you start** — then the agent audibly
+      softens/lifts it live (no hardware). A real light dimming is still the dream upgrade,
+      but the audible music already gives you a real "it acted" beat.
 - [ ] Walrus snapshot ready to fire for the trust beat.
 - [ ] Backup: a screen recording of a clean run, in case wifi dies.
 

@@ -33,8 +33,9 @@ plain-English rationale:
 > freshens**, **AC cools** — and on the 3D floor twin the lights visibly warm/dim and the music
 > ring pulses.
 
-This is the moment: *the agent read the room and acted, visibly, in seconds.* If you have real
-devices, let the music audibly drop here.
+This is the moment: *the agent read the room and acted, visibly, in seconds.* **Start the hosted
+music player first (tap ▶) and the music audibly softens right here — no hardware needed**, the
+browser's own audio is the actuator. (With real devices, the lights/AC move too.)
 
 **1:30 — Now the lull (20s).** Drop occupancy. The agent flips the other way: the **on-device
 music model** picks a cosier mood, lights warm and dim, and a **quiet-period markdown** marks
