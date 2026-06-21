@@ -62,7 +62,8 @@ by catching the sales you're losing. Your café, but it runs itself."**
 - [ ] **Tap ▶ on the hosted music player before you start** — then the agent audibly
       softens/lifts it live (no hardware). A real light dimming is still the dream upgrade,
       but the audible music already gives you a real "it acted" beat.
-- [ ] Walrus snapshot ready to fire for the trust beat.
+- [ ] The **⛓ on-chain button** is in the header — one click anchors to Walrus and opens the
+      public proof tab (needs the live backend).
 - [ ] Backup: a screen recording of a clean run, in case wifi dies.
 
 ## Discipline (what sank us last time)

@@ -46,8 +46,9 @@ preset → it loads a live 3D twin → tap **"Use this layout → Push to live."
 running on a real venue's geometry, not placeholder zones. *(This is the "works in any café in two
 minutes" wedge — manual zone-drawing is the #1 onboarding friction for every retail-CV tool.)*
 
-**2:20 — Trust & the bounties (30s).** Hit **anchor to Walrus** — the anonymized metrics + the
-agent's full action log (with rationales) are stored tamper-proof on-chain, returning a public,
+**2:20 — Trust & the bounties (30s).** Click the **⛓ on-chain button** in the header — it anchors
+the anonymized metrics + the agent's full action log (with rationales) to **Walrus** and **opens the
+public, verifiable record in a new tab**. The metrics + the agent's action log are stored tamper-proof on-chain, at a public,
 verifiable URL. Mention the federation angle: *"cafés learn better thresholds and music from each
 other — only ratios and model weights are shared, never a single frame."*
 
