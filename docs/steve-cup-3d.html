@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steve — The Smart Café Cup</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0c; }
+
+#canvas { position: fixed; inset: 0; }
+
+#ui {
+  position: fixed; right: 0; top: 0; bottom: 0;
+  width: 340px;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 48px 40px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(to right, transparent, rgba(10,10,12,0.98) 30%);
+  pointer-events: none;
+}
+.eyebrow {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em;
+  color: #e3501e; text-transform: uppercase; margin-bottom: 12px;
+}
+h1 {
+  font-size: 2.8rem; font-weight: 800; line-height: 1.05;
+  color: #f5ede0; margin-bottom: 6px;
+}
+h1 span { color: #d9a441; }
+.tagline {
+  font-size: 0.92rem; color: #888; line-height: 1.6;
+  margin-bottom: 36px;
+}
+.specs { display: flex; flex-direction: column; gap: 14px; margin-bottom: 36px; }
+.spec {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+}
+.spec-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.spec-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.08em; }
+.spec-value { font-size: 0.9rem; color: #e8ddd0; font-weight: 600; margin-top: 2px; }
+.price-row {
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;
+}
+.price { font-size: 2rem; font-weight: 700; color: #d9a441; }
+.price-label { font-size: 0.78rem; color: #666; }
+.hint { font-size: 0.72rem; color: #555; font-style: italic; }
+
+#screen-live {
+  position: fixed; bottom: 32px; left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-family: -apple-system, sans-serif;
+  color: #555; font-size: 0.72rem; letter-spacing: 0.05em;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div class="eyebrow">Product Design · Physical</div>
+  <h1>Meet<br><span>Steve.</span></h1>
+  <p class="tagline">
+    A ceramic café cup with a built-in ambient display.
+    Senses the room. Shows the vibe. No phone needed.
+  </p>
+
+  <div class="specs">
+    <div class="spec">
+      <div class="spec-icon">📺</div>
+      <div>
+        <div class="spec-label">Display</div>
+        <div class="spec-value">1.9″ colour e-ink screen, flush ceramic</div>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="spec-icon">🌡️</div>
+      <div>
+        <div class="spec-label">Sensors</div>
+        <div class="spec-value">Temp · Humidity · CO₂ · Noise</div>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="spec-icon">📡</div>
+      <div>
+        <div class="spec-label">Connectivity</div>
+        <div class="spec-value">Wi-Fi 6 · BLE 5.2 · OTA updates</div>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="spec-icon">🔋</div>
+      <div>
+        <div class="spec-label">Power</div>
+        <div class="spec-value">Qi wireless charging base included</div>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="spec-icon">☕</div>
+      <div>
+        <div class="spec-label">Body</div>
+        <div class="spec-value">330ml · Matte ceramic · Dishwasher safe</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="price-row">
+    <div class="price">£49.90</div>
+    <div class="price-label">ex-VAT · incl. 3 months free AI</div>
+  </div>
+  <div class="hint">Then £59/month · Cancel anytime</div>
+</div>
+
+<div id="screen-live">Drag to rotate &nbsp;·&nbsp; Scroll to zoom</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ─── renderer ─── */
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+/* ─── scene ─── */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0a0a0c');
+scene.fog = new THREE.Fog('#0a0a0c', 18, 32);
+
+/* ─── camera ─── */
+const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 60);
+camera.position.set(-1.8, 3.2, 10);
+camera.lookAt(0, 2.2, 0);
+
+/* ─── controls ─── */
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 2.2, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 4;
+controls.maxDistance = 18;
+controls.maxPolarAngle = Math.PI * 0.72;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.6;
+
+/* ─── lights ─── */
+const ambient = new THREE.AmbientLight(0xfff5e0, 0.55);
+scene.add(ambient);
+
+const keyLight = new THREE.DirectionalLight(0xfff5e0, 3.5);
+keyLight.position.set(-4, 8, 6);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.near = 0.1;
+keyLight.shadow.camera.far = 30;
+keyLight.shadow.camera.left = -6;
+keyLight.shadow.camera.right = 6;
+keyLight.shadow.camera.top = 8;
+keyLight.shadow.camera.bottom = -2;
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0x4488cc, 1.8);
+rimLight.position.set(5, 4, -6);
+scene.add(rimLight);
+
+const fillLight = new THREE.PointLight(0xff9955, 0.8, 20);
+fillLight.position.set(3, -1, 3);
+scene.add(fillLight);
+
+const screenGlow = new THREE.PointLight(0x44ffaa, 0.6, 4);
+screenGlow.position.set(0.2, 2.5, 1.9);
+scene.add(screenGlow);
+
+/* ─── ground ─── */
+const groundGeo = new THREE.PlaneGeometry(20, 20);
+const groundMat = new THREE.ShadowMaterial({ opacity: 0.35 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.02;
+ground.receiveShadow = true;
+scene.add(ground);
+
+/* ════════════════════════════════════════
+   CUP TEXTURE — drawn on a 2048×2048 canvas
+   u=0.5 → front face (phiStart=π setup)
+   ════════════════════════════════════════ */
+function buildCupTexture() {
+  const W = 2048, H = 2048;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+
+  /* base — warm cream ceramic */
+  ctx.fillStyle = '#f2ead8';
+  ctx.fillRect(0, 0, W, H);
+
+  /* subtle horizontal bands */
+  for (let y = 0; y < H; y += 6) {
+    ctx.fillStyle = `rgba(0,0,0,${0.012})`;
+    ctx.fillRect(0, y, W, 2);
+  }
+
+  /* ── orange brand stripe near top ── */
+  const stripeY = 90, stripeH = 28;
+  ctx.fillStyle = '#e3501e';
+  ctx.fillRect(0, stripeY, W, stripeH);
+
+  /* ── "CAFFE STEVE" wordmark ── */
+  ctx.save();
+  ctx.font = '700 52px -apple-system, sans-serif';
+  ctx.fillStyle = '#e3501e';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '0.18em';
+  ctx.fillText('CAFFE  STEVE', W * 0.5, 72);
+  ctx.restore();
+
+  /* ══ BIG EYES (centre of texture = front of cup) ══ */
+  const cx = W * 0.5;   // horizontal centre = front of cup
+  const eyeY = 320;     // vertical position on cup
+  const eyeGap = 190;   // distance between eye centres
+  const eyeRx = 105, eyeRy = 88; // eye ellipse radii
+
+  function drawEye(ex, ey, lookX, lookY) {
+    /* white sclera */
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, eyeRx, eyeRy, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 18;
+    ctx.fill();
+    ctx.restore();
+
+    /* iris — orange-amber */
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(ex + lookX * 18, ey + lookY * 12, 54, 50, 0, 0, Math.PI * 2);
+    const iris = ctx.createRadialGradient(
+      ex + lookX * 18, ey + lookY * 12, 6,
+      ex + lookX * 18, ey + lookY * 12, 54
+    );
+    iris.addColorStop(0, '#d9a441');
+    iris.addColorStop(0.5, '#e3501e');
+    iris.addColorStop(1, '#8b2500');
+    ctx.fillStyle = iris;
+    ctx.fill();
+    ctx.restore();
+
+    /* pupil */
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(ex + lookX * 22, ey + lookY * 16, 26, 28, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fill();
+    ctx.restore();
+
+    /* highlight */
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(ex + lookX * 14 - 10, ey + lookY * 8 - 12, 11, 9, -0.4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fill();
+    ctx.restore();
+
+    /* eyelid shadow */
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, eyeRx, eyeRy, 0, Math.PI, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fill();
+
+    /* outline */
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, eyeRx, eyeRy, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawEye(cx - eyeGap / 2, eyeY, -0.15, 0.1);   // left eye — slight outward glance
+  drawEye(cx + eyeGap / 2, eyeY,  0.15, 0.1);   // right eye
+
+  /* tiny cute beak / mouth nub */
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, eyeY + 115, 20, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.strokeStyle = '#c44010';
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.restore();
+
+  /* ══ SCREEN BEZEL — dark ceramic recess ══ */
+  const scx = cx, scy = 780;
+  const sw = 460, sh = 330;
+  const br = 22;
+
+  /* outer shadow */
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetY = 6;
+  roundRect(ctx, scx - sw / 2, scy - sh / 2, sw, sh, br);
+  ctx.fillStyle = '#1a1208';
+  ctx.fill();
+  ctx.restore();
+
+  /* bezel */
+  roundRect(ctx, scx - sw / 2, scy - sh / 2, sw, sh, br);
+  ctx.fillStyle = '#1a1208';
+  ctx.fill();
+  ctx.strokeStyle = '#3a2a10';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  /* screen glass — very dark OLED */
+  const si = 18; // inset from bezel
+  roundRect(ctx, scx - sw / 2 + si, scy - sh / 2 + si, sw - si * 2, sh - si * 2, br - 6);
+  ctx.fillStyle = '#050807';
+  ctx.fill();
+
+  /* screen content */
+  drawScreenContent(ctx, scx, scy, sw - si * 2, sh - si * 2);
+
+  /* subtle green screen-glow on ceramic around screen */
+  ctx.save();
+  ctx.shadowColor = 'rgba(80,220,140,0.25)';
+  ctx.shadowBlur = 40;
+  roundRect(ctx, scx - sw / 2, scy - sh / 2, sw, sh, br);
+  ctx.strokeStyle = 'rgba(80,220,140,0.15)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  /* ── small brand mark bottom ── */
+  ctx.save();
+  ctx.font = '400 36px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(180,140,90,0.35)';
+  ctx.textAlign = 'center';
+  ctx.fillText('☕  ambient · aware', W * 0.5, 1080);
+  ctx.restore();
+
+  return new THREE.CanvasTexture(c);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+/* live metrics — updated each frame */
+let metrics = { comfort: 87, guests: 6, queue: 2, temp: 21.5, rh: 58 };
+let screenCanvas, screenCtx, screenTex;
+
+function buildScreenCanvas() {
+  screenCanvas = document.createElement('canvas');
+  screenCanvas.width = 512; screenCanvas.height = 360;
+  screenCtx = screenCanvas.getContext('2d');
+  screenTex = new THREE.CanvasTexture(screenCanvas);
+  return screenTex;
+}
+
+function drawScreenContent(ctx, cx, cy, sw, sh) {
+  const px = cx - sw / 2, py = cy - sh / 2;
+
+  /* comfort index gauge arc */
+  const gx = cx, gy = cy - sh * 0.12, gr = 80;
+  const startA = Math.PI * 0.75, endA = Math.PI * 2.25;
+  const filled = startA + (endA - startA) * (metrics.comfort / 100);
+
+  /* track */
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(gx, gy, gr, startA, endA);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  /* fill */
+  const grad = ctx.createLinearGradient(gx - gr, gy, gx + gr, gy);
+  grad.addColorStop(0, '#44dd88');
+  grad.addColorStop(1, '#d9a441');
+  ctx.beginPath();
+  ctx.arc(gx, gy, gr, startA, filled);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.restore();
+
+  /* comfort number */
+  ctx.save();
+  ctx.font = '700 64px -apple-system, sans-serif';
+  ctx.fillStyle = '#44dd88';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(metrics.comfort, gx, gy + 4);
+  ctx.font = '500 22px -apple-system, sans-serif';
+  ctx.fillStyle = '#558866';
+  ctx.fillText('COMFORT', gx, gy + 44);
+  ctx.restore();
+
+  /* divider */
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px + 20, cy + sh * 0.15);
+  ctx.lineTo(px + sw - 20, cy + sh * 0.15);
+  ctx.stroke();
+  ctx.restore();
+
+  /* metric tiles */
+  const tiles = [
+    { icon: '👤', val: metrics.guests + ' in', label: 'GUESTS' },
+    { icon: '🚶', val: metrics.queue + ' wait', label: 'QUEUE'  },
+    { icon: '🌡️', val: metrics.temp.toFixed(1) + '°C', label: 'TEMP'  },
+    { icon: '💧', val: metrics.rh + '%', label: 'HUMID'  },
+  ];
+
+  const tileW = (sw - 40) / 4;
+  tiles.forEach((t, i) => {
+    const tx = px + 20 + i * tileW + tileW / 2;
+    const ty = cy + sh * 0.28;
+    ctx.save();
+    ctx.font = '600 28px -apple-system, sans-serif';
+    ctx.fillStyle = '#c8e8d0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.val, tx, ty);
+    ctx.font = '500 17px -apple-system, sans-serif';
+    ctx.fillStyle = '#3a6648';
+    ctx.fillText(t.label, tx, ty + 26);
+    ctx.restore();
+  });
+
+  /* music label */
+  ctx.save();
+  ctx.font = '500 20px -apple-system, sans-serif';
+  ctx.fillStyle = '#d9a441';
+  ctx.textAlign = 'center';
+  ctx.fillText('♫  Morning Rush  ·  118 BPM  ·  auto', cx, cy + sh * 0.44);
+  ctx.restore();
+}
+
+/* ─── build scene objects ─── */
+
+/* cup profile */
+const pts = [];
+const profile = [
+  [0.01, 0], [1.72, 0], [1.68, 0.18], [1.52, 0.6],
+  [1.48, 1.5], [1.48, 3.2], [1.52, 4.4],
+  [1.62, 4.9], [1.72, 5.1], [1.76, 5.25],
+];
+profile.forEach(([x, y]) => pts.push(new THREE.Vector2(x, y)));
+
+const cupGeo = new THREE.LatheGeometry(pts, 80, Math.PI, Math.PI * 2);
+
+const cupTex = buildCupTexture();
+cupTex.colorSpace = THREE.SRGBColorSpace;
+cupTex.wrapS = THREE.RepeatWrapping;
+cupTex.wrapT = THREE.RepeatWrapping;
+
+const cupMat = new THREE.MeshStandardMaterial({
+  map: cupTex,
+  roughness: 0.38,
+  metalness: 0.0,
+  envMapIntensity: 0.8,
+});
+const cup = new THREE.Mesh(cupGeo, cupMat);
+cup.castShadow = true;
+cup.receiveShadow = true;
+scene.add(cup);
+
+/* ── rim — gold/brass thin torus ── */
+const rimGeo = new THREE.TorusGeometry(1.76, 0.045, 12, 80);
+const rimMat = new THREE.MeshStandardMaterial({ color: '#c8a040', roughness: 0.25, metalness: 0.8 });
+const rim = new THREE.Mesh(rimGeo, rimMat);
+rim.position.y = 5.25;
+rim.castShadow = true;
+scene.add(rim);
+
+/* ── handle ── */
+const hPts = [
+  new THREE.Vector3(1.52, 4.0, 0),
+  new THREE.Vector3(2.1,  3.7, 0),
+  new THREE.Vector3(2.6,  3.0, 0),
+  new THREE.Vector3(2.65, 2.3, 0),
+  new THREE.Vector3(2.4,  1.6, 0),
+  new THREE.Vector3(1.8,  1.2, 0),
+  new THREE.Vector3(1.52, 1.1, 0),
+];
+const handleCurve = new THREE.CatmullRomCurve3(hPts);
+const handleGeo = new THREE.TubeGeometry(handleCurve, 48, 0.16, 10, false);
+const handleMat = new THREE.MeshStandardMaterial({
+  color: '#ede0c4', roughness: 0.4, metalness: 0.0
+});
+const handle = new THREE.Mesh(handleGeo, handleMat);
+handle.castShadow = true;
+scene.add(handle);
+
+/* ── saucer ── */
+const saucerPts = [
+  new THREE.Vector2(0.01, 0),
+  new THREE.Vector2(2.6, 0),
+  new THREE.Vector2(2.7, 0.06),
+  new THREE.Vector2(2.55, 0.18),
+  new THREE.Vector2(1.9, 0.22),
+  new THREE.Vector2(1.78, 0.28),
+  new THREE.Vector2(1.78, 0.35),
+  new THREE.Vector2(2.55, 0.4),
+  new THREE.Vector2(2.82, 0.48),
+  new THREE.Vector2(2.9, 0.55),
+];
+const saucerGeo = new THREE.LatheGeometry(saucerPts, 64, Math.PI, Math.PI * 2);
+const saucerMat = new THREE.MeshStandardMaterial({
+  color: '#ede0c4', roughness: 0.35, metalness: 0.0
+});
+const saucer = new THREE.Mesh(saucerGeo, saucerMat);
+saucer.position.y = -0.38;
+saucer.castShadow = true;
+saucer.receiveShadow = true;
+scene.add(saucer);
+
+/* ── charging ring (Qi indicator) ── */
+const chargeGeo = new THREE.TorusGeometry(1.5, 0.03, 8, 60);
+const chargeMat = new THREE.MeshStandardMaterial({
+  color: '#44dd88', emissive: '#44dd88', emissiveIntensity: 0.6,
+  roughness: 0.1, metalness: 0.2
+});
+const chargeRing = new THREE.Mesh(chargeGeo, chargeMat);
+chargeRing.position.y = 0.02;
+chargeRing.rotation.x = -Math.PI / 2;
+scene.add(chargeRing);
+
+/* ── steam particles ── */
+const steamCount = 40;
+const steamGeo = new THREE.BufferGeometry();
+const steamPos = new Float32Array(steamCount * 3);
+const steamVel = new Float32Array(steamCount * 3);
+const steamLife = new Float32Array(steamCount);
+for (let i = 0; i < steamCount; i++) {
+  steamPos[i*3]   = (Math.random() - 0.5) * 0.8;
+  steamPos[i*3+1] = 5.3 + Math.random() * 0.3;
+  steamPos[i*3+2] = (Math.random() - 0.5) * 0.8;
+  steamVel[i*3]   = (Math.random() - 0.5) * 0.008;
+  steamVel[i*3+1] = 0.018 + Math.random() * 0.01;
+  steamVel[i*3+2] = (Math.random() - 0.5) * 0.008;
+  steamLife[i] = Math.random();
+}
+steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPos, 3));
+const steamMat = new THREE.PointsMaterial({
+  color: '#fff8f0', size: 0.12, transparent: true,
+  opacity: 0.35, sizeAttenuation: true,
+});
+const steam = new THREE.Points(steamGeo, steamMat);
+scene.add(steam);
+
+/* ── reflection disc under saucer ── */
+const reflGeo = new THREE.CircleGeometry(3.2, 64);
+const reflMat = new THREE.MeshStandardMaterial({
+  color: '#0a0a0c', roughness: 0.0, metalness: 0.8,
+  transparent: true, opacity: 0.45
+});
+const refl = new THREE.Mesh(reflGeo, reflMat);
+refl.rotation.x = -Math.PI / 2;
+refl.position.y = -0.01;
+scene.add(refl);
+
+/* ─── animation ─── */
+let t = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  t += 0.012;
+
+  /* jitter metrics slowly */
+  if (Math.floor(t * 0.4) !== Math.floor((t - 0.012) * 0.4)) {
+    metrics.comfort = Math.max(70, Math.min(98, metrics.comfort + (Math.random() - 0.48)));
+    metrics.temp    = parseFloat((metrics.temp + (Math.random() - 0.5) * 0.05).toFixed(1));
+    metrics.rh      = Math.max(40, Math.min(75, metrics.rh + (Math.random() - 0.5) | 0));
+    /* redraw cup texture screen area */
+    const ctx2 = cupTex.image.getContext('2d');
+    const W2 = cupTex.image.width, H2 = cupTex.image.height;
+    const scx = W2 * 0.5, scy = 780, sw = 460, sh = 330;
+    const br = 22, si = 18;
+    ctx2.fillStyle = '#050807';
+    roundRect(ctx2, scx - sw/2 + si, scy - sh/2 + si, sw - si*2, sh - si*2, br - 6);
+    ctx2.fill();
+    drawScreenContent(ctx2, scx, scy, sw - si*2, sh - si*2);
+    cupTex.needsUpdate = true;
+  }
+
+  /* steam */
+  const pos = steamGeo.attributes.position.array;
+  for (let i = 0; i < steamCount; i++) {
+    pos[i*3]   += steamVel[i*3];
+    pos[i*3+1] += steamVel[i*3+1];
+    pos[i*3+2] += steamVel[i*3+2];
+    steamLife[i] += 0.008;
+    if (steamLife[i] > 1) {
+      pos[i*3]   = (Math.random() - 0.5) * 0.6;
+      pos[i*3+1] = 5.3;
+      pos[i*3+2] = (Math.random() - 0.5) * 0.6;
+      steamLife[i] = 0;
+    }
+  }
+  steamGeo.attributes.position.needsUpdate = true;
+  steamMat.opacity = 0.25 + Math.sin(t * 1.5) * 0.1;
+
+  /* charging ring pulse */
+  chargeMat.emissiveIntensity = 0.4 + Math.sin(t * 2.2) * 0.3;
+  screenGlow.intensity = 0.5 + Math.sin(t * 1.8) * 0.15;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+controls.addEventListener('end',   () => { setTimeout(() => controls.autoRotate = true, 3000); });
+</script>
+</body>
+</html>
