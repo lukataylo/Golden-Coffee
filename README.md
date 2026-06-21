@@ -228,7 +228,7 @@ We benchmarked the perception pipeline against a vision-LLM judge on 24 frames a
 |---|---|---|
 | **Sui / Walrus** | 🟢 **Live** | `onchain/walrus.py` + `POST /onchain/snapshot` anchor anonymized metrics + the agent's action audit trail to the Walrus testnet over pure HTTP — returns a public, verifiable blob URL. No wallet needed. |
 | **Vercel** | 🟢 **Live-ready** | A separate production Next.js 14 + Clerk app in `web/` (marketing, auth, multi-venue onboarding) deploys independently to Vercel; the static dashboard is also Vercel-deployable and `?ws=`-aware. See [VERCEL.md](VERCEL.md). |
-| **FLock** | 🟡 **Model ported; demo runs** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally. On-chain packaging (Docker/IPFS/FlockTask) is documented but not executed — see [federated/FLOCK.md](federated/FLOCK.md). |
+| **FLock** | 🟢 **Model ported; demo runs** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally. On-chain packaging (Docker/IPFS/FlockTask) is documented but not executed — see [federated/FLOCK.md](federated/FLOCK.md). |
 | **Codeplain** | ✅ **Spec→code PWA built** | A companion mobile PWA generated spec-first with Codeplain from [`codeplain/golden_coffee_app.plain`](codeplain/golden_coffee_app.plain) → [`codeplain/dist/`](codeplain/dist/) (TypeScript React — room comfort, controls, activity audit feed, Walrus verify). Plan + workflow in [codeplain/README.md](codeplain/README.md). |
 
 🔎 Full per-bounty write-up: **[docs/bounties.md](docs/bounties.md)**.
