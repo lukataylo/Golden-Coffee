@@ -30,8 +30,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Unit tests (auth, command bar, comfort index, forecast/discounts, FLock packaging)
-        run: python -m pytest backend federated shared agent -q
+      - name: Unit tests (auth, command bar, comfort, forecast/discounts, FLock packaging, ops-report)
+        run: python -m pytest backend federated shared agent codeplain -q
 
       - name: Deep capabilities eval (policy, music model, agent, schemas, actuators, geometry, federated)
         run: python -m eval.capabilities_eval

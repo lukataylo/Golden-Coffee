@@ -69,14 +69,24 @@ steps that need FLock credentials, not code.
 
 ## 🟡 Codeplain — spec-first development
 
-**Status: spec written; rendering blocked on an API key.**
+**Status: spec written, validated by a passing reference impl, and the feature ships live; the
+Codeplain-*rendered* deliverable is the only part still blocked on an API key.**
 
 The Codeplain bounty requires building with Codeplain as the *primary* tool. We chose a discrete,
 useful module to build spec-first: the **daily ops-report tool**, specified in structured English at
 [`codeplain/ops_report.plain`](../codeplain/ops_report.plain) (it feeds the £-at-risk headline and
-the Walrus snapshot). Codeplain isn't self-serve — rendering the `.plain` spec to tested code is
-blocked on an API key request to `support@codeplain.ai`. The full plan, commands, and the key-request
-email are in [codeplain/README.md](../codeplain/README.md).
+the Walrus snapshot).
+
+To de-risk that track and ship the feature now, we wrote the **reference implementation**
+([`codeplain/ops_report.py`](../codeplain/ops_report.py)) that satisfies the spec's acceptance tests
+verbatim ([`codeplain/test_ops_report.py`](../codeplain/test_ops_report.py), in CI) and serves it live
+at **`GET /ops/report`** over the real metrics log. This proves the `.plain` spec is complete and
+buildable and gives the Codeplain-rendered output a conformance target.
+
+> Honest scope: hand-writing the reference does **not** by itself satisfy the "built *with* Codeplain"
+> requirement — that still needs the hosted render, blocked on an API key request to
+> `support@codeplain.ai` (plan + key-request email in [codeplain/README.md](../codeplain/README.md)).
+> What's won today is the *feature* and a *validated spec*, not the bounty.
 
 ## A note on scope
 

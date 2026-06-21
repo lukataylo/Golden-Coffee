@@ -151,8 +151,8 @@ Everything offline is tested and runs in CI on every push ([.github/workflows/ci
 
 ```bash
 pip install -r requirements-dev.txt        # lean test deps (every heavy CV import is lazy)
-python -m pytest backend federated shared agent -q   # 49 unit tests: auth, command bar,
-                                            # comfort index, forecast, discounts, FLock packaging
+python -m pytest backend federated shared agent codeplain -q   # 59 unit tests: auth, command bar,
+                                            # comfort index, forecast, discounts, FLock packaging, ops-report
 python -m eval.capabilities_eval            # 106 deep behavioural checks — policy, music model,
                                             # agent, schemas, actuators, geometry, federation
 python -m agent.policy                       # offline policy self-test over synthetic scenes
@@ -240,7 +240,7 @@ We benchmarked the perception pipeline against a vision-LLM judge on 24 frames a
 | **Sui / Walrus** | 🟢 **Live** | `onchain/walrus.py` + `POST /onchain/snapshot` anchor anonymized metrics + the agent's action audit trail to the Walrus testnet over pure HTTP — returns a public, verifiable blob URL. No wallet needed. |
 | **Vercel** | 🟢 **Live-ready** | A separate production Next.js 14 + Clerk app in `web/` (marketing, auth, multi-venue onboarding) deploys independently to Vercel; the static dashboard is also Vercel-deployable and `?ws=`-aware. See [VERCEL.md](VERCEL.md). |
 | **FLock** | 🟡 **Model ported; container CI-verified** | `federated/flock_model.py` is a faithful port of our federated sim onto FLock's `FlockModel` interface (`train`/`aggregate`/`evaluate`). `python -m federated.flock_model` runs end-to-end locally, and `Dockerfile.flock` is packaging-tested in CI (`federated/test_flock_packaging.py` rebuilds the image's copy-set and trains from it). Only the on-chain registration (IPFS/FlockTask, needs platform creds) remains — see [federated/FLOCK.md](federated/FLOCK.md). |
-| **Codeplain** | 🟡 **Spec written; render blocked on key** | The daily ops-report module is specified spec-first in `codeplain/ops_report.plain`; rendering to code is blocked on a Codeplain API key. Plan in [codeplain/README.md](codeplain/README.md). |
+| **Codeplain** | 🟡 **Spec validated + feature live; render blocked on key** | The daily ops-report is specified spec-first in `codeplain/ops_report.plain`; a reference impl (`codeplain/ops_report.py`) passes the spec's acceptance tests in CI and is served live at `GET /ops/report`. The Codeplain-*rendered* deliverable still needs an API key — honest scope in [codeplain/README.md](codeplain/README.md). |
 
 🔎 Full per-bounty write-up: **[docs/bounties.md](docs/bounties.md)**.
 

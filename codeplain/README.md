@@ -1,5 +1,12 @@
 # Codeplain bounty plan (1st = £1,000 cash + $500 credits/member)
 
+> **Status update:** the ops-report **feature ships now.** `ops_report.py` is a hand-written
+> reference implementation of `ops_report.plain` that passes the spec's acceptance tests
+> (`test_ops_report.py`, in CI) and is served live at `GET /ops/report` over the metrics log.
+> This validates the spec and gives the Codeplain render a conformance target — but writing
+> the reference by hand does **not** satisfy "built *with* Codeplain", so the bounty itself is
+> still gated on the API key below.
+
 **Bounty requirement:** *"Build with \*codeplain as your primary development tool"* +
 submit a public GitHub repo. So we can't just call the API once — we must show a real
 module that was genuinely **spec-built** with Codeplain, with the `.plain` spec as the

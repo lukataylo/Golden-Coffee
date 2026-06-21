@@ -259,6 +259,17 @@ async def metrics(limit: int = 200) -> dict:
     return {"summary": summary, "recent": rows}
 
 
+@app.get("/ops/report")
+async def ops_report() -> dict:
+    """Today's one-page operations digest — revenue-at-risk, peak occupancy,
+    walk-offs, busiest hour, and cleaning alerts — computed from the metrics log
+    by the spec-built ops-report tool (codeplain/ops_report.py)."""
+    from codeplain.ops_report import report_for_file
+
+    report = await asyncio.to_thread(report_for_file, str(METRICS_PATH))
+    return {"ok": True, "report": report}
+
+
 @app.post("/onchain/snapshot")
 async def onchain_snapshot(limit: int = 500) -> dict:
     """Anchor the anonymized metrics history + agent ACTION audit trail to Walrus
