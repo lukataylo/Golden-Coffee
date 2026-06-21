@@ -36,10 +36,13 @@ def _synthetic_scene(t: int) -> SceneEvent:
     queue_len = int(wave * 4)
     productivity = round(0.4 + 0.5 * (1 - wave), 2)  # busy => higher activity
 
-    # Cumulative walk-offs today: customers give up when the queue is long. Grows
-    # monotonically with sustained queue pressure (queue² × time), so the agent's
-    # rush copilot can surface the £ walked away. ~£5.50 average ticket.
-    abandons = int(0.012 * queue_len * queue_len * t)
+    # Conversion funnel — cumulative counters that grow over the day. People keep
+    # arriving; most order, but a fraction give up when the queue is long (the
+    # walk-offs that drive the £-at-risk headline). Kept internally consistent:
+    # entered >= ordered, and abandons accounts for part of the entered/ordered gap.
+    entered = int(2 + 0.9 * t)                              # ~1 arrival/tick + base
+    abandons = int(0.012 * queue_len * queue_len * t)       # give-ups under queue pressure
+    ordered = max(0, entered - abandons - queue_len)        # reached the counter
     avg_ticket_gbp = 5.50
 
     tracks: list[Track] = []
@@ -106,6 +109,8 @@ def _synthetic_scene(t: int) -> SceneEvent:
         tracks=tracks,
         occupancy=occupancy,
         queue_len=queue_len,
+        entered=entered,
+        ordered=ordered,
         abandons=abandons,
         avg_ticket_gbp=avg_ticket_gbp,
         heatmap_grid=grid,

@@ -71,6 +71,10 @@ class SceneEvent(BaseModel):
     tracks: list[Track] = Field(default_factory=list)
     occupancy: int = 0              # customers currently inside
     queue_len: int = 0
+    # Conversion funnel (all cumulative-today counters): entered the venue ->
+    # joined the queue -> ordered at the counter; abandons left without ordering.
+    entered: int = 0                # cumulative people who came through the door today
+    ordered: int = 0               # cumulative people who reached the counter / ordered today
     abandons: int = 0               # cumulative walk-offs today: joined the queue then left without ordering
     avg_ticket_gbp: float = 5.50    # average spend per customer (£) — drives the £-walked-away headline
     heatmap_grid: Optional[list[list[float]]] = None  # coarse dwell-density grid for flow/layout

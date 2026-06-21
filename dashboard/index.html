@@ -1179,8 +1179,10 @@
       tables.push({ id:tid, occupied:occupied, wait_s:wait, status:status, needs_cleaning:(!occupied && (t+k)%5===0) });
     });
     var abandons = Math.round(0.012 * queue_len * queue_len * t);  // walk-offs climb under queue pressure
+    var entered = Math.round(2 + 0.9 * t);                          // cumulative arrivals today
+    var ordered = Math.max(0, entered - abandons - queue_len);      // reached the counter
     return { type:"scene", ts:Date.now()/1000, tracks:tracks, occupancy:occupancy, queue_len:queue_len,
-             abandons:abandons, avg_ticket_gbp:5.5,
+             entered:entered, ordered:ordered, abandons:abandons, avg_ticket_gbp:5.5,
              heatmap_grid:grid, tables:tables, source:"mock" };
   }
   function demoActions(scene, t) {

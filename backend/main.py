@@ -71,6 +71,8 @@ def _log_metrics(event: dict) -> None:
         "ts": event.get("ts"),
         "occupancy": event.get("occupancy", 0),
         "queue_len": event.get("queue_len", 0),
+        "entered": int(event.get("entered", 0) or 0),
+        "ordered": int(event.get("ordered", 0) or 0),
         "abandons": abandons,
         "lost_gbp": round(abandons * avg_ticket, 2),  # £ walked away today (avg ticket × walk-offs)
         "tables_waiting": sum(
@@ -249,12 +251,17 @@ async def metrics(limit: int = 200) -> dict:
                 rows.append(json.loads(ln))
             except Exception:
                 continue
+    entered_today = max((r.get("entered", 0) for r in rows), default=0)
+    ordered_today = max((r.get("ordered", 0) for r in rows), default=0)
     summary = {
         "samples": len(rows),
         "peak_occupancy": max((r.get("occupancy", 0) for r in rows), default=0),
         # The headline: total £ walked away (max of the cumulative running total).
         "lost_gbp_today": max((r.get("lost_gbp", 0) for r in rows), default=0),
         "abandons_today": max((r.get("abandons", 0) for r in rows), default=0),
+        "entered_today": entered_today,
+        "ordered_today": ordered_today,
+        "conversion_pct": round(100 * ordered_today / entered_today) if entered_today else 0,
     }
     return {"summary": summary, "recent": rows}
 
