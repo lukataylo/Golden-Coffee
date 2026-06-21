@@ -29,6 +29,10 @@ const DASHBOARD_URL = withFallback(
 );
 
 export const env = {
+  // Whether Clerk auth is configured. When false the app still builds and the
+  // marketing site deploys to Vercel with zero config (auth simply degrades),
+  // so a judge can deploy out of the box without a Clerk account.
+  clerkEnabled: !!(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.trim()),
   appUrl: withFallback(process.env.NEXT_PUBLIC_APP_URL, "http://localhost:3000"),
   dashboardUrl: DASHBOARD_URL,
   scanUrl: withFallback(

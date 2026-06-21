@@ -3,6 +3,11 @@ import { UserButton, OrganizationSwitcher } from "@clerk/nextjs";
 import { Wordmark } from "@/components/ui";
 import { env } from "@/lib/env";
 
+// Auth-gated routes render at request time (when Clerk is available), never at
+// build — Clerk's <UserButton>/<OrganizationSwitcher> can't be statically
+// prerendered, so this keeps `next build` green with or without a key configured.
+export const dynamic = "force-dynamic";
+
 export default function AppLayout({
   children,
 }: {

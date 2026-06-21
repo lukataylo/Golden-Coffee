@@ -48,11 +48,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <ClerkProvider appearance={clerkAppearance}>
-      <html lang="en" className={`${sans.variable} ${mono.variable}`}>
-        <body>{children}</body>
-      </html>
-    </ClerkProvider>
+  const html = (
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+      <body>{children}</body>
+    </html>
   );
+  // Only mount ClerkProvider when a publishable key is configured. Without it,
+  // ClerkProvider throws during static prerender ("Missing publishableKey") and
+  // breaks `next build` — so the marketing site can deploy to Vercel with zero
+  // config, and full auth lights up the moment the key is set.
+  if (!env.clerkEnabled) return html;
+  return <ClerkProvider appearance={clerkAppearance}>{html}</ClerkProvider>;
 }
