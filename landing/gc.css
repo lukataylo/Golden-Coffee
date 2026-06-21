@@ -118,3 +118,18 @@ p{margin:0;}
   .wrap,.wrap-narrow{padding:0 18px;}
   .footer-inner{grid-template-columns:1fr;}
 }
+
+/* ── Caffe Steve eye blink ── */
+@keyframes steve-blink {
+  0%, 60%  { transform: scaleY(1); }
+  62%      { transform: scaleY(0.06); }
+  65%      { transform: scaleY(1); }
+  68%      { transform: scaleY(0.06); }
+  71%      { transform: scaleY(1); }
+  100%     { transform: scaleY(1); }
+}
+.steve-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: steve-blink 5s ease-in-out infinite;
+}
