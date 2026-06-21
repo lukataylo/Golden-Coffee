@@ -854,7 +854,8 @@
     scent:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4-2 6-5 6-9a6 6 0 0 0-12 0c0 4 2 7 6 9Z"/><path d="M12 13a3 3 0 0 0 0-6"/></svg>',
     staff:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
     discount:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0l-6.18-6.18A2 2 0 0 1 3.83 13V5a2 2 0 0 1 2-2h8a2 2 0 0 1 1.42.59l5.34 5.34a2 2 0 0 1 0 2.48Z"/><circle cx="7.5" cy="7.5" r="1"/></svg>',
-    verified:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+    verified:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    network:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M6.8 7.4 10.4 16M17.2 7.4 13.6 16M7 6h10"/></svg>'
   };
   var ICONCOL = {
     music:   { bg:"rgba(255,154,45,.14)",  fg:"#FF9A2D" },
@@ -863,7 +864,8 @@
     scent:   { bg:"rgba(169,189,214,.16)", fg:"#A9BDD6" },
     staff:   { bg:"rgba(235,106,78,.16)",  fg:"#F2A48E" },
     discount:{ bg:"rgba(255,184,92,.16)",  fg:"#FFB85C" },
-    verified:{ bg:"rgba(111,207,151,.22)", fg:"#6FCF97" }
+    verified:{ bg:"rgba(111,207,151,.22)", fg:"#6FCF97" },
+    network: { bg:"rgba(111,182,224,.16)", fg:"#6FB6E0" }
   };
   function reword(action, params) {
     params = params || {};
@@ -876,6 +878,10 @@
       case "push_discount": return { type:"discount", title:"Shared a little treat" };
       case "update_menu_price": return { type:"discount", title:`Marked down ${params.discount_pct||""}% — quiet period` };
       case "notify_staff": return { type:"staff", title:(/till|queue|second/.test(String(params.text || "").toLowerCase()) ? "Opened a second till" : /pos|marked|repric/.test(String(params.text || "").toLowerCase()) ? "Updated POS prices" : params.escalation ? "ESCALATION — unresolved alert" : "Sent a hand to a table") };
+      case "tune_policy": {
+        var n = params.n_nodes || params.n || 0;
+        return { type:"network", title: n > 1 ? ("Learned from " + n + " cafés in the network") : "Tuned from the café network" };
+      }
       case "staff_verified": {
         var rs = params.response_time_s || 0;
         var mins = Math.floor(rs / 60), secs = rs % 60;
@@ -1334,6 +1340,12 @@
         rationale: (ab - _demoLastAb) + " just left the queue without ordering; ~£" + lost + " walked away today — act before more leave." });
     }
     _demoLastAb = ab;
+    // Federated learning beat — every ~40s the venue syncs with the café network
+    // (the FLock / "British Sovereign AI" differentiator: only ratios leave a shop).
+    if (t > 0 && t % 40 === 0) {
+      out.push({ action:"tune_policy", auto:true, ts:ts, params:{ n_nodes:4, lull:3, high:9, queue:5 },
+        rationale:"Federated round: learned better thresholds from 4 cafés in the network — only capacity-normalized ratios were shared, never a single frame." });
+    }
     return out;
   }
   var _demoLastAb = 0;
