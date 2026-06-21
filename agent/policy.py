@@ -348,6 +348,9 @@ def decide(scene: dict, state: dict) -> list[AgentAction]:
     unattended = _unattended_guests(scene)
     busy = occupancy >= HIGH_OCCUPANCY
     music_auto = state.get("music_mode", "auto") == "auto"
+    tracks = scene.get("tracks", []) or []
+    customer_tracks = [t for t in tracks if t.get("role") != "staff"]
+    energy = (sum(t.get("activity", 0.0) for t in customer_tracks) / len(customer_tracks)) if customer_tracks else 0.5
 
     actions: list[AgentAction] = []
 
