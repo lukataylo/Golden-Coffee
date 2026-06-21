@@ -1339,6 +1339,15 @@
                  text:"Walk-offs rising — open a second till. (~£" + lost + " walked away today)" },
         rationale: (ab - _demoLastAb) + " just left the queue without ordering; ~£" + lost + " walked away today — act before more leave." });
     }
+    // Closed-loop verification — a few ticks after an urgent alert, the camera
+    // CONFIRMS staff acted (the differentiator: it doesn't just alert, it verifies).
+    if (ab > _demoLastAb && scene.queue_len >= 3) _demoAlertAt = t;
+    if (_demoAlertAt > 0 && t === _demoAlertAt + 4) {
+      out.push({ action:"staff_verified", auto:true, ts:ts,
+        params:{ table_id:"till", alert_type:"queue", response_time_s:110, verified_by:"camera" },
+        rationale:"Camera confirmed: a second till opened and the queue cleared — alert resolved in 1m 50s." });
+      _demoAlertAt = -1;
+    }
     _demoLastAb = ab;
     // Federated learning beat — every ~40s the venue syncs with the café network
     // (the FLock / "British Sovereign AI" differentiator: only ratios leave a shop).
@@ -1348,7 +1357,7 @@
     }
     return out;
   }
-  var _demoLastAb = 0;
+  var _demoLastAb = 0, _demoAlertAt = -1;
   function demoTick() {
     var scene = demoScene(demoT); renderScene(scene);
     demoActions(scene, demoT).forEach(function (a) { applyComfortAction(a); pushFeed(a.action, a.params, a.rationale, true, (a.ts ? a.ts*1000 : Date.now())); });
