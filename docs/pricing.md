@@ -1,7 +1,7 @@
 # Caffe Steve — Pricing & Unit Economics
 
 > **Pitch version.** All prices ex-VAT (B2B standard). Inc-VAT shown in brackets.
-> FX: £1 ≈ $1.32 / ¥8.96 · June 2026
+> FX: £1 ≈ $1.32 / ¥8.96 · June 2026. Customer mix assumption: 70% Tier 1 / 20% Tier 2 / 10% Tier 3.
 
 ---
 
@@ -9,7 +9,46 @@
 
 **Steve is the acquisition hook. Subscription is the profit engine.**
 
-Hardware is priced near cost to get devices into venues fast. The recurring subscription — with ~79% gross margin — is where the business lives.
+Hardware is priced near cost to get devices into venues fast. The recurring subscription — with ~70–79% gross margin — is where the business lives.
+
+---
+
+## Blended economics (70/20/10 mix)
+
+| | Value |
+|---|---|
+| Blended variable COGS/month | 0.7 × £13 + 0.2 × £21 + 0.1 × £52 = **£18.50** |
+| Fixed cost base | **£20,000/month** |
+| Fixed cost per site at 500 locations | £20,000 ÷ 500 = **£40/site** |
+| Minimum viable blended price | £18.50 + £40.00 = **£58.50 ex-VAT** |
+
+---
+
+## Three pricing models compared
+
+| Pricing model | T1 / T2 / T3 ex-VAT | Blended avg revenue | Blended contribution | Break-even sites |
+|---|---|---:|---:|---:|
+| Minimum breakeven | £49 / £79 / £139 | £64.00 | £45.50 | ~440 |
+| **Strategic launch (recommended)** | **£59 / £89 / £159** | **£75.00** | **£56.50** | **~354** |
+| Premium headroom | £63 / £99 / £179 | £81.80 | £63.30 | ~316 |
+
+> **Recommendation: use the strategic launch prices.** The minimum is mathematically tight — no room for churn, failed devices, or support spikes. The premium model is fine but harder to sell at launch. Strategic launch breaks even at 354 sites and generates ~£8,250/month operating buffer at 500 sites.
+
+---
+
+## Recommended pricing: Strategic launch
+
+### 500-site operating proof
+
+| Item | Value |
+|---|---|
+| Blended revenue per site | £75.00/month |
+| Blended variable COGS | £18.50/month |
+| Contribution margin per site | **£56.50/month** |
+| Total contribution at 500 sites | **£28,250/month** |
+| Fixed costs | £20,000/month |
+| **Operating profit at 500 sites** | **~£8,250/month** |
+| Break-even site count | **~354 sites** |
 
 ---
 
@@ -55,7 +94,7 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 
 ### Tier 1 — Steve Sensor + AI Vibe Monitoring
 
-*One Steve device (camera + sensors) → AI reads the room, tunes music, lighting, air.*
+*Steve (camera + sensors) reads the room and tunes music, lighting, and air automatically.*
 
 **Hardware**
 
@@ -68,7 +107,7 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 | Sale price (inc-VAT) | £59.88 |
 | Hardware gross margin | ~10% |
 
-> Note: if you say "£50 inc-VAT," net revenue is only £41.67 — below landed COGS. Always state £49.90 ex-VAT for B2B, or £59.88 inc-VAT for consumer marketing.
+> If marketed as "£50 inc-VAT," net revenue is only £41.67 — below landed COGS. Always state £49.90 ex-VAT for B2B, or £59.88 inc-VAT for consumer marketing.
 
 **Monthly subscription (after 3-month free trial)**
 
@@ -80,15 +119,15 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 | Payment processing | £2.00–£2.50 |
 | Maintenance / device replacement reserve | £1.50 |
 | **Variable service COGS/month** | **~£13** |
-| **Subscription (ex-VAT)** | **£63/month** |
-| Subscription (inc-VAT) | £75.60/month |
-| **Subscription gross margin** | **~79%** |
+| **Strategic launch price (ex-VAT)** | **£59/month** |
+| Inc-VAT | £70.80/month |
+| **Subscription gross margin** | **~78%** |
 
 ---
 
 ### Tier 2 — Steve + AI Illumination Integration
 
-*Steve controls the lighting mood — LED strips, smart dimmers, drivers, track spots.*
+*Steve actively controls LED strips, smart dimmers, drivers, and track spots.*
 
 **Setup (one zone, ~20–40 sqm)**
 
@@ -116,15 +155,15 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 | Payment processing | £3–£4 |
 | Hardware maintenance reserve | £4 |
 | **Variable service COGS/month** | **~£21** |
-| **Subscription (ex-VAT)** | **£99/month** |
-| Subscription (inc-VAT) | £118.80/month |
-| **Subscription gross margin** | **~79%** |
+| **Strategic launch price (ex-VAT)** | **£89/month** |
+| Inc-VAT | £106.80/month |
+| **Subscription gross margin** | **~76%** |
 
 ---
 
 ### Tier 3 — Full Ecosystem: Lighting + AC/Air + Scent
 
-*Complete vibe OS — Steve controls lighting, AC, air quality, and scent diffuser.*
+*Complete vibe OS — lighting, AC control, air quality monitoring, and scent diffuser.*
 
 **Setup (one zone, existing AC/ventilation)**
 
@@ -156,20 +195,20 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 | Support and remote optimisation | £10–£15 |
 | Maintenance / replacement reserve | £8–£12 |
 | Payment processing | £5–£7 |
-| **Variable service COGS/month** | **~£50–£55** |
-| **Subscription (ex-VAT)** | **£179/month** |
-| Subscription (inc-VAT) | £214.80/month |
-| **Subscription gross margin** | **~70%** |
+| **Variable service COGS/month** | **~£52** |
+| **Strategic launch price (ex-VAT)** | **£159/month** |
+| Inc-VAT | £190.80/month |
+| **Subscription gross margin** | **~67%** |
 
 ---
 
 ## Pricing menu at a glance
 
-| Tier | Upfront ex-VAT | Upfront inc-VAT | Monthly ex-VAT | Monthly inc-VAT | Margin |
+| Tier | Upfront ex-VAT | Upfront inc-VAT | Monthly ex-VAT | Monthly inc-VAT | Sub margin |
 |---|---|---|---|---|---|
-| Tier 1: Steve + AI Monitoring | **£49.90** | £59.88 | **£63** | £75.60 | ~79% sub |
-| Tier 2: Steve + Illumination | **£899** | £1,078.80 | **£99** | £118.80 | ~79% sub |
-| Tier 3: Full Ecosystem | **£1,999** | £2,398.80 | **£179** | £214.80 | ~70% sub |
+| Tier 1: Steve + AI Monitoring | **£49.90** | £59.88 | **£59** | £70.80 | ~78% |
+| Tier 2: Steve + Illumination | **£899** | £1,078.80 | **£89** | £106.80 | ~76% |
+| Tier 3: Full Ecosystem | **£1,999** | £2,398.80 | **£159** | £190.80 | ~67% |
 
 ---
 
@@ -185,24 +224,6 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 | Marketing / content / demo budget | £2,000–£5,000 |
 | **Total monthly fixed cost** | **~£17,500–£25,800** |
 
-**Fixed cost per customer at £20k/month baseline:**
-
-| Paying sites | Fixed cost per site |
-|---:|---:|
-| 100 | £200/mo — not viable |
-| 300 | £67/mo — approaching break-even |
-| 400 | £50/mo — **break-even** |
-| 500 | £40/mo — profitable |
-| 1,000 | £20/mo — strong margin |
-
----
-
-## Break-even
-
-- Tier 1 contribution margin: £63 − £13 = **£50/site/month**
-- Break-even: £20,000 ÷ £50 = **~400 paying sites**
-- That is **< 9% of London's ~4,500 independent cafés alone**
-
 ---
 
 ## Commercial logic
@@ -210,9 +231,9 @@ Every physical component is China-sourced. Customer prices are UK prices (ex-VAT
 | Role | What it is |
 |---|---|
 | Steve device | Customer acquisition anchor — low margin, gets us in the door |
-| Subscription | Profit engine — ~79% gross margin |
+| Subscription | Profit engine — ~67–78% gross margin |
 | Tier 2/3 setup | Cash-flow protection — covers hardware + install costs |
 | Tier 2/3 subscription | High-margin recurring upsell |
 
 **The clean launch pitch:**
-> "Buy Steve for £49.90. Get 3 months free. Then £63/month. Upgrade to lighting control from £899 + £99/month. Full ambience ecosystem from £1,999 + £179/month."
+> "Buy Steve for £49.90. Get 3 months free. Then £59/month. Upgrade to lighting control from £899 + £89/month. Full ambience ecosystem from £1,999 + £159/month."
