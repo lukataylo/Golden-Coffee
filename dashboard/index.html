@@ -2002,6 +2002,9 @@
 })();
 </script>
 
-<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<!-- Optional Spotify Web Playback SDK. async + onerror so a blocked/slow CDN at the
+     venue can never stall or break the rest of the dashboard (the hosted music
+     library is the default; Spotify is a fallback). -->
+<script async src="https://sdk.scdn.co/spotify-player.js" onerror="console.warn('[spotify] SDK failed to load — continuing without it');"></script>
 </body>
 </html>
