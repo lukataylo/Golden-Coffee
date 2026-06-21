@@ -510,17 +510,32 @@
 
   // Anchor the anonymized metrics + the agent's action audit trail on Walrus (Sui),
   // then open the PUBLIC, verifiable blob URL — the demo's tamper-proof trust beat.
+  var _anchoring = false;
   function anchorOnchain() {
     if (demoActive || !EP.http) { toast("Connect the live backend to anchor on Walrus"); return; }
+    if (_anchoring) return;                       // guard against double-clicks on stage
+    _anchoring = true;
+    var btn = $("onchain-btn");
+    if (btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
     toast("Anchoring today's audit trail on Walrus…");
-    fetch(EP.http + "/onchain/snapshot", { method: "POST" })
+    var done = function (msg, url) {
+      _anchoring = false;
+      if (btn) { btn.disabled = false; btn.style.opacity = ""; }
+      toast(msg);
+      if (url) window.open(url, "_blank", "noopener");
+    };
+    // Walrus can be slow; cap the wait so the button never hangs the demo.
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 35000);
+    fetch(EP.http + "/onchain/snapshot", { method: "POST", signal: ctrl ? ctrl.signal : undefined })
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        clearTimeout(timer);
         var url = d && d.walrus && d.walrus.read_url;
-        if (url) { toast("Anchored on-chain ✓ — opening the public proof"); window.open(url, "_blank", "noopener"); }
-        else { toast("Anchored, but Walrus returned no URL"); }
+        if (url) done("Anchored on-chain ✓ — opening the public proof", url);
+        else done("Anchored, but Walrus returned no URL");
       })
-      .catch(function () { toast("Couldn't reach Walrus — is the backend running?"); });
+      .catch(function () { clearTimeout(timer); done("Couldn't reach Walrus — is the backend running?"); });
   }
   window.anchorOnchain = anchorOnchain;
 
