@@ -842,7 +842,8 @@
   var feedItems = [];
   function pushFeed(action, params, rationale, auto, ts) {
     var r = reword(action, params || {});
-    feedItems.unshift({ type:r.type, title:r.title, sub: rationale || DEFAULT_SUB[r.type] || "", ts: ts || Date.now(), auto: auto !== false });
+    var urgent = !!(params && params.priority === "urgent");
+    feedItems.unshift({ type:r.type, title:r.title, sub: rationale || DEFAULT_SUB[r.type] || "", ts: ts || Date.now(), auto: auto !== false, urgent: urgent });
     if (feedItems.length > 8) feedItems.length = 8;
     if (action === "notify_staff" && window.Floor3D && floor3dOK && Floor3D.flashAlert) {
       Floor3D.flashAlert((params && params.zone) || "queue", "Staff alert");
@@ -858,11 +859,13 @@
     var html = "";
     for (var i = 0; i < feedItems.length; i++) {
       var it = feedItems[i], co = ICONCOL[it.type] || ICONCOL.staff, ic = ICON[it.type] || ICON.staff;
+      if (it.urgent) co = { bg:"rgba(235,106,78,.20)", fg:"#EB6A4E" };  // walk-off / urgent → red accent
       if (i > 0) html += '<div style="height:1px;background:rgba(255,236,214,.08);margin:13px 0;"></div>';
-      html += '<div style="display:flex;align-items:center;gap:12px;">' +
+      html += '<div style="display:flex;align-items:center;gap:12px;' + (it.urgent ? 'padding-left:8px;border-left:3px solid #EB6A4E;margin-left:-11px;' : '') + '">' +
         '<div style="width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;background:' + co.bg + ';color:' + co.fg + ';">' + ic + '</div>' +
         '<div style="flex:1;min-width:0;">' +
           '<div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;">' + escapeHtml(it.title) +
+            (it.urgent ? '<span style="font:700 9px/1 \'JetBrains Mono\',monospace;letter-spacing:.08em;color:#EB6A4E;background:rgba(235,106,78,.16);padding:2px 6px;border-radius:6px;">URGENT</span>' : '') +
             (it.auto ? '' : '<span style="font:600 9px/1 \'JetBrains Mono\',monospace;letter-spacing:.08em;color:#A9BDD6;background:rgba(92,130,184,.18);padding:2px 6px;border-radius:6px;">YOU</span>') +
           '</div>' +
           '<div style="font-size:11.5px;color:#9b8c7b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(it.sub) + '</div>' +
