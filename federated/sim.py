@@ -134,7 +134,7 @@ def main(rounds: int = 5, history: int = 120) -> None:
     ]
 
     print("\n" + "═" * len(HEADER))
-    print("  ☕  Coffee Steve — Federated Policy Simulation")
+    print("  ☕  Caffe Steve — Federated Policy Simulation")
     print("═" * len(HEADER))
     print(f"\n  {len(shops)} shops  ·  {history} scenes/round  ·  {rounds} federation rounds")
     print(f"\n  Venues:")

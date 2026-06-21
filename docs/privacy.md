@@ -1,12 +1,12 @@
 # 🔒 Privacy
 
-Privacy isn't a feature bolted onto Coffee Steve — it's the premise. The product only works if a
+Privacy isn't a feature bolted onto Caffe Steve — it's the premise. The product only works if a
 café owner can point it at their existing camera without it becoming surveillance. So the design
 goal is simple: **understand the room, never the person.**
 
 ## The stance
 
-> Coffee Steve is an ambient + ops copilot, **not** a surveillance tool. **No employee scoring.
+> Caffe Steve is an ambient + ops copilot, **not** a surveillance tool. **No employee scoring.
 > No demographics. No facial recognition. No surge pricing. No using discomfort to move people
 > along.** Every action helps the customer or the staff.
 

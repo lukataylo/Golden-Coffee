@@ -1,6 +1,6 @@
 # 🎵 Local music model — the room picks the playlist
 
-Coffee Steve already tunes music **volume** from the scene. The **local music
+Caffe Steve already tunes music **volume** from the scene. The **local music
 model** (`agent/music_model.py`) goes a step further: it chooses *what's
 actually playing* — the mood/genre, tempo (BPM) and the Spotify playlist — from
 the same anonymized scene data, entirely **on-device**.
@@ -15,7 +15,7 @@ The **on-device model below decides *what mood* should play**; the **player that
 actually makes sound** is our own hosted, royalty-free library — so music works
 with **zero setup and no account**. Spotify is an optional fallback.
 
-- **Tier-1 = Coffee Steve Sound Library.** Six café tracks (Kevin MacLeod,
+- **Tier-1 = Caffe Steve Sound Library.** Six café tracks (Kevin MacLeod,
   CC-BY 4.0) re-encoded to 112 kbps live in `dashboard/audio/`, catalogued in
   `dashboard/audio/manifest.json` and served by `GET /music/library`. Each track's
   `mood` maps 1:1 to the model's moods, so Auto mode can pick the matching track.

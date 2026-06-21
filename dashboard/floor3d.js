@@ -1,5 +1,5 @@
 /*
- * Coffee Steve — isometric 3D floor map (P0 from FLOORMAP_RESEARCH.md).
+ * Caffe Steve — isometric 3D floor map (P0 from FLOORMAP_RESEARCH.md).
  *
  * Extrudes the dashboard's normalized zone bands into a Three.js isometric
  * "digital twin" and binds it to live SceneEvent state: zone occupancy heat,

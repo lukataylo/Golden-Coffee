@@ -1,4 +1,4 @@
-"""Deterministic, rule-based ops policy for Coffee Steve.
+"""Deterministic, rule-based ops policy for Caffe Steve.
 
 `decide(scene, state) -> list[AgentAction]` is a *pure-ish* function: given a
 SceneEvent (as a dict) and a mutable `state` dict it owns for debouncing, it
@@ -10,7 +10,7 @@ ANTHROPIC_API_KEY is present it *may* layer Claude's judgement on top, but the
 shop still works fully without it.
 
 Philosophy: every action helps the customer or the staff — never punishes them.
-Coffee Steve is an "ambient autopilot + rush copilot": it tunes the atmosphere
+Caffe Steve is an "ambient autopilot + rush copilot": it tunes the atmosphere
 and protects speed-of-service, privately.
 
 Encoded rules (see constants for thresholds):

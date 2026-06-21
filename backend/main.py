@@ -1,4 +1,4 @@
-"""Coffee Steve backend — the realtime hub.
+"""Caffe Steve backend — the realtime hub.
 
 Decouples producers from consumers so all four workstreams can run independently:
 
@@ -83,7 +83,7 @@ def _log_metrics(event: dict) -> None:
     except Exception:
         pass  # never let logging break ingestion
 
-app = FastAPI(title="Coffee Steve Hub")
+app = FastAPI(title="Caffe Steve Hub")
 
 # CORS so the Vercel-hosted dashboard can hit the REST endpoints.
 app.add_middleware(
@@ -450,7 +450,7 @@ async def integrations_announce(request: Request) -> dict:
     if not isinstance(body, dict):
         body = {}
     target = str(body.get("target", "")).lower()
-    text = (str(body.get("text", "") or "Hello from Coffee Steve").strip())[:200]
+    text = (str(body.get("text", "") or "Hello from Caffe Steve").strip())[:200]
     cfg = _read_config()
     if target == "alexa":
         url = cfg.get("alexa_webhook_url") or os.environ.get("ALEXA_WEBHOOK_URL", "")
@@ -702,7 +702,7 @@ async def music_library() -> dict:
     try:
         data = json.loads(manifest_path.read_text())
     except Exception:
-        return {"library": "Coffee Steve Sound Library", "tracks": []}
+        return {"library": "Caffe Steve Sound Library", "tracks": []}
     for t in data.get("tracks", []):
         if t.get("file"):
             t["url"] = f"/audio/{t['file']}"

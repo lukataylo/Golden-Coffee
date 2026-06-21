@@ -1,4 +1,4 @@
-/* Coffee Steve — home gallery & simplified flow.
+/* Caffe Steve — home gallery & simplified flow.
  *
  * Default path is two taps: pick a coffee-shop card -> the layout loads into the
  * shared live 3D twin -> "Use this layout -> Push to live" POSTs the exact

@@ -1,4 +1,4 @@
-"""CaféComfortNet — the policy model at the heart of Coffee Steve's federated AI.
+"""CaféComfortNet — the policy model at the heart of Caffe Steve's federated AI.
 
 A deliberately small 3-layer MLP (8 → 16 → 8 → 4, ~500 parameters) that learns
 which ambient adjustments improve guest experience from live scene data.

@@ -1,4 +1,4 @@
-# Coffee Steve — Dashboard Redesign Brief
+# Caffe Steve — Dashboard Redesign Brief
 
 **Goal:** Replace the current dark coffee/gold dashboard with a clean, minimal,
 **Apple-grade** interface that reads as *intentionally designed by a human*, not

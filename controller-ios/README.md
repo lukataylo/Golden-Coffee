@@ -1,6 +1,6 @@
-# Coffee Steve — native iOS/iPadOS café controller
+# Caffe Steve — native iOS/iPadOS café controller
 
-App icon + brand: **Coffee Steve** (`App/Assets.xcassets/AppIcon.appiconset`, from `CoffeeSteve.svg`). Xcode project/bundle id and the `GoldenCoffeeKit` package keep their internal names.
+App icon + brand: **Caffe Steve** (`App/Assets.xcassets/AppIcon.appiconset`, from `CaffeSteve.svg`). Xcode project/bundle id and the `GoldenCoffeeKit` package keep their internal names.
 
 A native **SwiftUI** controller for the café‑ambiance system, styled
 after Apple Home, with an **on‑device autopilot** (Yao's rules ported to Swift),

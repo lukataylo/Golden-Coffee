@@ -1,4 +1,4 @@
-/* Coffee Steve Floorplan Scanner — 2D editor, capture, trace, export.
+/* Caffe Steve Floorplan Scanner — 2D editor, capture, trace, export.
  *
  * Geometry contract (perception/run.py load_geometry):
  *   { "zones":   {entry,queue,counter,seating: [[x,y],...]},

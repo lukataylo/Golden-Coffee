@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/cn";
 
-/** Coffee Steve bean/steam mark in brand gold. */
+/** Caffe Steve bean/steam mark in brand gold. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg

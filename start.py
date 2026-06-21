@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coffee Steve — single-command launcher.
+"""Caffe Steve — single-command launcher.
 
 Starts all services in the correct order and keeps them alive.
 Camera source is read from (in priority order):
@@ -118,7 +118,7 @@ def _handle_signal(sig, frame) -> None:
 # ── main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Coffee Steve — start all services")
+    parser = argparse.ArgumentParser(description="Caffe Steve — start all services")
     parser.add_argument("--source",  help="Camera source (overrides config.json)")
     parser.add_argument("--mock",    action="store_true", help="Use synthetic mock data instead of camera")
     parser.add_argument("--no-fl",   action="store_true", help="Skip federated learning node")
@@ -132,7 +132,7 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _handle_signal)
 
     print("=" * 58)
-    print("  ☕  Coffee Steve — starting all services")
+    print("  ☕  Caffe Steve — starting all services")
     print("=" * 58)
     print(f"  Camera source : {camera}" + (" (mock override)" if args.mock else ""))
     print(f"  Privacy mode  : {'on' if args.privacy else 'off'}")

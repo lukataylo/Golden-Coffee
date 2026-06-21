@@ -1,4 +1,4 @@
-# ☕ Coffee Steve
+# ☕ Caffe Steve
 
 ### *Your café, but it runs itself.*
 
@@ -25,7 +25,7 @@ stored. No surge pricing. Every action helps a guest or a staff member.
 > comfortable and keep service fast.
 >
 > **Why it matters:** café owners already have cameras nobody watches, queues that quietly
-> lose sales, and a vibe that drives (or kills) dwell time. Coffee Steve turns that one
+> lose sales, and a vibe that drives (or kills) dwell time. Caffe Steve turns that one
 > camera into a teammate that handles the room so the owner can run the shop.
 
 ---
@@ -37,7 +37,7 @@ person who walks out. The "feel" of the room — music too loud, air too stuffy,
 harsh — decides whether people stay for a second coffee. Nobody is watching all of it, all
 the time.
 
-**What Coffee Steve does.** It plugs into the camera you already own and understands the
+**What Caffe Steve does.** It plugs into the camera you already own and understands the
 room — occupancy, queue length, the conversion funnel, per-table wait times, cleaning
 cadence. Then an agent *acts*:
 
@@ -97,16 +97,16 @@ No backend handy? The dashboard has a self-contained **▶ Demo** mode
 
 The live **dashboard above is open — no login required**. For the customer-facing
 web app (`web/`, sign-up + onboarding), these demo logins each load one of our 5
-sample coffee-shop layouts. Password for all: **`GoldenDemo!24`**. Seed data lives
+sample coffee-shop layouts. Password for all: **`CaffeDemo!24`**. Seed data lives
 in [`web/seed/demo-accounts.json`](web/seed/demo-accounts.json).
 
 | Login | Coffee shop | Sample room |
 |---|---|---|
-| `corner@goldencoffee.demo` | **Corner Café** | cosy · 4 tables · comfort 92 · 12 covers |
-| `roastery@goldencoffee.demo` | **Open Roastery** | open-plan + patio · 6 tables · buzzy · 38 covers |
-| `kiosk@goldencoffee.demo` | **Grab & Go Kiosk** | counter-led · queue focus · 6 covers |
-| `bistro@goldencoffee.demo` | **Bistro + Patio** | 5 tables + patio · calm · 24 covers |
-| `espresso@goldencoffee.demo` | **Long Bar Espresso** | bar + stools · cosy · 9 covers |
+| `corner@caffesteve.demo` | **Corner Café** | cosy · 4 tables · comfort 92 · 12 covers |
+| `roastery@caffesteve.demo` | **Open Roastery** | open-plan + patio · 6 tables · buzzy · 38 covers |
+| `kiosk@caffesteve.demo` | **Grab & Go Kiosk** | counter-led · queue focus · 6 covers |
+| `bistro@caffesteve.demo` | **Bistro + Patio** | 5 tables + patio · calm · 24 covers |
+| `espresso@caffesteve.demo` | **Long Bar Espresso** | bar + stools · cosy · 9 covers |
 
 > The web app uses **Clerk** auth — seed these users in the Clerk dashboard (or
 > enable demo mode) to sign in. Each maps to a layout in `dashboard/scan/presets.js`.
@@ -279,6 +279,6 @@ Reference docs: [TRACKS.md](TRACKS.md) · [RESEARCH.md](RESEARCH.md) · [FLOORMA
 
 ---
 
-<sub>Built at the **Encode Vibe Coding Hackathon**. Coffee Steve is an ambient + ops copilot,
+<sub>Built at the **Encode Vibe Coding Hackathon**. Caffe Steve is an ambient + ops copilot,
 not a surveillance tool — no employee scoring, no demographics, no surge pricing, no using
 discomfort to move people along.</sub>

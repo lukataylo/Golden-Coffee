@@ -1,4 +1,4 @@
-"""Coffee Steve agent — turns scene metrics into real-world actions.
+"""Caffe Steve agent — turns scene metrics into real-world actions.
 
 By default the agent runs a deterministic, rule-based policy (`agent.policy`):
 it needs no API key and no model, so the MVP works anywhere. If an

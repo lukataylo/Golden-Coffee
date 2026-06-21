@@ -1,4 +1,4 @@
-"""Coffee Steve — user management & sign-up.
+"""Caffe Steve — user management & sign-up.
 
 A small, dependency-free account layer for the landing-page sign-up flow:
 

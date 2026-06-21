@@ -1,4 +1,4 @@
-/* Coffee Steve Floorplan Scanner — service worker.
+/* Caffe Steve Floorplan Scanner — service worker.
    Caches the app shell for offline use. Cache-first for the shell, with a
    network fallback so the app still works with no connectivity. */
 const CACHE = 'gc-scan-v2';

@@ -1,4 +1,4 @@
-/* Coffee Steve — "Connect & auto-map" camera-first setup flow.
+/* Caffe Steve — "Connect & auto-map" camera-first setup flow.
  *
  * A 3-screen, mobile-first onboarding that reads like:
  *   connect a camera  ->  it auto-detects your zones  ->  go live.

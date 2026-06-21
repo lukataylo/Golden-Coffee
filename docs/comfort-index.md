@@ -1,6 +1,6 @@
 # The Comfort Index
 
-The Comfort Index is the single number Coffee Steve is built around: **how nice
+The Comfort Index is the single number Caffe Steve is built around: **how nice
 does it feel to be in this room right now**, on a 0–100 scale. Everything the
 agent does — nudging music, light, temperature and scent — is in service of
 keeping this number high without anyone having to think about it.

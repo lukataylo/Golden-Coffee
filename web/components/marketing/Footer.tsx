@@ -30,7 +30,7 @@ export default function Footer() {
       </div>
       <div className="mx-auto max-w-6xl px-6 pb-8">
         <p className="text-xs text-white/30">
-          © {year} Coffee Steve. All rights reserved.
+          © {year} Caffe Steve. All rights reserved.
         </p>
       </div>
     </footer>

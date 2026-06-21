@@ -1,4 +1,4 @@
-"""Coffee Steve — the Comfort Index, defined once, canonically.
+"""Caffe Steve — the Comfort Index, defined once, canonically.
 
 The Comfort Index is the single number the product is built around: *how nice
 does it feel to be in this room right now*, 0–100. It is a weighted blend of

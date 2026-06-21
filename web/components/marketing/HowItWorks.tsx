@@ -41,7 +41,7 @@ const FEATURES: Feature[] = [
   },
   {
     title: "Protects service",
-    body: "When queues build or tables wait too long, Coffee Steve flags it and nudges the room back to speed-of-service.",
+    body: "When queues build or tables wait too long, Caffe Steve flags it and nudges the room back to speed-of-service.",
     icon: (
       <svg {...iconProps}>
         <circle cx="12" cy="12" r="9" />

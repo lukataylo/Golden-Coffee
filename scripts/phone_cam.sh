@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Coffee Steve — run the perception pipeline from a phone camera over USB (DroidCam).
+# Caffe Steve — run the perception pipeline from a phone camera over USB (DroidCam).
 # Re-arms the adb port-forward, waits for DroidCam to actually serve the stream,
 # then starts perception with low-latency defaults.
 #
@@ -14,7 +14,7 @@ PORT="${DROIDCAM_PORT:-4747}"
 URL="http://127.0.0.1:${PORT}/video"
 ADB="$(command -v adb || echo "$HOME/Library/Android/sdk/platform-tools/adb")"
 
-echo "▶ Coffee Steve — phone camera over USB (DroidCam)"
+echo "▶ Caffe Steve — phone camera over USB (DroidCam)"
 
 # 1) adb installed?
 if ! "$ADB" version >/dev/null 2>&1; then

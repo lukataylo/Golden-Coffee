@@ -1,4 +1,4 @@
-/* Coffee Steve — shared front-end helpers (vanilla, no framework).
+/* Caffe Steve — shared front-end helpers (vanilla, no framework).
    Safe to load on every page. Degrades gracefully without GSAP. */
 (function () {
   'use strict';
@@ -60,7 +60,7 @@
   ready(function () { initNav(); initReveal(); initYear(); });
 
   // --- backend / auth wiring -------------------------------------------------
-  // The static landing site talks to the Coffee Steve hub (FastAPI on Railway).
+  // The static landing site talks to the Caffe Steve hub (FastAPI on Railway).
   // Base URL precedence: ?backend= query  ->  localStorage  ->  window global
   //   ->  Railway default. The first two let the verification harness point the
   // pages at a throwaway local backend without editing source.
@@ -127,7 +127,7 @@
           throw err;
         });
       }, function (netErr) {
-        var err = new Error('Network error — could not reach Coffee Steve. Check your connection and try again.');
+        var err = new Error('Network error — could not reach Caffe Steve. Check your connection and try again.');
         err.status = 0; err.detail = err.message; err.cause = netErr;
         throw err;
       });

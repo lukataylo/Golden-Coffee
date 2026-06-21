@@ -1,4 +1,4 @@
-# 📖 Coffee Steve — Docs Wiki
+# 📖 Caffe Steve — Docs Wiki
 
 > *Your café, but it runs itself.* — a privacy-first AI ambient + ops copilot for cafés and
 > restaurants, driven by a single camera you already own.

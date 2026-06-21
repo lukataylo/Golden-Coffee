@@ -122,7 +122,7 @@ const App: React.FC = () => {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           zIndex: 1000
         }}>
-          <h1 style={{ fontSize: '1.2rem', margin: 0 }}>Coffee Steve</h1>
+          <h1 style={{ fontSize: '1.2rem', margin: 0 }}>Caffe Steve</h1>
         </header>
 
         {/* Main Content */}

@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 /**
- * Waitlist capture endpoint for the Coffee Steve marketing site.
+ * Waitlist capture endpoint for the Caffe Steve marketing site.
  *
  * POST /api/waitlist
  *   body: { email: string; website?: string }

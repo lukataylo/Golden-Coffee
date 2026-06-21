@@ -1,4 +1,4 @@
-# Coffee Steve — Python dependencies
+# Caffe Steve — Python dependencies
 # Perception
 ultralytics>=8.3.0          # YOLO11
 supervision>=0.25.0         # ByteTrack, zones, dwell timers, heatmaps (MIT)

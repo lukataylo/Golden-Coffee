@@ -1,4 +1,4 @@
-# Coffee Steve — Web (marketing + auth + onboarding)
+# Caffe Steve — Web (marketing + auth + onboarding)
 
 A **separate, production-grade Next.js app** for the public site, sign-up, and
 onboarding. It is intentionally **decoupled** from the live product (the Python

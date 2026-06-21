@@ -35,11 +35,11 @@ If it's smooth, spec a second module the same way (e.g. an eval scorer) to make 
 
 ## Email draft to send to support@codeplain.ai
 
-> Subject: API key request — Encode Vibe Coding Hackathon (Coffee Steve)
+> Subject: API key request — Encode Vibe Coding Hackathon (Caffe Steve)
 >
 > Hi Codeplain team,
 >
-> We're building **Coffee Steve** (an AI café/restaurant ops copilot) at the Encode
+> We're building **Caffe Steve** (an AI café/restaurant ops copilot) at the Encode
 > Vibe Coding Hackathon this weekend and would love to use Codeplain as our primary
 > development tool for the Codeplain bounty. Could you please issue us an API key for
 > the `plain2code_client`?

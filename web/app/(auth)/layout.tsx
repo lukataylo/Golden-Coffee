@@ -9,7 +9,7 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="gc-container flex items-center justify-between py-6">
-        <Link href="/" aria-label="Coffee Steve home">
+        <Link href="/" aria-label="Caffe Steve home">
           <Wordmark />
         </Link>
         <Link

@@ -1,4 +1,4 @@
-"""Coffee Steve × FLock — port of our homegrown federated sim onto FlockModel.
+"""Caffe Steve × FLock — port of our homegrown federated sim onto FlockModel.
 
 FLock (https://flock.io) runs federated learning *on-chain*: each participant
 trains locally and only submits opaque ``bytes`` parameters, an aggregator
@@ -285,7 +285,7 @@ def _run_local_demo() -> dict:
     bar = "═" * 70
 
     print("\n" + bar)
-    print("  ☕  Coffee Steve × FLock — local federated round (no platform)")
+    print("  ☕  Caffe Steve × FLock — local federated round (no platform)")
     print(bar)
     print(f"  flock_sdk installed: {HAS_FLOCK_SDK}"
           f"   (GoldenCoffeeModel is a "

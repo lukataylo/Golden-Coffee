@@ -3,7 +3,7 @@ import { SignUp } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "Create your account",
-  description: "Start running your café with Coffee Steve.",
+  description: "Start running your café with Caffe Steve.",
 };
 
 export default function SignUpPage() {

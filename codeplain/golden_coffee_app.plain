@@ -17,7 +17,7 @@ import:
 
 - Implement the entry point for :App:.
 
-- :App: should present a mobile-first layout: a single column centered on the page with a maximum width of 480 pixels and a warm off-white background. It has a fixed top header showing the title "Coffee Steve", and a fixed bottom navigation bar with four tabs labelled "Room", "Controls", "Activity", and "Settings". Tapping a tab switches the visible screen, and the active tab is visually highlighted. The "Room" screen is shown by default.
+- :App: should present a mobile-first layout: a single column centered on the page with a maximum width of 480 pixels and a warm off-white background. It has a fixed top header showing the title "Caffe Steve", and a fixed bottom navigation bar with four tabs labelled "Room", "Controls", "Activity", and "Settings". Tapping a tab switches the visible screen, and the active tab is visually highlighted. The "Room" screen is shown by default.
 
 - :App: should store a café backend base URL in browser localStorage under the key "gc_backend". The Settings screen should show a labelled text input pre-filled with the stored value, defaulting to "https://golden-coffee-production.up.railway.app" when nothing is stored, and a "Save" button that writes the current input value to localStorage and shows a brief "Saved" confirmation.
 
@@ -33,4 +33,4 @@ import:
 
 - The Settings screen should also show a "Tamper-proof record" card explaining that the autopilot's action history is anchored to Walrus decentralized storage so it can be independently verified. The card has a "Verify latest snapshot" button that opens, in a new browser tab, the URL "https://aggregator.walrus-testnet.walrus.space/v1/blobs/<blobId>", where <blobId> is read from localStorage under the key "gc_blob" (defaulting to "demo-snapshot" when nothing is stored).
 
-- :App: should be installable to an iPhone home screen as a PWA: its HTML head must link a web app manifest declaring the name "Coffee Steve", "standalone" display, a theme colour and a background colour, and at least one icon; and must include the meta tags apple-mobile-web-app-capable set to "yes" and apple-mobile-web-app-title set to "Coffee Steve", plus an apple-touch-icon link. A service worker should be registered that caches the app shell so the app still loads when offline.
+- :App: should be installable to an iPhone home screen as a PWA: its HTML head must link a web app manifest declaring the name "Caffe Steve", "standalone" display, a theme colour and a background colour, and at least one icon; and must include the meta tags apple-mobile-web-app-capable set to "yes" and apple-mobile-web-app-title set to "Caffe Steve", plus an apple-touch-icon link. A service worker should be registered that caches the app shell so the app still loads when offline.

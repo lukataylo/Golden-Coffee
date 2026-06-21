@@ -1,6 +1,6 @@
 # 🧭 Architecture
 
-Coffee Steve is deliberately small and decoupled. Four moving parts — perception, agent,
+Caffe Steve is deliberately small and decoupled. Four moving parts — perception, agent,
 backend, and the dashboard — never talk to each other directly. They all talk to a central
 **hub** in exactly **two shapes**: a `SceneEvent` (what the camera understands) and an
 `AgentAction` (what the system does). That single contract is the whole trick: any part can

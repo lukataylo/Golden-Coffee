@@ -2,7 +2,7 @@
 
 Research across café/retail video analytics, queue & wait-time estimation, table/seat
 occupancy, occupancy-reactive automation, and agentic vision. **Headline: no single OSS
-project does the full Coffee Steve loop** (single camera → café/table/cleaning ops → an
+project does the full Caffe Steve loop** (single camera → café/table/cleaning ops → an
 agent that acts on comfort). The field splits into two halves nobody has joined —
 perception (counts/dwell/queue/occupancy) and action (occupancy-reactive automation,
 vision-LLM agents that alert). **Our wedge is the seam.**
@@ -46,7 +46,7 @@ their actions are **security/alerting/Q&A** — none close the loop to **comfort
 (music/lights/scent/AC) driven by occupancy/queue/dwell**, and none model **restaurant table
 lifecycle or cleaning cadence**. Occupancy-reactive automation (Area-Occupancy, ESPresense)
 controls comfort well but from **sensors, not a camera**, with **no business-ops semantics**.
-Café/retail CV repos only **dashboard counts — they never act**. Coffee Steve is the join.
+Café/retail CV repos only **dashboard counts — they never act**. Caffe Steve is the join.
 
 ## ⚠️ Red flags
 - **Ultralytics YOLO is AGPL-3.0** — using its weights/code in a closed product is copyleft-

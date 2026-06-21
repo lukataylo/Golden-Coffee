@@ -3,7 +3,7 @@ import { SignIn } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to your Coffee Steve account.",
+  description: "Sign in to your Caffe Steve account.",
 };
 
 export default function SignInPage() {

@@ -1,4 +1,4 @@
-# Coffee Steve Sound Library — credits
+# Caffe Steve Sound Library — credits
 
 The hosted music library ships royalty-free tracks so the player works with zero
 setup (Spotify is an optional fallback). All tracks below are by **Kevin MacLeod**

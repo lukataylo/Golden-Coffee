@@ -1,6 +1,6 @@
 """Walrus (Sui ecosystem) decentralized blob storage — tamper-proof ops evidence.
 
-Coffee Steve anchors its anonymized metrics history + the agent ACTION audit trail
+Caffe Steve anchors its anonymized metrics history + the agent ACTION audit trail
 to Walrus so a café's AI decisions are independently, verifiably stored — privacy-
 first (aggregate numbers + hashes, never faces). Uses the PUBLIC testnet
 publisher/aggregator: a pure-HTTP path with no wallet or Move needed, so it works

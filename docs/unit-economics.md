@@ -1,8 +1,8 @@
-# Coffee Steve — Unit Economics & Hardware Costing
+# Caffe Steve — Unit Economics & Hardware Costing
 
 *For the hackathon judges. Prepared 2026-06-20. All figures GBP, ex-VAT.*
 
-Coffee Steve uses a **WHOOP-style membership model**: one flat price, the hardware is
+Caffe Steve uses a **WHOOP-style membership model**: one flat price, the hardware is
 included free, and the customer never makes an upfront purchase. This document shows the
 real bill of materials (cheap Xiaomi / Mijia devices) and the margin math behind the
 **£99/month** membership.
@@ -93,7 +93,7 @@ them to. This is a one-time **café-side** cost, **not** in our COGS and **not**
 
 ## 4. Comparison — what the café would pay piecing it together
 
-| Capability | DIY (buy separately) | Coffee Steve |
+| Capability | DIY (buy separately) | Caffe Steve |
 |---|---|---|
 | Security camera | £40 one-off | Included |
 | Footfall / queue analytics (Dor) | £150/mo + £240 hardware | Included |
@@ -105,7 +105,7 @@ them to. This is a one-time **café-side** cost, **not** in our COGS and **not**
 | **Recurring** | **~£194/mo** | **£99/mo** |
 | **Upfront** | **~£350** | **£0** |
 
-Coffee Steve is roughly **half the monthly cost, zero upfront**, and is the only option
+Caffe Steve is roughly **half the monthly cost, zero upfront**, and is the only option
 that actually unifies perception → action.
 
 *Prices are representative 2026 street prices for cheap Xiaomi/Mijia gear and named

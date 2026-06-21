@@ -1,37 +1,37 @@
 {
   "_note": "Demo accounts for judges — each maps to one of the 5 sample coffee-shop layouts (dashboard/scan/presets.js). Seed these users in your Clerk dashboard (or enable demo mode) to log into the web app. The live product dashboard itself is open (no login) at https://golden-coffee-production.up.railway.app.",
-  "password": "GoldenDemo!24",
+  "password": "CaffeDemo!24",
   "accounts": [
     {
-      "email": "corner@goldencoffee.demo",
+      "email": "corner@caffesteve.demo",
       "shop": "Corner Café",
       "preset": "corner-cafe",
       "blurb": "Cosy neighbourhood corner shop",
       "sample": { "covers": 12, "tables": 4, "comfort_index": 92, "mood": "Cosy", "avg_wait": "2:10", "music": "midday_dwell" }
     },
     {
-      "email": "roastery@goldencoffee.demo",
+      "email": "roastery@caffesteve.demo",
       "shop": "Open Roastery",
       "preset": "open-roastery",
       "blurb": "Big open-plan roastery with a sunny patio",
       "sample": { "covers": 38, "tables": 6, "comfort_index": 84, "mood": "Buzzy", "avg_wait": "4:05", "music": "rush_flow" }
     },
     {
-      "email": "kiosk@goldencoffee.demo",
+      "email": "kiosk@caffesteve.demo",
       "shop": "Grab & Go Kiosk",
       "preset": "grab-go-kiosk",
       "blurb": "Commuter kiosk built for speed",
       "sample": { "covers": 6, "tables": 0, "comfort_index": 88, "mood": "Lively", "avg_wait": "1:30", "music": "morning_rush" }
     },
     {
-      "email": "bistro@goldencoffee.demo",
+      "email": "bistro@caffesteve.demo",
       "shop": "Bistro + Patio",
       "preset": "bistro-patio",
       "blurb": "All-day bistro with a distinct front patio",
       "sample": { "covers": 24, "tables": 5, "comfort_index": 90, "mood": "Calm", "avg_wait": "3:20", "music": "afternoon_lounge" }
     },
     {
-      "email": "espresso@goldencoffee.demo",
+      "email": "espresso@caffesteve.demo",
       "shop": "Long Bar Espresso",
       "preset": "long-bar-espresso",
       "blurb": "Narrow espresso bar with a row of stools",

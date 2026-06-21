@@ -1,4 +1,4 @@
-/* Coffee Steve — ready-made coffee-shop layouts ("mockups of existing shops").
+/* Caffe Steve — ready-made coffee-shop layouts ("mockups of existing shops").
  *
  * Each preset is { id, name, blurb, geometry } where geometry is the normalized
  * 0..1 zones.json contract consumed by perception.load_geometry and rendered by

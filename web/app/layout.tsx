@@ -22,17 +22,17 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(env.appUrl),
   title: {
-    default: "Coffee Steve — your café, but it runs itself",
-    template: "%s · Coffee Steve",
+    default: "Caffe Steve — your café, but it runs itself",
+    template: "%s · Caffe Steve",
   },
   description:
     "An ambient + ops copilot for cafés and restaurants. Privacy-first, runs on a single existing camera.",
-  applicationName: "Coffee Steve",
+  applicationName: "Caffe Steve",
   openGraph: {
-    title: "Coffee Steve",
+    title: "Caffe Steve",
     description: "Your café, but it runs itself.",
     type: "website",
-    siteName: "Coffee Steve",
+    siteName: "Caffe Steve",
   },
   icons: { icon: "/favicon.ico" },
 };

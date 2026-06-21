@@ -88,7 +88,7 @@ export function OnboardingWizard() {
             Let&apos;s set up your café
           </h1>
           <p className="mt-1.5 text-sm text-cream-muted">
-            A few quick steps and Coffee Steve starts running the room.
+            A few quick steps and Caffe Steve starts running the room.
           </p>
         </div>
         <button
@@ -186,7 +186,7 @@ export function OnboardingWizard() {
           <CardHeader>
             <CardTitle>Connect your camera</CardTitle>
             <CardDescription>
-              Coffee Steve runs on one camera you already have — no new
+              Caffe Steve runs on one camera you already have — no new
               hardware. We process the feed privately; faces are never stored.
             </CardDescription>
           </CardHeader>
