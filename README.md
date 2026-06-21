@@ -207,7 +207,7 @@ flowchart LR
 | 📲 **Telegram alerts** | Staff get queue alerts pushed to their phones. |
 | ⛓️ **Tamper-proof audit** | One call anchors the anonymized metrics + the agent's action log to Walrus — an independently verifiable record of what the AI did. |
 
-### 📊 Accuracy, honestly
+### 📊 Accuracy
 
 We benchmarked the perception pipeline against a vision-LLM judge on 24 frames across 4 clips
 ([`eval/report.md`](eval/report.md)):
