@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live demo — Caffe Steve</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23E8862A%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%278%27 cy=%2721%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3Ccircle cx=%2715%27 cy=%2716%27 r=%272.6%27 fill=%27%231f140a%27/%3E%3C/svg%3E">
+<meta name="description" content="Caffe Steve — live demo hub. The live dashboard, the homepage, and the native phone app, in one place.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,ital,wght@6..72,0,300;6..72,0,400;6..72,0,500;6..72,1,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./gc.css">
+<style>
+  body{min-height:100vh;display:flex;flex-direction:column;}
+  .demo-wrap{max-width:1060px;margin:0 auto;padding:34px 28px 60px;width:100%;flex:1;}
+
+  /* hero — borrows the homepage radial-amber panel + serif headline */
+  .demo-hero{position:relative;overflow:hidden;border-radius:30px;padding:54px 44px 50px;text-align:center;
+    background:radial-gradient(120% 120% at 18% 18%, #FDE9B4 0%, #FACB6A 32%, #F2A23C 60%, #E07C25 100%);
+    box-shadow:0 30px 70px rgba(224,124,37,.28);}
+  .demo-hero .ring{position:absolute;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);pointer-events:none;}
+  .demo-hero .ring.a{width:560px;height:560px;left:-160px;top:-150px;}
+  .demo-hero .ring.b{width:380px;height:380px;left:-60px;top:-60px;border-color:rgba(255,255,255,.4);}
+  .demo-hero .brand{display:inline-flex;align-items:center;gap:10px;justify-content:center;margin-bottom:20px;position:relative;}
+  .demo-hero .brand span{font-size:17px;font-weight:600;color:#3a2208;letter-spacing:-0.01em;}
+  .demo-hero h1{position:relative;font-family:var(--serif);font-weight:400;font-size:clamp(34px,4.6vw,52px);line-height:1.05;color:#3a2208;margin:0 0 14px;letter-spacing:-0.01em;}
+  .demo-hero p{position:relative;font-size:16px;line-height:1.6;color:#5e3413;max-width:480px;margin:0 auto;}
+  .live-chip{position:relative;display:inline-flex;align-items:center;gap:8px;margin-top:18px;background:rgba(40,22,7,.14);
+    border:1px solid rgba(58,34,8,.2);border-radius:999px;padding:7px 15px;font:600 12.5px/1 var(--sans);color:#3a2208;}
+  .live-dot{width:9px;height:9px;border-radius:50%;background:#2f8f4e;box-shadow:0 0 0 0 rgba(47,143,78,.6);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,143,78,.55);}70%{box-shadow:0 0 0 9px rgba(47,143,78,0);}100%{box-shadow:0 0 0 0 rgba(47,143,78,0);}}
+
+  /* link cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px;}
+  .card{display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:24px;
+    padding:28px 26px;box-shadow:var(--shadow-sm);text-decoration:none;color:inherit;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;}
+  .card:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:var(--line-2);}
+  .card.primary{border:1.5px solid var(--amber);background:linear-gradient(180deg,#fffaf0,#FFFDF8 60%);box-shadow:0 20px 48px rgba(232,134,42,.18);}
+  .card .ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;margin-bottom:18px;background:rgba(232,134,42,.1);color:var(--amber);}
+  .card.primary .ic{background:var(--amber-grad);color:#2a1607;}
+  .card .eyebrow{margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .card h2{font-size:20px;margin-bottom:8px;}
+  .card p{font-size:13.5px;line-height:1.55;color:var(--muted);flex:1;}
+  .card .go{display:inline-flex;align-items:center;gap:7px;margin-top:18px;font:700 14px/1 var(--sans);color:var(--amber);}
+  .card .go .url{font:500 11.5px/1 var(--mono);color:var(--muted-2);}
+  .card:hover .go svg{transform:translateX(3px);}
+  .card .go svg{transition:transform .2s ease;}
+
+  /* demo login callout */
+  .login-note{margin-top:22px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 22px;font-size:13.5px;color:var(--muted);text-align:center;}
+  .login-note .k{font-weight:600;color:var(--ink);}
+  .login-note code{font-family:var(--mono);font-size:12.5px;background:var(--sand-2);padding:3px 8px;border-radius:6px;color:var(--ink);}
+
+  .demo-foot{text-align:center;font-size:12.5px;color:var(--muted-2);padding:24px 0 8px;}
+  .demo-foot a{color:var(--muted-2);}
+
+  @media(max-width:780px){ .cards{grid-template-columns:1fr;} .demo-hero{padding:40px 26px;} }
+</style>
+</head>
+<body>
+<div class="demo-wrap">
+
+  <!-- HERO (homepage radial-amber look) -->
+  <section class="demo-hero" data-rv>
+    <span class="ring a"></span><span class="ring b"></span>
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="#3a2208"><circle cx="8" cy="11" r="2.6"/><circle cx="8" cy="21" r="2.6"/><circle cx="15" cy="16" r="2.6"/><circle cx="22" cy="16" r="5" fill="none" stroke="#3a2208" stroke-width="2.6"/></svg>
+      <span>Caffe Steve</span>
+    </div>
+    <h1>See it for yourself.</h1>
+    <p>Three ways into the demo — the live dashboard, the product site, and the native phone app. The model is running right now.</p>
+    <span class="live-chip"><span class="live-dot"></span> Live model in motion — replaying a real recorded session</span>
+  </section>
+
+  <!-- LINK CARDS -->
+  <div class="cards" data-rv-group>
+
+    <!-- 1. Live dashboard / API -->
+    <a class="card primary" href="https://api.caffesteve.com" target="_blank" rel="noopener">
+      <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M3 9h18M8 21h8M12 17v4"/></svg></div>
+      <div class="eyebrow"><span class="live-dot"></span>Live dashboard · API</div>
+      <h2>Watch the model run</h2>
+      <p>Occupancy, queue, the Comfort Index, “£ walked away” and the agent's action feed — all updating live, driven by a real recorded session. No login needed.</p>
+      <span class="go">Open the dashboard
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <span class="go" style="margin-top:6px;"><span class="url">api.caffesteve.com</span></span>
+    </a>
+
+    <!-- 2. Homepage -->
+    <a class="card" href="./index.html">
+      <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9"/><path d="M9.5 20v-6h5v6"/></svg></div>
+      <div class="eyebrow">The product</div>
+      <h2>Homepage</h2>
+      <p>The story, the pitch and the pricing — how one small device reads the room and runs the music, lighting and air, then the subscription that makes it a business.</p>
+      <span class="go">Visit the site
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <span class="go" style="margin-top:6px;"><span class="url">caffesteve.com</span></span>
+    </a>
+
+    <!-- 3. Phone app -->
+    <a class="card" href="https://github.com/lukataylo/Golden-Coffee/tree/main/controller-ios" target="_blank" rel="noopener">
+      <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></div>
+      <div class="eyebrow">On the floor</div>
+      <h2>Phone app</h2>
+      <p>A native SwiftUI controller, styled after Apple Home — on-device autopilot, Apple Foundation Models for voice commands, a 3D shop model wired to the live camera.</p>
+      <span class="go">View the iOS app
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <span class="go" style="margin-top:6px;"><span class="url">github.com · controller-ios</span></span>
+    </a>
+  </div>
+
+  <!-- DEMO LOGIN -->
+  <div class="login-note" data-rv>
+    <span><span class="k">Judge demo login</span> — on the homepage, <b>Sign in</b> → “Sign in with the demo account”, or use:</span>
+    <code>demo@caffesteve.com</code><code>stevedemo24</code>
+  </div>
+
+  <div class="demo-foot">© <span data-year>2026</span> Caffe Steve · Privacy-first · No faces stored · <a href="./pricing.html">Pricing</a> · <a href="./terms.html">Terms</a></div>
+</div>
+
+<script src="./gc.js"></script>
+</body>
+</html>
